@@ -22,6 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
             return redirect('/login')->withCookie(cookie()->forget(config('session.cookie')));
         });
         $exceptions->renderable(function (\Illuminate\Session\TokenMismatchException $e, $request) {
-            return redirect()->back()->with('error', 'Your session expired. Please refresh the page and try again.');
+            return redirect()->back()->with('error', 'Your session expired. Please try submitting again.');
+        });
+        $exceptions->renderable(function (\Illuminate\Foundation\Http\Exceptions\TokenMismatchException $e, $request) {
+            return redirect()->back()->with('error', 'Your session expired. Please try submitting again.');
         });
     })->create();
