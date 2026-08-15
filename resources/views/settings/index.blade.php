@@ -616,12 +616,28 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                     <div style="margin-top: 2rem; background: rgba(var(--primary-rgb), 0.03); padding: 1.5rem; border-radius: 1rem; border: 1px dashed var(--primary); display: flex; align-items: center; gap: 1.5rem;">
                         <i class="ph ph-database" style="font-size: 2.5rem; color: var(--primary);"></i>
                         <div style="flex: 1;">
-                            <h4 style="margin: 0; font-size: 1rem;">{{ __('Attendance Database Backup') }}</h4>
-                            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Download a complete record of all attendance data in XLS format.') }}</p>
+                            <h4 style="margin: 0; font-size: 1rem;">{{ __('Attendance Database Report (XLS)') }}</h4>
+                            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Download a formatted spreadsheet of all attendance logs.') }}</p>
                         </div>
                         <a href="{{ route('settings.backup') }}" class="btn-secondary">
                             <i class="ph ph-download-simple"></i> {{ __('Export XLS') }}
                         </a>
+                    </div>
+
+                    <div style="margin-top: 1.5rem; background: rgba(59, 130, 246, 0.03); padding: 1.5rem; border-radius: 1rem; border: 1px dashed rgba(59, 130, 246, 0.5); display: flex; align-items: center; gap: 1.5rem;">
+                        <i class="ph ph-hard-drives" style="font-size: 2.5rem; color: #3b82f6;"></i>
+                        <div style="flex: 1;">
+                            <h4 style="margin: 0; font-size: 1rem;">{{ __('Full Database Backup & Import (.sqlite)') }}</h4>
+                            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Export your complete system database file or restore an existing .sqlite backup.') }}</p>
+                        </div>
+                        <div style="display: flex; gap: 0.75rem;">
+                            <a href="{{ route('settings.database.export') }}" class="btn-secondary" style="color: #3b82f6; border-color: rgba(59, 130, 246, 0.5); background: rgba(59, 130, 246, 0.08);">
+                                <i class="ph ph-download"></i> {{ __('Export DB File') }}
+                            </a>
+                            <button type="button" onclick="document.getElementById('importDbFileInput').click();" class="btn-premium" style="padding: 0.5rem 1rem;">
+                                <i class="ph ph-upload-simple"></i> {{ __('Import DB File') }}
+                            </button>
+                        </div>
                     </div>
 
                     <div style="margin-top: 1.5rem; background: rgba(239, 68, 68, 0.03); padding: 1.5rem; border-radius: 1rem; border: 1px dashed rgba(239, 68, 68, 0.5); display: flex; align-items: center; gap: 1.5rem;">
@@ -642,6 +658,12 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                     </div>
                 </form>
                 
+                {{-- Hidden Form for Database Import --}}
+                <form id="dbImportForm" action="{{ route('settings.database.import') }}" method="POST" enctype="multipart/form-data" style="display: none;">
+                    @csrf
+                    <input type="file" id="importDbFileInput" name="db_file" accept=".sqlite,.db,.sqlite3" onchange="if(confirm('Importing a database backup will replace all current data. Are you sure you want to proceed?')) document.getElementById('dbImportForm').submit();">
+                </form>
+
                 {{-- Hidden Form for System Cleanup --}}
                 <form id="systemCleanupForm" action="{{ route('settings.cleanup') }}" method="POST" style="display: none;">
                     @csrf

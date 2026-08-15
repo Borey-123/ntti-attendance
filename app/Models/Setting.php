@@ -24,6 +24,9 @@ class Setting extends Model
     {
         $val = self::getValue($key, null);
         if ($val) {
+            if (str_starts_with($val, 'data:image/') || str_starts_with($val, 'http://') || str_starts_with($val, 'https://')) {
+                return $val;
+            }
             $relativePath = ltrim($val, '/');
             if (str_starts_with($relativePath, 'storage/')) {
                 $publicPath = public_path($relativePath);

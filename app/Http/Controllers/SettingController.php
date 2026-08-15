@@ -173,10 +173,11 @@ class SettingController extends Controller
             if ($request->hasFile('university_logo')) {
                 $file = $request->file('university_logo');
                 if ($file->isValid()) {
-                    $path = $file->store('settings', 'public');
+                    $mime = $file->getMimeType();
+                    $base64 = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
                     Setting::updateOrCreate(
                         ['key' => 'university_logo'],
-                        ['value' => '/storage/' . $path]
+                        ['value' => $base64]
                     );
                 }
             }
@@ -184,10 +185,11 @@ class SettingController extends Controller
             if ($request->hasFile('login_bg')) {
                 $file = $request->file('login_bg');
                 if ($file->isValid()) {
-                    $path = $file->store('settings', 'public');
+                    $mime = $file->getMimeType();
+                    $base64 = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
                     Setting::updateOrCreate(
                         ['key' => 'login_bg'],
-                        ['value' => '/storage/' . $path]
+                        ['value' => $base64]
                     );
                 }
             }
@@ -447,6 +449,55 @@ class SettingController extends Controller
             return back()->with('success', 'System data cleanup completed successfully.');
         } catch (\Exception $e) {
             return back()->with('error', 'Cleanup failed: ' . $e->getMessage());
+        }
+    }
+
+    public function downloadDatabaseSqlite()
+    {
+        $dbPath = database_path('database.sqlite');
+        if (!file_exists($dbPath)) {
+            return back()->with('error', 'Database file not found.');
+        }
+
+        $filename = 'ntti_attendance_db_' . now()->format('Y-m-d_H-i-s') . '.sqlite';
+        SecurityLog::record('Downloaded Database Backup', 'Database');
+
+        return response()->download($dbPath, $filename);
+    }
+
+    public function importDatabaseSqlite(Request $request)
+    {
+        $request->validate([
+            'db_file' => 'required|file'
+        ]);
+
+        try {
+            $file = $request->file('db_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+
+            if (!in_array($ext, ['sqlite', 'db', 'sqlite3', 'sql'])) {
+                return back()->with('error', 'Invalid file format. Please upload a .sqlite, .db, or .sqlite3 database file.');
+            }
+
+            $dbPath = database_path('database.sqlite');
+            
+            // Backup current db first just in case
+            if (file_exists($dbPath)) {
+                @copy($dbPath, database_path('database.sqlite.bak'));
+            }
+
+            // Copy uploaded file
+            copy($file->getRealPath(), $dbPath);
+            @chmod($dbPath, 0777);
+
+            \Illuminate\Support\Facades\Artisan::call('cache:clear');
+            \Illuminate\Support\Facades\Artisan::call('config:clear');
+
+            SecurityLog::record('Imported Database', 'Database');
+
+            return back()->with('success', 'Database imported successfully! System records and settings have been restored.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to import database: ' . $e->getMessage());
         }
     }
 }

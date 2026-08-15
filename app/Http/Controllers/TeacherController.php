@@ -56,8 +56,11 @@ class TeacherController extends Controller
         ]);
 
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('teachers', 'public');
-            $validated['photo'] = '/storage/' . $path;
+            $file = $request->file('photo');
+            if ($file->isValid()) {
+                $mime = $file->getMimeType();
+                $validated['photo'] = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+            }
         }
 
         // Set a temporary unique employee_id because it's required and unique in DB
@@ -101,8 +104,11 @@ class TeacherController extends Controller
             }
             $validated['photo'] = null;
         } elseif ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('teachers', 'public');
-            $validated['photo'] = '/storage/' . $path;
+            $file = $request->file('photo');
+            if ($file->isValid()) {
+                $mime = $file->getMimeType();
+                $validated['photo'] = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+            }
         }
 
         $teacher->update($validated);

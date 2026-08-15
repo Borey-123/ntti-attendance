@@ -123,6 +123,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
     Route::get('/settings/backup', [SettingController::class, 'downloadBackup'])->name('settings.backup');
+    Route::get('/settings/database/export', [SettingController::class, 'downloadDatabaseSqlite'])->name('settings.database.export');
+    Route::post('/settings/database/import', [SettingController::class, 'importDatabaseSqlite'])->name('settings.database.import');
     Route::post('/settings/system-cleanup', [SettingController::class, 'runSystemCleanup'])->name('settings.cleanup');
     Route::get('/settings/telegram-chats', [SettingController::class, 'fetchTelegramChats'])->name('settings.telegram.chats');
     Route::post('/settings/appearance', [SettingController::class, 'updateAppearance'])->name('settings.appearance.update');
