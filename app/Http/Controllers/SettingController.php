@@ -470,9 +470,9 @@ class SettingController extends Controller
         @set_time_limit(300);
         @ini_set('memory_limit', '512M');
 
-        $request->validate([
-            'db_file' => 'required|file'
-        ]);
+        if (!$request->hasFile('db_file') || !$request->file('db_file')->isValid()) {
+            return back()->with('error', 'No file uploaded or the uploaded file exceeds the PHP server upload size limit.');
+        }
 
         $dbPath = database_path('database.sqlite');
         $bakPath = database_path('database.sqlite.bak');
@@ -486,6 +486,10 @@ class SettingController extends Controller
             }
 
             $realPath = $file->getRealPath();
+            if (!$realPath || !file_exists($realPath)) {
+                return back()->with('error', 'Unable to read the uploaded file. Please try again.');
+            }
+
             $content = file_get_contents($realPath);
 
             // 1. Always back up current database first

@@ -178,14 +178,22 @@ class TeacherController extends Controller
 
     public function import(Request $request)
     {
-        $request->validate([
-            'file' => 'required|file'
-        ]);
+        @set_time_limit(300);
+        @ini_set('memory_limit', '512M');
+
+        if (!$request->hasFile('file') || !$request->file('file')->isValid()) {
+            return back()->with('error', 'No file uploaded or the uploaded file exceeds the PHP server upload size limit.');
+        }
 
         try {
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());
             $realPath = $file->getRealPath();
+
+            if (!$realPath || !file_exists($realPath)) {
+                return back()->with('error', 'Unable to read uploaded file. Please try again.');
+            }
+
             $content = file_get_contents($realPath);
             $importedCount = 0;
 
