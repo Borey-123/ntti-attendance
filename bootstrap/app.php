@@ -28,7 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
             return redirect()->back()->with('error', 'Your session expired. Please try submitting again.');
         });
         $exceptions->renderable(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, $request) {
-            return redirect()->back()->with('error', 'The uploaded file is too large for server limits. Please upload a smaller SQL file or increase upload_max_filesize in php.ini.');
+            return response('The uploaded file is too large for the server limits. Please upload a smaller file or increase post_max_size in php.ini. <br><br><a href="javascript:history.back()">Click here to go back</a>', 413);
         });
         $exceptions->renderable(function (\PDOException $e, $request) {
             if (str_contains($e->getMessage(), '2002') || str_contains(strtolower($e->getMessage()), 'refused')) {

@@ -267,7 +267,7 @@ class TeacherController extends Controller
             SecurityLog::record('Imported Teachers', "Count: {$importedCount}");
 
             return back()->with('success', "Teacher list imported successfully! {$importedCount} statements/records processed.");
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return back()->with('error', 'Failed to import teacher file: ' . $e->getMessage());
         }
     }

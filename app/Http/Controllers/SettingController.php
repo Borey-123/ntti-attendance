@@ -479,15 +479,15 @@ class SettingController extends Controller
 
         try {
             $file = $request->file('db_file');
-            $ext = strtolower($file->getClientOriginalExtension());
-
-            if (!in_array($ext, ['sqlite', 'db', 'sqlite3', 'sql'])) {
-                return back()->with('error', 'Invalid file format. Please upload a .sqlite, .db, or .sql database file.');
-            }
-
             $realPath = $file->getRealPath();
+            
             if (!$realPath || !file_exists($realPath)) {
                 return back()->with('error', 'Unable to read the uploaded file. Please try again.');
+            }
+
+            $ext = strtolower($file->getClientOriginalExtension());
+            if (!in_array($ext, ['sqlite', 'db', 'sqlite3', 'sql'])) {
+                return back()->with('error', 'Invalid file format. Please upload a .sqlite, .db, or .sql database file.');
             }
 
             $content = file_get_contents($realPath);
@@ -574,7 +574,7 @@ class SettingController extends Controller
             SecurityLog::record('Imported Database', 'Database');
 
             return back()->with('success', 'Database imported successfully! System records and settings have been restored.');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Restore previous database backup on error so system remains functional
             if (file_exists($bakPath)) {
                 @copy($bakPath, $dbPath);
