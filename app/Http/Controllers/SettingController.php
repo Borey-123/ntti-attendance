@@ -16,7 +16,7 @@ class SettingController extends Controller
     public function index()
     {
         $universityName = Setting::getValue('university_name', 'NTTI System');
-        $universityLogo = Setting::getValue('university_logo', '');
+        $universityLogo = Setting::getAssetUrl('university_logo', '/images/ntti_logo.png');
         $primaryColor   = Setting::getValue('primary_color', '#00d4a0');
         $defaultTheme   = Setting::getValue('default_theme', 'dark');
         $admins         = User::all();
@@ -27,7 +27,7 @@ class SettingController extends Controller
         $authorizedIp   = Setting::getValue('authorized_ip', '');
         $systemOpen     = Setting::getValue('system_open_time', '06:30');
         $systemClose    = Setting::getValue('system_close_time', '18:30');
-        $loginBg        = Setting::getValue('login_bg', '');
+        $loginBg        = Setting::getAssetUrl('login_bg', '/images/bg-login.jpg');
         $morningStart   = Setting::getValue('morning_shift_start', '05:00');
         $morningEnd     = Setting::getValue('morning_shift_end', '12:00');
         $afternoonStart = Setting::getValue('afternoon_shift_start', '12:00');

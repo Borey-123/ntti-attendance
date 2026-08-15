@@ -635,7 +635,7 @@
         <header>
             @php 
                 $uName = \App\Models\Setting::getValue('university_name', 'National Technical Training Institute');
-                $uLogo = \App\Models\Setting::getValue('university_logo', '/images/ntti_logo.png'); 
+                $uLogo = \App\Models\Setting::getAssetUrl('university_logo', '/images/ntti_logo.png'); 
                 $uWeb = \App\Models\Setting::getValue('university_website', '#');
                 $uFb = \App\Models\Setting::getValue('university_facebook', '#');
             @endphp
@@ -669,7 +669,7 @@
             {{-- Logo --}}
             @if($uLogo)
                 <div class="logo-wrapper" onclick="openSchoolInfo()" title="{{ __('School Info') }}">
-                    <img src="{{ url($uLogo) }}" class="logo-img" alt="Logo">
+                    <img src="{{ $uLogo }}" class="logo-img" alt="Logo">
                 </div>
             @endif
 

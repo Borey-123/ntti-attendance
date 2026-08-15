@@ -244,13 +244,13 @@
             </button>
             @php
                 $uName = __(\App\Models\Setting::getValue('university_name', 'National Technical Training Institute'));
-                $uLogo = \App\Models\Setting::getValue('university_logo', '/images/ntti_logo.png');
+                $uLogo = \App\Models\Setting::getAssetUrl('university_logo', '/images/ntti_logo.png');
                 $uWeb  = \App\Models\Setting::getValue('university_website', '#');
                 $uFb   = \App\Models\Setting::getValue('university_facebook', '#');
             @endphp
             @if($uLogo)
                 <div class="sidebar-logo-badge" onclick="openSchoolInfo()" title="{{ __('School Info') }}">
-                    <img src="{{ url($uLogo) }}" alt="Logo">
+                    <img src="{{ $uLogo }}" class="brand-logo" alt="Logo">
                 </div>
             @endif
             <h2 style="font-size: 1.25rem; cursor: pointer;" onclick="openSchoolInfo()">{{ $uName }}</h2>

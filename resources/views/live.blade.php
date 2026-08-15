@@ -1043,10 +1043,10 @@
 
         {{-- ① Brand Card --}}
         <div class="header-brand hcard">
-            @php $logo = \App\Models\Setting::getValue('university_logo', '/images/ntti_logo.png'); @endphp
+            @php $logo = \App\Models\Setting::getAssetUrl('university_logo', '/images/ntti_logo.png'); @endphp
             @if($logo)
                 <div style="width:58px; height:58px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.15); border:3px solid rgba(255,255,255,0.15); flex-shrink:0;">
-                    <img src="{{ url($logo) }}" alt="Logo" style="width:85%; height:85%; object-fit:contain;">
+                    <img src="{{ $logo }}" alt="Logo" style="width:85%; height:85%; object-fit:contain;">
                 </div>
             @endif
             <div class="header-brand-text">

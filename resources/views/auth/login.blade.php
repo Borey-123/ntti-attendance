@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 @php
     $uName = __(\App\Models\Setting::getValue('university_name', 'National Technical Training Institute'));
-    $uLogo = \App\Models\Setting::getValue('university_logo', '/images/ntti_logo.png');
-    $loginBg = \App\Models\Setting::getValue('login_bg', '');
+    $uLogo = \App\Models\Setting::getAssetUrl('university_logo', '/images/ntti_logo.png');
+    $loginBg = \App\Models\Setting::getAssetUrl('login_bg', '/images/bg-login.jpg');
     $primaryColor = \App\Models\Setting::getValue('primary_color', '#00d4a0');
     $defaultTheme = \App\Models\Setting::getValue('default_theme', 'dark');
     
@@ -40,7 +40,7 @@
             position: absolute;
             inset: 0;
             background: linear-gradient(rgba(10, 15, 30, 0.4), rgba(10, 15, 30, 0.8)),
-                        url('{{ $loginBg ? url($loginBg) : asset('images/bg-login.jpg') }}') center/cover no-repeat;
+                        url('{{ $loginBg }}') center/cover no-repeat;
             animation: kenBurns 20s ease-in-out infinite alternate;
             z-index: 1;
         }
