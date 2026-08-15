@@ -27,4 +27,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->renderable(function (\Illuminate\Foundation\Http\Exceptions\TokenMismatchException $e, $request) {
             return redirect()->back()->with('error', 'Your session expired. Please try submitting again.');
         });
+        $exceptions->renderable(function (\PDOException $e, $request) {
+            if (str_contains($e->getMessage(), '2002') || str_contains(strtolower($e->getMessage()), 'refused')) {
+                return redirect()->back()->with('error', 'Database Connection Error: Could not connect to MySQL. Please make sure MySQL is started in XAMPP Control Panel.');
+            }
+        });
+        $exceptions->renderable(function (\Illuminate\Database\QueryException $e, $request) {
+            if (str_contains($e->getMessage(), '2002') || str_contains(strtolower($e->getMessage()), 'refused')) {
+                return redirect()->back()->with('error', 'Database Connection Error: Could not connect to MySQL. Please make sure MySQL is started in XAMPP Control Panel.');
+            }
+        });
     })->create();
