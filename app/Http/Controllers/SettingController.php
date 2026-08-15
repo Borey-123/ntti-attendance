@@ -471,24 +471,45 @@ class SettingController extends Controller
             'db_file' => 'required|file'
         ]);
 
+        $dbPath = database_path('database.sqlite');
+        $bakPath = database_path('database.sqlite.bak');
+
         try {
             $file = $request->file('db_file');
             $ext = strtolower($file->getClientOriginalExtension());
 
             if (!in_array($ext, ['sqlite', 'db', 'sqlite3', 'sql'])) {
-                return back()->with('error', 'Invalid file format. Please upload a .sqlite, .db, or .sqlite3 database file.');
+                return back()->with('error', 'Invalid file format. Please upload a .sqlite, .db, or .sql database file.');
             }
 
-            $dbPath = database_path('database.sqlite');
-            
-            // Backup current db first just in case
+            $realPath = $file->getRealPath();
+            $content = file_get_contents($realPath);
+
+            // 1. Always back up current database first
             if (file_exists($dbPath)) {
-                @copy($dbPath, database_path('database.sqlite.bak'));
+                @copy($dbPath, $bakPath);
             }
 
-            // Copy uploaded file
-            copy($file->getRealPath(), $dbPath);
-            @chmod($dbPath, 0777);
+            // 2. Check if binary SQLite file vs SQL script
+            if (str_starts_with($content, 'SQLite format 3')) {
+                // Direct binary copy
+                copy($realPath, $dbPath);
+                @chmod($dbPath, 0777);
+            } else {
+                // It's a text SQL dump (from phpMyAdmin / MySQL or SQLite dump)
+                $sql = $content;
+                // Sanitize MySQL-specific syntax to prevent SQLite crashes
+                $sql = preg_replace('/ENGINE\s*=\s*\w+/i', '', $sql);
+                $sql = preg_replace('/DEFAULT\s+CHARSET\s*=\s*\w+/i', '', $sql);
+                $sql = preg_replace('/COLLATE\s*=\s*\w+/i', '', $sql);
+                $sql = preg_replace('/AUTO_INCREMENT\s*=\s*\d+/i', '', $sql);
+                $sql = preg_replace('/LOCK\s+TABLES.*?;/is', '', $sql);
+                $sql = preg_replace('/UNLOCK\s+TABLES;/i', '', $sql);
+                $sql = preg_replace('/SET\s+[\w_]+\s*=\s*.*?;/i', '', $sql);
+
+                // Run SQL queries inside PDO connection
+                \DB::connection()->getPdo()->exec($sql);
+            }
 
             \Illuminate\Support\Facades\Artisan::call('cache:clear');
             \Illuminate\Support\Facades\Artisan::call('config:clear');
@@ -497,7 +518,11 @@ class SettingController extends Controller
 
             return back()->with('success', 'Database imported successfully! System records and settings have been restored.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to import database: ' . $e->getMessage());
+            // Restore previous database backup on error so system remains functional
+            if (file_exists($bakPath)) {
+                @copy($bakPath, $dbPath);
+            }
+            return back()->with('error', 'Failed to import database: ' . $e->getMessage() . '. Restored previous database backup.');
         }
     }
 }
