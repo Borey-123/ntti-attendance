@@ -498,17 +498,50 @@ class SettingController extends Controller
             } else {
                 // It's a text SQL dump (from phpMyAdmin / MySQL or SQLite dump)
                 $sql = $content;
-                // Sanitize MySQL-specific syntax to prevent SQLite crashes
+
+                // Remove MySQL conditional comments /*!40101 SET ... */;
+                $sql = preg_replace('/\/\*!\d+.*?\*\//s', '', $sql);
+                // Remove inline comments -- ...
+                $sql = preg_replace('/^\s*--.*$/m', '', $sql);
+                // Convert START TRANSACTION to BEGIN for SQLite compatibility
+                $sql = preg_replace('/START\s+TRANSACTION;/i', 'BEGIN;', $sql);
+
+                // Sanitize MySQL-specific table/column options
                 $sql = preg_replace('/ENGINE\s*=\s*\w+/i', '', $sql);
                 $sql = preg_replace('/DEFAULT\s+CHARSET\s*=\s*\w+/i', '', $sql);
-                $sql = preg_replace('/COLLATE\s*=\s*\w+/i', '', $sql);
+                $sql = preg_replace('/COLLATE\s*=\s*[\w_]+/i', '', $sql);
                 $sql = preg_replace('/AUTO_INCREMENT\s*=\s*\d+/i', '', $sql);
                 $sql = preg_replace('/LOCK\s+TABLES.*?;/is', '', $sql);
                 $sql = preg_replace('/UNLOCK\s+TABLES;/i', '', $sql);
-                $sql = preg_replace('/SET\s+[\w_]+\s*=\s*.*?;/i', '', $sql);
 
-                // Run SQL queries inside PDO connection
-                \DB::connection()->getPdo()->exec($sql);
+                $driver = \DB::connection()->getDriverName();
+                $pdo = \DB::connection()->getPdo();
+
+                if ($driver === 'sqlite') {
+                    // Filter out SET commands that fail on SQLite
+                    $sql = preg_replace('/SET\s+[\w_@]+\s*=\s*.*?;/i', '', $sql);
+                }
+
+                // Split into individual SQL statements by semicolon
+                $statements = array_filter(
+                    array_map('trim', explode(';', $sql)),
+                    fn($stmt) => !empty($stmt)
+                );
+
+                foreach ($statements as $statement) {
+                    if (strlen($statement) > 2) {
+                        try {
+                            $pdo->exec($statement);
+                        } catch (\Exception $ex) {
+                            // If table already exists or harmless setting fails, continue importing remaining statements
+                            $msg = strtolower($ex->getMessage());
+                            if (!str_contains($msg, 'already exists') && !str_contains($msg, 'unknown variable')) {
+                                // If critical error on main query, rethrow
+                                throw $ex;
+                            }
+                        }
+                    }
+                }
             }
 
             \Illuminate\Support\Facades\Artisan::call('cache:clear');
