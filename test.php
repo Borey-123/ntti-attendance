@@ -1,1 +1,0 @@
-<?php $sql = str_repeat("-- comment\nINSERT INTO table VALUES(1);\n", 100000); $res = preg_replace("/^\s*--.*$/m", "", $sql); var_dump($res === null);
