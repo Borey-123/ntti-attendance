@@ -19,25 +19,36 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->renderable(function (\Illuminate\Contracts\Encryption\DecryptException $e, $request) {
-            return redirect('/login')->withCookie(cookie()->forget(config('session.cookie')));
+            return redirect('/login');
         });
         $exceptions->renderable(function (\Illuminate\Session\TokenMismatchException $e, $request) {
-            return redirect()->back()->with('error', 'Your session expired. Please try submitting again.');
+            return redirect('/login')->with('error', 'Your session expired. Please try logging in again.');
         });
         $exceptions->renderable(function (\Illuminate\Foundation\Http\Exceptions\TokenMismatchException $e, $request) {
-            return redirect()->back()->with('error', 'Your session expired. Please try submitting again.');
+            return redirect('/login')->with('error', 'Your session expired. Please try logging in again.');
         });
         $exceptions->renderable(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, $request) {
             return response('The uploaded file is too large for the server limits. Please upload a smaller file or increase post_max_size in php.ini. <br><br><a href="javascript:history.back()">Click here to go back</a>', 413);
         });
         $exceptions->renderable(function (\PDOException $e, $request) {
-            if (str_contains($e->getMessage(), '2002') || str_contains(strtolower($e->getMessage()), 'refused')) {
-                return redirect()->back()->with('error', 'Database Connection Error: Could not connect to MySQL. Please make sure MySQL is started in XAMPP Control Panel.');
+            $msg = strtolower($e->getMessage());
+            if (str_contains($msg, '2002') || str_contains($msg, 'refused')) {
+                return response('Database Connection Error: Could not connect to Database server. Please ensure MySQL or your DB service is running.', 500);
             }
         });
         $exceptions->renderable(function (\Illuminate\Database\QueryException $e, $request) {
-            if (str_contains($e->getMessage(), '2002') || str_contains(strtolower($e->getMessage()), 'refused')) {
-                return redirect()->back()->with('error', 'Database Connection Error: Could not connect to MySQL. Please make sure MySQL is started in XAMPP Control Panel.');
+            $msg = strtolower($e->getMessage());
+            if (str_contains($msg, 'no such table') || str_contains($msg, "doesn't exist")) {
+                try {
+                    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+                    \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+                    return redirect()->to('/login')->with('success', 'Database tables automatically initialized!');
+                } catch (\Throwable $ex) {
+                    return response('Database Schema Error: Table missing (' . $e->getMessage() . '). Auto-migration failed: ' . $ex->getMessage(), 500);
+                }
+            }
+            if (str_contains($msg, '2002') || str_contains($msg, 'refused')) {
+                return response('Database Connection Error: Could not connect to Database server.', 500);
             }
         });
     })->create();
