@@ -197,8 +197,8 @@ void connectWiFi() {
   // Add Custom Parameter for Server IP
   char ipBuffer[40];
   serverIP.toCharArray(ipBuffer, 40);
-  WiFiManagerParameter custom_server_ip("server_ip", "Server IP Address",
-                                        ipBuffer, 40);
+  WiFiManagerParameter custom_server_ip("server_ip", "Server Host/URL (e.g. ntti-attendance.onrender.com or 192.168.1.19)",
+                                        ipBuffer, 60);
   wifiManager.addParameter(&custom_server_ip);
 
   // Try to connect to last saved WiFi. If it fails, create an Access Point
@@ -206,8 +206,9 @@ void connectWiFi() {
   bool connected = wifiManager.autoConnect("Scanner_Setup");
 
   if (connected) {
-    // Save new IP if user changed it in the Captive Portal
+    // Save new Host/IP if user changed it in the Captive Portal
     String newIP = custom_server_ip.getValue();
+    newIP.trim();
     if (newIP != "" && newIP != serverIP) {
       serverIP = newIP;
       preferences.begin("scanner", false);
@@ -215,9 +216,24 @@ void connectWiFi() {
       preferences.end();
     }
 
-    // Build the URLs using the saved IP address
-    serverUrl = "http://" + serverIP + ":8001/api/attendance/scan";
-    heartbeatUrl = "http://" + serverIP + ":8001/api/hardware/heartbeat";
+    // Intelligently build the base URL for local IP or cloud domain
+    String baseHost = serverIP;
+    baseHost.trim();
+    if (!baseHost.startsWith("http://") && !baseHost.startsWith("https://")) {
+        if (baseHost.indexOf(":") == -1 && (baseHost.startsWith("192.") || baseHost.startsWith("10.") || baseHost.startsWith("172."))) {
+            baseHost = "http://" + baseHost + ":8001";
+        } else {
+            baseHost = "http://" + baseHost;
+        }
+    }
+    if (baseHost.endsWith("/")) {
+        baseHost = baseHost.substring(0, baseHost.length() - 1);
+    }
+
+    serverUrl = baseHost + "/api/attendance/scan";
+    heartbeatUrl = baseHost + "/api/hardware/heartbeat";
+
+    Serial.println("Server URL: " + serverUrl);
 
     lcdPrint("WiFi Connected!", WiFi.localIP().toString());
     digitalWrite(LED_GREEN_PIN, HIGH);
