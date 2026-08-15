@@ -467,6 +467,9 @@ class SettingController extends Controller
 
     public function importDatabaseSqlite(Request $request)
     {
+        @set_time_limit(300);
+        @ini_set('memory_limit', '512M');
+
         $request->validate([
             'db_file' => 'required|file'
         ]);
@@ -503,8 +506,9 @@ class SettingController extends Controller
                 $sql = preg_replace('/\/\*!\d+.*?\*\//s', '', $sql);
                 // Remove inline comments -- ...
                 $sql = preg_replace('/^\s*--.*$/m', '', $sql);
-                // Convert START TRANSACTION to BEGIN for SQLite compatibility
-                $sql = preg_replace('/START\s+TRANSACTION;/i', 'BEGIN;', $sql);
+                // Convert START TRANSACTION / COMMIT for SQLite compatibility
+                $sql = preg_replace('/START\s+TRANSACTION;/i', '', $sql);
+                $sql = preg_replace('/COMMIT;/i', '', $sql);
 
                 // Sanitize MySQL-specific table/column options
                 $sql = preg_replace('/ENGINE\s*=\s*\w+/i', '', $sql);
@@ -520,9 +524,10 @@ class SettingController extends Controller
                 if ($driver === 'sqlite') {
                     // Filter out SET commands that fail on SQLite
                     $sql = preg_replace('/SET\s+[\w_@]+\s*=\s*.*?;/i', '', $sql);
-                    $pdo->exec('PRAGMA foreign_keys = OFF;');
+                    @$pdo->exec('PRAGMA foreign_keys = OFF;');
+                    @$pdo->exec('PRAGMA synchronous = OFF;');
                 } else {
-                    $pdo->exec('SET FOREIGN_KEY_CHECKS = 0;');
+                    @$pdo->exec('SET FOREIGN_KEY_CHECKS = 0;');
                 }
 
                 // Split into individual SQL statements by semicolon
@@ -531,24 +536,31 @@ class SettingController extends Controller
                     fn($stmt) => !empty($stmt)
                 );
 
-                foreach ($statements as $statement) {
-                    if (strlen($statement) > 2) {
-                        try {
-                            $pdo->exec($statement);
-                        } catch (\Exception $ex) {
-                            // If table already exists, constraint error, or setting fails, continue importing
-                            $msg = strtolower($ex->getMessage());
-                            if (!str_contains($msg, 'already exists') && !str_contains($msg, 'unknown variable') && !str_contains($msg, 'foreign key constraint failed')) {
-                                // Ignore non-critical constraints during bulk restore
+                try {
+                    @$pdo->beginTransaction();
+                    foreach ($statements as $statement) {
+                        if (strlen($statement) > 2) {
+                            try {
+                                $pdo->exec($statement);
+                            } catch (\Exception $ex) {
+                                // Skip non-critical query errors
                             }
                         }
+                    }
+                    if ($pdo->inTransaction()) {
+                        $pdo->commit();
+                    }
+                } catch (\Exception $txEx) {
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
                     }
                 }
 
                 if ($driver === 'sqlite') {
-                    $pdo->exec('PRAGMA foreign_keys = ON;');
+                    @$pdo->exec('PRAGMA foreign_keys = ON;');
+                    @$pdo->exec('PRAGMA synchronous = NORMAL;');
                 } else {
-                    $pdo->exec('SET FOREIGN_KEY_CHECKS = 1;');
+                    @$pdo->exec('SET FOREIGN_KEY_CHECKS = 1;');
                 }
             }
 
