@@ -1,0 +1,212 @@
+7-Day Attendance Trend
+Active Cards
+Active Working Days
+Adjust
+Adjust Photo
+Adjust Record
+Admin
+Admin intervention and manual attendance override
+Afternoon
+Afternoon Check-In
+Afternoon Check-Out
+Afternoon Late Cutoff
+Afternoon Shift
+Afternoon Status
+All
+All rights reserved.
+All Teachers
+Assign Hardware ID
+Attendance %
+Attendance Database Backup
+Attendance Rate
+Attendance Rules
+Attendance Volatility & Trend
+AUTHENTICATE
+Authenticate & Scan
+Authorized Terminal IP
+Awaiting Scan...
+Awaiting Scanned UID...
+Brand Logo
+Check Another ID
+Check In Time
+Check your attendance records instantly.
+Checking...
+Check-ins Today
+Choose teacher...
+Click to re-adjust
+Click to view staff list
+Commit Update
+Configure core system parameters, security protocols, and visual branding.
+Configure how your institution appears across the platform.
+Confirm
+Connecting...
+Controls
+Create
+Credential UID
+Crop & Apply
+Currently In
+Currently Out
+Daily Records
+Days
+Days Absent
+Days Late
+Days Present
+Default Interface Theme
+Define shifts, working days, and late thresholds.
+Detecting Shift...
+Device Status
+Disabled
+Download a complete record of all attendance data in XLS format.
+Duplicate UID Detected
+Duration
+e.g. Device failure, Forgot card
+e.g. T0005
+Email Address
+Enroll New Administrator
+Error:
+Excel
+Export Date
+Export XLS
+Filter Department
+Full Name (English)
+Full Name (Khmer)
+Global Icon Weight
+Hardware Interface
+Hardware Offline
+Holder
+How long the check-in/out popup stays visible on the Live Monitor and Dashboard.
+Initialing system
+Initiate Scan
+Institution Name
+Instructor
+Interface Scaling (Font Size)
+Just now
+Last Scan
+Leave blank to allow any IP address.
+LIVE
+Live Attendance Monitor
+Live Monitor
+Loading date...
+Loading...
+Login Screen Wallpaper
+Maintenance Mode
+Manage administrator access and credentials.
+Manage personnel, credentials, and profile identities.
+Manage secure hardware credentials and card assignments.
+Manual Attendance Adjustment
+Manual Terminal
+Monthly Performance
+Monthly Summary
+Morning
+Morning Check-In
+Morning Check-Out
+Morning Late Cutoff
+Morning Shift
+Morning Status
+New Password
+No activity detected.
+No data found.
+No data yet
+No Email
+No Phone
+No recent records
+No recent scans.
+No records found in last 30 days.
+No teachers found in this selection.
+None
+OFFLINE
+OK
+On-Time
+Open Live Monitor
+Operational
+PDF
+Pending Cards
+Period
+Personalize the visual identity and interface scaling.
+Please tap your card to scan
+PORTAL
+PROXIMITY SCANNING...
+Punctuality
+Rate
+Ready to assign
+READY TO AUTHENTICATE
+READY TO SCAN
+Real-time updates enabled
+Reason / Note
+Re-assigning secure card for
+Recent 30 Days
+Recent Records
+Recent Scans
+Recommended: PNG with transparency, 512x512px.
+recorded
+Register & Assign
+Register New Teacher
+Remaining
+Remove current photo
+Report Period
+Reset
+RFID Assigned
+RFID Control Center
+RFID Teachers
+ROOT ADMIN
+Save
+Save Adjustment
+Save Attendance Rules
+Save Branding
+Save Identity
+Save Security Settings
+Scan Alert Duration (Seconds)
+Scan Attendance
+Scan New UID
+Scanner Health Status
+Scanner Offline
+Scanner Online
+Scanner restrictions and operating schedules.
+Score
+Search name, ID or position...
+Search teacher name, Teacher ID or department...
+Search teacher...
+Search...
+Secure Registry
+Security & Hardware
+Security Level
+Security Password
+Select a profile to begin
+Select Personnel
+Settings Hub
+Shift End
+Shift Start
+Source
+Stay signed in
+SYSTEM ADMIN
+System Appearance
+System Close
+System Identity
+System Open
+System Operating Window
+System Status
+Target Department
+Target Personnel
+Teacher Attendance Official Report
+Teacher Directory
+Teacher ID
+Teacher Name
+Teacher Portal
+Teacher Total Hours / Month
+Team Management
+Temporarily disable all RFID scanner inputs.
+TERMINAL ONLINE
+This is an electronically generated document. No signature is required.
+Times
+Tip: Verify your ID in the teacher list.
+to
+Today Total
+Total Hours / Month
+Total Issued
+Try adjusting your filters or register a new teacher.
+UID Available
+Update
+Update Credential
+View My Attendance
+Working days
+Working Hours
