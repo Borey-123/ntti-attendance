@@ -200,7 +200,14 @@ class TeacherController extends Controller
                 $sql = preg_replace('/AUTO_INCREMENT\s*=\s*\d+/i', '', $sql);
 
                 $statements = array_filter(array_map('trim', explode(';', $sql)), fn($stmt) => !empty($stmt));
+                $driver = \DB::connection()->getDriverName();
                 $pdo = \DB::connection()->getPdo();
+
+                if ($driver === 'sqlite') {
+                    $pdo->exec('PRAGMA foreign_keys = OFF;');
+                } else {
+                    $pdo->exec('SET FOREIGN_KEY_CHECKS = 0;');
+                }
 
                 foreach ($statements as $statement) {
                     if (strlen($statement) > 2) {
@@ -210,12 +217,15 @@ class TeacherController extends Controller
                                 $importedCount++;
                             }
                         } catch (\Exception $ex) {
-                            $msg = strtolower($ex->getMessage());
-                            if (!str_contains($msg, 'already exists') && !str_contains($msg, 'unknown variable')) {
-                                // continue
-                            }
+                            // continue on minor errors
                         }
                     }
+                }
+
+                if ($driver === 'sqlite') {
+                    $pdo->exec('PRAGMA foreign_keys = ON;');
+                } else {
+                    $pdo->exec('SET FOREIGN_KEY_CHECKS = 1;');
                 }
             } else {
                 $lines = file($realPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);

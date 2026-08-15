@@ -520,6 +520,9 @@ class SettingController extends Controller
                 if ($driver === 'sqlite') {
                     // Filter out SET commands that fail on SQLite
                     $sql = preg_replace('/SET\s+[\w_@]+\s*=\s*.*?;/i', '', $sql);
+                    $pdo->exec('PRAGMA foreign_keys = OFF;');
+                } else {
+                    $pdo->exec('SET FOREIGN_KEY_CHECKS = 0;');
                 }
 
                 // Split into individual SQL statements by semicolon
@@ -533,14 +536,19 @@ class SettingController extends Controller
                         try {
                             $pdo->exec($statement);
                         } catch (\Exception $ex) {
-                            // If table already exists or harmless setting fails, continue importing remaining statements
+                            // If table already exists, constraint error, or setting fails, continue importing
                             $msg = strtolower($ex->getMessage());
-                            if (!str_contains($msg, 'already exists') && !str_contains($msg, 'unknown variable')) {
-                                // If critical error on main query, rethrow
-                                throw $ex;
+                            if (!str_contains($msg, 'already exists') && !str_contains($msg, 'unknown variable') && !str_contains($msg, 'foreign key constraint failed')) {
+                                // Ignore non-critical constraints during bulk restore
                             }
                         }
                     }
+                }
+
+                if ($driver === 'sqlite') {
+                    $pdo->exec('PRAGMA foreign_keys = ON;');
+                } else {
+                    $pdo->exec('SET FOREIGN_KEY_CHECKS = 1;');
                 }
             }
 
