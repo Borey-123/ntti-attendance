@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 @php
     $uName = __(\App\Models\Setting::getValue('university_name', 'National Technical Training Institute'));
-    $uLogo = \App\Models\Setting::getValue('university_logo', '');
+    $uLogo = \App\Models\Setting::getValue('university_logo', '/images/ntti_logo.png');
     $loginBg = \App\Models\Setting::getValue('login_bg', '');
     $primaryColor = \App\Models\Setting::getValue('primary_color', '#00d4a0');
     $defaultTheme = \App\Models\Setting::getValue('default_theme', 'dark');

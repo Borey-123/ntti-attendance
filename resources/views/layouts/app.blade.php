@@ -244,7 +244,7 @@
             </button>
             @php
                 $uName = __(\App\Models\Setting::getValue('university_name', 'National Technical Training Institute'));
-                $uLogo = \App\Models\Setting::getValue('university_logo', '');
+                $uLogo = \App\Models\Setting::getValue('university_logo', '/images/ntti_logo.png');
                 $uWeb  = \App\Models\Setting::getValue('university_website', '#');
                 $uFb   = \App\Models\Setting::getValue('university_facebook', '#');
             @endphp
