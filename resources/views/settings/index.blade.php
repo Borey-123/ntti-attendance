@@ -439,13 +439,8 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                     <div class="form-group">
                         <label>{{ __('Brand Logo') }}</label>
                         <div style="display: flex; align-items: center; gap: 2rem; background: rgba(0,0,0,0.1); padding: 1.5rem; border-radius: 1rem; border: 1px dashed var(--border);">
-                            @if($universityLogo)
-                                <img src="{{ $universityLogo }}" style="height: 60px; object-fit: contain;">
-                            @else
-                                <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.05); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">
-                                    <i class="ph ph-image" style="font-size: 2rem; opacity: 0.3;"></i>
-                                </div>
-                            @endif
+                            @php $displayLogo = $universityLogo ?: '/images/ntti_logo.png'; @endphp
+                            <img src="{{ url($displayLogo) }}" style="height: 60px; object-fit: contain;">
                             <div style="flex: 1;">
                                 <input type="file" name="university_logo" class="form-control" accept="image/*">
                                 <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">{{ __('Recommended: PNG with transparency, 512x512px.') }}</p>
