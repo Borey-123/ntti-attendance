@@ -21,4 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->renderable(function (\Illuminate\Contracts\Encryption\DecryptException $e, $request) {
             return redirect('/login')->withCookie(cookie()->forget(config('session.cookie')));
         });
+        $exceptions->renderable(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            return redirect()->back()->with('error', 'Your session expired. Please refresh the page and try again.');
+        });
     })->create();
