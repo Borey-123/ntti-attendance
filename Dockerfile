@@ -63,6 +63,6 @@ CMD cp -n /var/www/html/.env.example /var/www/html/.env || true && \
     php artisan route:clear && \
     php artisan view:clear && \
     php artisan storage:link || true && \
-    php artisan migrate --force && \
+    php artisan migrate --force || true && \
     php artisan db:seed --force || true && \
     apache2-foreground
