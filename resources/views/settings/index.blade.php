@@ -661,7 +661,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                 {{-- Hidden Form for Database Import --}}
                 <form id="dbImportForm" action="{{ route('settings.database.import') }}" method="POST" enctype="multipart/form-data" style="display: none;">
                     @csrf
-                    <input type="file" id="importDbFileInput" name="db_file" accept=".sqlite,.db,.sqlite3" onchange="if(confirm('Importing a database backup will replace all current data. Are you sure you want to proceed?')) document.getElementById('dbImportForm').submit();">
+                    <input type="file" id="importDbFileInput" name="db_file" accept=".sql,.sqlite,.db,.sqlite3" onchange="if(confirm('Importing a database backup will replace all current data. Are you sure you want to proceed?')) document.getElementById('dbImportForm').submit();">
                 </form>
 
                 {{-- Hidden Form for System Cleanup --}}
