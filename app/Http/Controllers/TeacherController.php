@@ -198,42 +198,52 @@ class TeacherController extends Controller
             $importedCount = 0;
 
             if (in_array($ext, ['sql'])) {
-                $sql = $content;
-                $sql = preg_replace('/\/\*!\d+.*?\*\//s', '', $sql);
-                $sql = preg_replace('/^\s*--.*$/m', '', $sql);
-                $sql = preg_replace('/START\s+TRANSACTION;/i', 'BEGIN;', $sql);
-                $sql = preg_replace('/ENGINE\s*=\s*\w+/i', '', $sql);
-                $sql = preg_replace('/DEFAULT\s+CHARSET\s*=\s*\w+/i', '', $sql);
-                $sql = preg_replace('/COLLATE\s*=\s*[\w_]+/i', '', $sql);
-                $sql = preg_replace('/AUTO_INCREMENT\s*=\s*\d+/i', '', $sql);
-
-                $statements = array_filter(array_map('trim', explode(';', $sql)), fn($stmt) => !empty($stmt));
                 $driver = \DB::connection()->getDriverName();
                 $pdo = \DB::connection()->getPdo();
 
-                if ($driver === 'sqlite') {
-                    $pdo->exec('PRAGMA foreign_keys = OFF;');
-                } else {
-                    $pdo->exec('SET FOREIGN_KEY_CHECKS = 0;');
-                }
-
-                foreach ($statements as $statement) {
-                    if (strlen($statement) > 2) {
-                        try {
-                            $pdo->exec($statement);
-                            if (str_contains(strtolower($statement), 'insert into')) {
-                                $importedCount++;
+                if ($driver === 'mysql') {
+                    @$pdo->exec('SET FOREIGN_KEY_CHECKS = 0;');
+                    try {
+                        \DB::unprepared($content);
+                        $importedCount = substr_count(strtolower($content), 'insert into');
+                    } catch (\Throwable $ex) {
+                        $statements = array_filter(array_map('trim', preg_split('/;\s*[\r\n]+/', $content)), fn($stmt) => !empty($stmt));
+                        foreach ($statements as $statement) {
+                            if (strlen($statement) > 2) {
+                                try {
+                                    $pdo->exec($statement);
+                                    if (str_contains(strtolower($statement), 'insert into')) {
+                                        $importedCount++;
+                                    }
+                                } catch (\Throwable $err) {}
                             }
-                        } catch (\Exception $ex) {
-                            // continue on minor errors
                         }
                     }
-                }
-
-                if ($driver === 'sqlite') {
-                    $pdo->exec('PRAGMA foreign_keys = ON;');
+                    @$pdo->exec('SET FOREIGN_KEY_CHECKS = 1;');
                 } else {
-                    $pdo->exec('SET FOREIGN_KEY_CHECKS = 1;');
+                    $sql = $content;
+                    $sql = preg_replace('/\/\*!\d+.*?\*\//s', '', $sql) ?? $sql;
+                    $sql = preg_replace('/^\s*--.*$/m', '', $sql) ?? $sql;
+                    $sql = preg_replace('/START\s+TRANSACTION;/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/ENGINE\s*=\s*\w+/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/DEFAULT\s+CHARSET\s*=\s*\w+/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/COLLATE\s*=\s*[\w_]+/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/AUTO_INCREMENT\s*=\s*\d+/i', '', $sql) ?? $sql;
+
+                    $statements = array_filter(array_map('trim', preg_split('/;\s*[\r\n]+/', $sql)), fn($stmt) => !empty($stmt));
+
+                    $pdo->exec('PRAGMA foreign_keys = OFF;');
+                    foreach ($statements as $statement) {
+                        if (strlen($statement) > 2) {
+                            try {
+                                $pdo->exec($statement);
+                                if (str_contains(strtolower($statement), 'insert into')) {
+                                    $importedCount++;
+                                }
+                            } catch (\Throwable $ex) {}
+                        }
+                    }
+                    $pdo->exec('PRAGMA foreign_keys = ON;');
                 }
             } else {
                 $lines = file($realPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);

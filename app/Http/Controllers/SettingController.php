@@ -504,67 +504,80 @@ class SettingController extends Controller
                 @chmod($dbPath, 0777);
             } else {
                 // It's a text SQL dump (from phpMyAdmin / MySQL or SQLite dump)
-                $sql = $content;
-
-                // Remove MySQL conditional comments /*!40101 SET ... */;
-                $sql = preg_replace('/\/\*!\d+.*?\*\//s', '', $sql);
-                // Remove inline comments -- ...
-                $sql = preg_replace('/^\s*--.*$/m', '', $sql);
-                // Convert START TRANSACTION / COMMIT for SQLite compatibility
-                $sql = preg_replace('/START\s+TRANSACTION;/i', '', $sql);
-                $sql = preg_replace('/COMMIT;/i', '', $sql);
-
-                // Sanitize MySQL-specific table/column options
-                $sql = preg_replace('/ENGINE\s*=\s*\w+/i', '', $sql);
-                $sql = preg_replace('/DEFAULT\s+CHARSET\s*=\s*\w+/i', '', $sql);
-                $sql = preg_replace('/COLLATE\s*=\s*[\w_]+/i', '', $sql);
-                $sql = preg_replace('/AUTO_INCREMENT\s*=\s*\d+/i', '', $sql);
-                $sql = preg_replace('/LOCK\s+TABLES.*?;/is', '', $sql);
-                $sql = preg_replace('/UNLOCK\s+TABLES;/i', '', $sql);
-
                 $driver = \DB::connection()->getDriverName();
                 $pdo = \DB::connection()->getPdo();
 
-                if ($driver === 'sqlite') {
-                    // Filter out SET commands that fail on SQLite
-                    $sql = preg_replace('/SET\s+[\w_@]+\s*=\s*.*?;/i', '', $sql);
-                    @$pdo->exec('PRAGMA foreign_keys = OFF;');
-                    @$pdo->exec('PRAGMA synchronous = OFF;');
-                } else {
+                if ($driver === 'mysql') {
+                    // For MySQL, phpMyAdmin dumps can be executed directly using DB::unprepared
                     @$pdo->exec('SET FOREIGN_KEY_CHECKS = 0;');
-                }
+                    @$pdo->exec('SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";');
 
-                // Split into individual SQL statements by semicolon
-                $statements = array_filter(
-                    array_map('trim', explode(';', $sql)),
-                    fn($stmt) => !empty($stmt)
-                );
-
-                try {
-                    @$pdo->beginTransaction();
-                    foreach ($statements as $statement) {
-                        if (strlen($statement) > 2) {
-                            try {
-                                $pdo->exec($statement);
-                            } catch (\Exception $ex) {
-                                // Skip non-critical query errors
+                    try {
+                        \DB::unprepared($content);
+                    } catch (\Throwable $unpreparedEx) {
+                        // Fallback statement-by-statement execution
+                        $cleanSql = preg_replace('/^\s*--.*$/m', '', $content) ?? $content;
+                        $statements = array_filter(
+                            array_map('trim', preg_split('/;\s*[\r\n]+/', $cleanSql)),
+                            fn($stmt) => !empty($stmt)
+                        );
+                        foreach ($statements as $statement) {
+                            if (strlen($statement) > 2) {
+                                try {
+                                    $pdo->exec($statement);
+                                } catch (\Throwable $ex) {}
                             }
                         }
                     }
-                    if ($pdo->inTransaction()) {
-                        $pdo->commit();
-                    }
-                } catch (\Exception $txEx) {
-                    if ($pdo->inTransaction()) {
-                        $pdo->rollBack();
-                    }
-                }
 
-                if ($driver === 'sqlite') {
+                    @$pdo->exec('SET FOREIGN_KEY_CHECKS = 1;');
+                } else {
+                    // SQLite compatibility mode
+                    $sql = $content;
+
+                    // Remove MySQL conditional comments and comments
+                    $sql = preg_replace('/\/\*!\d+.*?\*\//s', '', $sql) ?? $sql;
+                    $sql = preg_replace('/^\s*--.*$/m', '', $sql) ?? $sql;
+                    $sql = preg_replace('/START\s+TRANSACTION;/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/COMMIT;/i', '', $sql) ?? $sql;
+
+                    // Sanitize MySQL-specific table/column options
+                    $sql = preg_replace('/ENGINE\s*=\s*\w+/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/DEFAULT\s+CHARSET\s*=\s*\w+/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/COLLATE\s*=\s*[\w_]+/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/AUTO_INCREMENT\s*=\s*\d+/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/LOCK\s+TABLES.*?;/is', '', $sql) ?? $sql;
+                    $sql = preg_replace('/UNLOCK\s+TABLES;/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/SET\s+[\w_@]+\s*=\s*.*?;/i', '', $sql) ?? $sql;
+
+                    @$pdo->exec('PRAGMA foreign_keys = OFF;');
+                    @$pdo->exec('PRAGMA synchronous = OFF;');
+
+                    $statements = array_filter(
+                        array_map('trim', preg_split('/;\s*[\r\n]+/', $sql)),
+                        fn($stmt) => !empty($stmt)
+                    );
+
+                    try {
+                        @$pdo->beginTransaction();
+                        foreach ($statements as $statement) {
+                            if (strlen($statement) > 2) {
+                                try {
+                                    $pdo->exec($statement);
+                                } catch (\Throwable $ex) {}
+                            }
+                        }
+                        if ($pdo->inTransaction()) {
+                            $pdo->commit();
+                        }
+                    } catch (\Throwable $txEx) {
+                        if ($pdo->inTransaction()) {
+                            $pdo->rollBack();
+                        }
+                    }
+
                     @$pdo->exec('PRAGMA foreign_keys = ON;');
                     @$pdo->exec('PRAGMA synchronous = NORMAL;');
-                } else {
-                    @$pdo->exec('SET FOREIGN_KEY_CHECKS = 1;');
                 }
             }
 
