@@ -1171,7 +1171,7 @@
             <div style="margin-bottom: 2rem;">
                 @if($uLogo)
                     <div style="width: 120px; height: 120px; margin: 0 auto 1.5rem; border-radius: 50%; overflow: hidden; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
-                        <img src="{{ url($uLogo) }}" alt="Logo" style="width: 85%; height: 85%; object-fit: contain;">
+                        <img src="{{ to_asset_url($uLogo) }}" alt="Logo" style="width: 85%; height: 85%; object-fit: contain;">
                     </div>
                 @endif
                 <h2 style="margin: 0; font-weight: 800; color: var(--text-primary); font-size: 1.6rem; line-height: 1.2;">{{ $uName }}</h2>

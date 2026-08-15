@@ -286,7 +286,7 @@
                         <div style="display: flex; align-items: center; gap: 0.65rem;">
                             <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--bg-elevated); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.75rem; color: var(--primary); overflow: hidden; border: 2px solid rgba(var(--primary-rgb), 0.2); flex-shrink: 0;">
                                 @if($dept->head->photo)
-                                    <img src="{{ url($dept->head->photo) }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <img src="{{ to_asset_url($dept->head->photo) }}" style="width: 100%; height: 100%; object-fit: cover;">
                                 @else
                                     {{ substr($dept->head->name, 0, 1) }}
                                 @endif

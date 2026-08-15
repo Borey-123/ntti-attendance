@@ -630,7 +630,7 @@
         </div>
 
         @if($teacher->photo)
-            <img src="{{ url($teacher->photo) }}" class="t-card-photo" alt="{{ $teacher->name }}">
+            <img src="{{ to_asset_url($teacher->photo) }}" class="t-card-photo" alt="{{ $teacher->name }}">
         @else
             <div class="t-card-photo">
                 {{ substr($teacher->name, 0, 1) }}

@@ -757,7 +757,7 @@
                     <div class="teacher-header" style="margin-bottom: 1rem;">
                         <div class="teacher-photo-wrapper">
                             @if($teacher->photo)
-                                <img src="{{ url($teacher->photo) }}" class="teacher-photo" alt="{{ $teacher->name }}">
+                                <img src="{{ to_asset_url($teacher->photo) }}" class="teacher-photo" alt="{{ $teacher->name }}">
                             @else
                                 <div class="teacher-photo" style="display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; background:var(--primary); font-size:2rem;">{{ substr($teacher->name, 0, 1) }}</div>
                             @endif
@@ -1097,7 +1097,7 @@
         <div style="margin-bottom: 2rem; text-align: center;">
             @if($uLogo)
                 <div style="width: 100px; height: 100px; margin: 0 auto 1.5rem; border-radius: 50%; overflow: hidden; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
-                    <img src="{{ url($uLogo) }}" alt="Logo" style="width: 85%; height: 85%; object-fit: contain;">
+                    <img src="{{ to_asset_url($uLogo) }}" alt="Logo" style="width: 85%; height: 85%; object-fit: contain;">
                 </div>
             @endif
             <h2 style="margin: 0; font-weight: 800; color: var(--text-main); font-size: 1.6rem; line-height: 1.2;">{{ $uName }}</h2>

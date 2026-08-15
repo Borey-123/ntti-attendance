@@ -440,7 +440,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                         <label>{{ __('Brand Logo') }}</label>
                         <div style="display: flex; align-items: center; gap: 2rem; background: rgba(0,0,0,0.1); padding: 1.5rem; border-radius: 1rem; border: 1px dashed var(--border);">
                             @php $displayLogo = $universityLogo ?: '/images/ntti_logo.png'; @endphp
-                            <img src="{{ url($displayLogo) }}" style="height: 60px; object-fit: contain;">
+                            <img src="{{ to_asset_url($displayLogo) }}" style="height: 60px; object-fit: contain;">
                             <div style="flex: 1;">
                                 <input type="file" name="university_logo" class="form-control" accept="image/*">
                                 <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">{{ __('Recommended: PNG with transparency, 512x512px.') }}</p>
@@ -450,7 +450,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                     <div class="form-group" style="margin-top: 2rem;">
                         <label>{{ __('Login Screen Wallpaper') }}</label>
                         <div style="position: relative; border-radius: 1rem; overflow: hidden; border: 1px solid var(--border);">
-                            <div style="height: 180px; background: url('{{ $loginBg ? url($loginBg) : '' }}') center/cover #000;"></div>
+                            <div style="height: 180px; background: url('{{ $loginBg ? to_asset_url($loginBg) : '' }}') center/cover #000;"></div>
                             <div style="padding: 1.5rem;">
                                 <input type="file" name="login_bg" class="form-control" accept="image/*">
                             </div>

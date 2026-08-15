@@ -520,7 +520,7 @@
         <div style="display:flex; align-items:center; gap:1rem; margin-bottom:3rem; animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;">
             @if($uLogo)
                 <div style="width: 85px; height: 85px; border-radius: 50%; overflow: hidden; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(0,0,0,0.3);">
-                    <img src="{{ url($uLogo) }}" alt="Logo" style="width: 92%; height: 92%; object-fit: contain;">
+                    <img src="{{ to_asset_url($uLogo) }}" alt="Logo" style="width: 92%; height: 92%; object-fit: contain;">
                 </div>
             @endif
             <span class="school-name-display" style="font-size:1.4rem; font-weight:800; color:#fff; letter-spacing:1px; text-transform:uppercase; opacity:0.9; text-shadow: 0 4px 10px rgba(0,0,0,0.4);">{{ $uName }}</span>
@@ -546,7 +546,7 @@
             </div>
             @if($uLogo)
                 <div class="decor-logo">
-                    <img src="{{ url($uLogo) }}" alt="{{ $uName }} Logo">
+                    <img src="{{ to_asset_url($uLogo) }}" alt="{{ $uName }} Logo">
                 </div>
             @endif
         </div>

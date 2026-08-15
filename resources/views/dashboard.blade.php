@@ -449,7 +449,7 @@
                         <div style="display:flex; align-items:center; gap:1rem; cursor:pointer;" onclick="openTeacherInsights({{ $record->teacher->id }})">
                             <div class="teacher-avatar">
                                 @if($record->teacher->photo)
-                                    <img src="{{ url($record->teacher->photo) }}" alt="">
+                                    <img src="{{ to_asset_url($record->teacher->photo) }}" alt="">
                                 @else
                                     <div class="avatar-placeholder">{{ $initial }}</div>
                                 @endif
@@ -527,7 +527,7 @@
                         <div style="display:flex; align-items:center; gap:1rem; cursor:pointer;" onclick="openTeacherInsights({{ $teacher->id }})">
                             <div class="teacher-avatar grayscale">
                                 @if($teacher->photo)
-                                    <img src="{{ url($teacher->photo) }}" alt="">
+                                    <img src="{{ to_asset_url($teacher->photo) }}" alt="">
                                 @else
                                     <div class="avatar-placeholder">{{ $initial }}</div>
                                 @endif

@@ -407,7 +407,7 @@
                                 <div style="display: flex; align-items: center; gap: 0.85rem;">
                                     <div class="teacher-avatar">
                                         @if($card->teacher && $card->teacher->photo)
-                                            <img src="{{ url($card->teacher->photo) }}" alt="">
+                                            <img src="{{ to_asset_url($card->teacher->photo) }}" alt="">
                                         @else
                                             <div class="avatar-placeholder">{{ $card->teacher ? strtoupper(substr($card->teacher->name, 0, 1)) : '?' }}</div>
                                         @endif

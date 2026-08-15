@@ -464,11 +464,11 @@
                  data-name-kh="{{ $teacher->name_kh }}"
                  data-dept="{{ $teacher->department }}"
                  data-empid="{{ $teacher->employee_id }}"
-                 data-photo="{{ $teacher->photo ? url($teacher->photo) : '' }}"
+                 data-photo="{{ $teacher->photo ? to_asset_url($teacher->photo) : '' }}"
                  onclick="selectTeacher(this)">
                 <div class="t-avatar">
                     @if($teacher->photo)
-                        <img src="{{ url($teacher->photo) }}" alt="">
+                        <img src="{{ to_asset_url($teacher->photo) }}" alt="">
                     @else
                         <div class="t-placeholder">{{ strtoupper(substr($teacher->name, 0, 1)) }}</div>
                     @endif
