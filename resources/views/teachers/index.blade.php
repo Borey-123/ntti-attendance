@@ -531,6 +531,9 @@
         <button class="btn" onclick="printFilteredCards()" style="display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 1.25rem; padding: 0.8rem 1.5rem; font-weight: 800; border: 1.5px solid #3b82f6; background: rgba(59, 130, 246, 0.1); color: #3b82f6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15); transition: all 0.2s ease; cursor: pointer;">
             <i class="ph ph-printer" style="font-size: 1.2rem;"></i> <span>{{ __('Print Cards') }}</span>
         </button>
+        <button class="btn" onclick="openModal('importTeacherModal')" style="display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 1.25rem; padding: 0.8rem 1.5rem; font-weight: 800; border: 1.5px solid #10b981; background: rgba(16, 185, 129, 0.1); color: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15); transition: all 0.2s ease; cursor: pointer;">
+            <i class="ph ph-upload-simple" style="font-size: 1.2rem;"></i> <span>{{ __('Import Data') }}</span>
+        </button>
         <button class="btn btn-primary" onclick="openModal('addTeacherModal')" style="display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 1.25rem; padding: 0.8rem 1.5rem; font-weight: 800; box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.25); transition: all 0.2s ease; width: fit-content;">
             <i class="ph ph-plus-circle" style="font-size: 1.2rem;"></i> <span>{{ __('Register New Teacher') }}</span>
         </button>
@@ -837,6 +840,32 @@
             <div class="d-flex justify-between align-center mt-4">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('editTeacherModal')">{{ __('Cancel') }}</button>
                 <button type="submit" class="btn btn-primary" style="width: auto;">{{ __('Update Teacher') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Import Teacher Data Modal -->
+<div class="modal" id="importTeacherModal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3><i class="ph ph-upload-simple" style="color: var(--primary); margin-right: 0.5rem;"></i>{{ __('Import Teacher Records') }}</h3>
+            <button class="modal-close" onclick="closeModal('importTeacherModal')">&times;</button>
+        </div>
+        <form action="{{ route('teachers.import') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div class="modal-body" style="padding: 1.5rem 0;">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+                    {{ __('Upload a .sql database dump or .csv list containing teacher data. The system will automatically create or update matching records.') }}
+                </p>
+                <div class="form-group">
+                    <label>{{ __('Select File (.sql, .csv)') }}</label>
+                    <input type="file" name="file" class="form-control" accept=".sql,.csv,.txt" required style="padding: 0.75rem;">
+                </div>
+            </div>
+            <div class="d-flex justify-between align-center mt-4">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('importTeacherModal')">{{ __('Cancel') }}</button>
+                <button type="submit" class="btn btn-primary" style="width: auto;">{{ __('Import Now') }}</button>
             </div>
         </form>
     </div>

@@ -63,6 +63,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [AttendanceController::class, 'index'])->name('dashboard');
     Route::get('/scan', [AttendanceController::class, 'scanPage'])->name('scan.index');
     Route::get('/teachers', [TeacherController::class, 'index'])->name('teachers.index');
+    Route::post('/teachers/import', [TeacherController::class, 'import'])->name('teachers.import');
     Route::get('/rfid', [RfidCardController::class, 'index'])->name('rfid.index');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index');

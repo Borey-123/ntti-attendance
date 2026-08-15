@@ -175,4 +175,82 @@ class TeacherController extends Controller
     {
         return response()->json(\App\Models\Department::pluck('name'));
     }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file'
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $realPath = $file->getRealPath();
+            $content = file_get_contents($realPath);
+            $importedCount = 0;
+
+            if (in_array($ext, ['sql'])) {
+                $sql = $content;
+                $sql = preg_replace('/\/\*!\d+.*?\*\//s', '', $sql);
+                $sql = preg_replace('/^\s*--.*$/m', '', $sql);
+                $sql = preg_replace('/START\s+TRANSACTION;/i', 'BEGIN;', $sql);
+                $sql = preg_replace('/ENGINE\s*=\s*\w+/i', '', $sql);
+                $sql = preg_replace('/DEFAULT\s+CHARSET\s*=\s*\w+/i', '', $sql);
+                $sql = preg_replace('/COLLATE\s*=\s*[\w_]+/i', '', $sql);
+                $sql = preg_replace('/AUTO_INCREMENT\s*=\s*\d+/i', '', $sql);
+
+                $statements = array_filter(array_map('trim', explode(';', $sql)), fn($stmt) => !empty($stmt));
+                $pdo = \DB::connection()->getPdo();
+
+                foreach ($statements as $statement) {
+                    if (strlen($statement) > 2) {
+                        try {
+                            $pdo->exec($statement);
+                            if (str_contains(strtolower($statement), 'insert into')) {
+                                $importedCount++;
+                            }
+                        } catch (\Exception $ex) {
+                            $msg = strtolower($ex->getMessage());
+                            if (!str_contains($msg, 'already exists') && !str_contains($msg, 'unknown variable')) {
+                                // continue
+                            }
+                        }
+                    }
+                }
+            } else {
+                $lines = file($realPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                foreach ($lines as $index => $line) {
+                    $row = str_getcsv($line);
+                    if ($index === 0 && (str_contains(strtolower($row[0] ?? ''), 'name') || str_contains(strtolower($row[0] ?? ''), 'id'))) {
+                        continue;
+                    }
+                    if (count($row) >= 2) {
+                        $empId = !empty($row[0]) ? trim($row[0]) : 'T' . str_pad($index, 4, '0', STR_PAD_LEFT);
+                        $name = trim($row[1] ?? 'Teacher ' . $index);
+                        $nameKh = trim($row[2] ?? '');
+                        $dept = trim($row[3] ?? 'General');
+                        $phone = trim($row[4] ?? null);
+
+                        Teacher::updateOrCreate(
+                            ['employee_id' => $empId],
+                            [
+                                'name' => $name,
+                                'name_kh' => $nameKh,
+                                'department' => $dept,
+                                'phone' => $phone,
+                                'status' => 'active'
+                            ]
+                        );
+                        $importedCount++;
+                    }
+                }
+            }
+
+            SecurityLog::record('Imported Teachers', "Count: {$importedCount}");
+
+            return back()->with('success', "Teacher list imported successfully! {$importedCount} statements/records processed.");
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to import teacher file: ' . $e->getMessage());
+        }
+    }
 }
