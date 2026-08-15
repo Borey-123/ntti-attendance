@@ -18,5 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->renderable(function (\Illuminate\Contracts\Encryption\DecryptException $e, $request) {
+            return redirect('/login')->withCookie(cookie()->forget(config('session.cookie')));
+        });
     })->create();

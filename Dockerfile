@@ -53,11 +53,15 @@ EXPOSE 80
 # Configure Apache port binding for Render
 RUN sed -i 's/80/${PORT}/g' /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf
 
-# Start script: ensure APP_KEY, run storage link, migrations, seeders, and start Apache
-CMD touch /var/www/html/database/database.sqlite && \
-    chmod -R 777 /var/www/html/database && \
-    chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database && \
-    php artisan key:generate --force && \
+# Start script: ensure .env, APP_KEY, storage link, migrations, seeders, and start Apache
+CMD cp -n /var/www/html/.env.example /var/www/html/.env || true && \
+    touch /var/www/html/database/database.sqlite && \
+    chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database /var/www/html/.env && \
+    chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database /var/www/html/.env && \
+    if ! grep -q "APP_KEY=base64" /var/www/html/.env; then php artisan key:generate --force; fi && \
+    php artisan config:clear && \
+    php artisan route:clear && \
+    php artisan view:clear && \
     php artisan storage:link || true && \
     php artisan migrate --force && \
     php artisan db:seed --force || true && \
