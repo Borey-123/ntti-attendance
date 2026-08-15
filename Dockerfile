@@ -36,9 +36,12 @@ COPY . /var/www/html
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Set proper permissions for Laravel storage & cache
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# Create SQLite database file if it doesn't exist
+RUN touch /var/www/html/database/database.sqlite
+
+# Set proper permissions for Laravel storage, cache, and database
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database \
+    && chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database
 
 # Render injects PORT env variable
 ENV PORT 80
@@ -47,5 +50,12 @@ EXPOSE 80
 # Configure Apache port binding for Render
 RUN sed -i 's/80/${PORT}/g' /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf
 
-# Start script: run database migrations and start Apache
-CMD php artisan storage:link || true && php artisan migrate --force && apache2-foreground
+# Start script: ensure APP_KEY, run storage link, migrations, seeders, and start Apache
+CMD touch /var/www/html/database/database.sqlite && \
+    chmod -R 777 /var/www/html/database && \
+    chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database && \
+    php artisan key:generate --force && \
+    php artisan storage:link || true && \
+    php artisan migrate --force && \
+    php artisan db:seed --force || true && \
+    apache2-foreground
