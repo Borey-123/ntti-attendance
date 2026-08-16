@@ -19,6 +19,11 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Web Migration Helper for Free Hosting (Render without interactive Shell)
 Route::get('/migrate-db', function () {
     try {
+        $dbPath = database_path('database.sqlite');
+        if (!file_exists($dbPath)) {
+            @touch($dbPath);
+        }
+
         \Illuminate\Support\Facades\Artisan::call('migrate:fresh', [
             '--seed' => true,
             '--force' => true,
