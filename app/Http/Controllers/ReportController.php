@@ -1065,11 +1065,11 @@ class ReportController extends Controller
             'teacher_id' => 'required|exists:teachers,id',
             'date' => 'required|date',
             'reason' => 'required|string|max:255',
-            'morning_in' => 'nullable|date_format:H:i',
-            'morning_out' => 'nullable|date_format:H:i',
+            'morning_in' => 'nullable|string',
+            'morning_out' => 'nullable|string',
             'morning_status' => 'required|string',
-            'afternoon_in' => 'nullable|date_format:H:i',
-            'afternoon_out' => 'nullable|date_format:H:i',
+            'afternoon_in' => 'nullable|string',
+            'afternoon_out' => 'nullable|string',
             'afternoon_status' => 'required|string',
         ]);
 
@@ -1098,11 +1098,11 @@ class ReportController extends Controller
     {
         $request->validate([
             'reason' => 'required|string|max:255',
-            'morning_in' => 'nullable|date_format:H:i',
-            'morning_out' => 'nullable|date_format:H:i',
+            'morning_in' => 'nullable|string',
+            'morning_out' => 'nullable|string',
             'morning_status' => 'required|string',
-            'afternoon_in' => 'nullable|date_format:H:i',
-            'afternoon_out' => 'nullable|date_format:H:i',
+            'afternoon_in' => 'nullable|string',
+            'afternoon_out' => 'nullable|string',
             'afternoon_status' => 'required|string',
         ]);
 
