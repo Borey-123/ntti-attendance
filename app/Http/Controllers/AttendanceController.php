@@ -363,53 +363,63 @@ class AttendanceController extends Controller
 
         // --- 1. Check if there's an open check-in that needs checking out ---
         if (!empty($record->morning_in) && empty($record->morning_out)) {
-            $record->update(['morning_out' => $timeString]);
+            try {
+                $record->update(['morning_out' => $timeString]);
 
-            $checkIn  = Carbon::parse($record->date->format('Y-m-d') . ' ' . $record->morning_in);
-            $workMins = $checkIn->diffInMinutes($now);
-            $workHrs  = floor($workMins / 60);
-            $workRem  = $workMins % 60;
+                $morningInParsed = Carbon::parse($today . ' ' . $record->morning_in);
+                $workMins = max(0, $morningInParsed->diffInMinutes($now));
+                $workHrs  = floor($workMins / 60);
+                $workRem  = $workMins % 60;
 
-            $this->sendTelegramNotification($teacher, 'check-out', 'Morning', $now->format('h:i:s A'));
+                $this->sendTelegramNotification($teacher, 'check-out', 'Morning', $now->format('h:i:s A'));
 
-            return response()->json([
-                'status'        => 'success',
-                'action'        => 'check-out',
-                'teacher_name'  => $teacher->name,
-                'teacher_name_kh'=> $teacher->name_kh,
-                'photo'         => $teacher->photo ? url($teacher->photo) : null,
-                'employee_id'   => $teacher->employee_id,
-                'department'    => $teacher->department,
-                'shift'         => 'Morning',
-                'time'          => $now->format('h:i:s A'),
-                'working_hours' => "{$workHrs}h {$workRem}m",
-                'message'       => 'Morning Check-out recorded',
-            ]);
+                return response()->json([
+                    'status'        => 'success',
+                    'action'        => 'check-out',
+                    'teacher_name'  => $teacher->name,
+                    'teacher_name_kh'=> $teacher->name_kh,
+                    'photo'         => $teacher->photo ? url($teacher->photo) : null,
+                    'employee_id'   => $teacher->employee_id,
+                    'department'    => $teacher->department,
+                    'shift'         => 'Morning',
+                    'time'          => $now->format('h:i:s A'),
+                    'working_hours' => "{$workHrs}h {$workRem}m",
+                    'message'       => 'Morning Check-out recorded',
+                ]);
+            } catch (\Throwable $e) {
+                \Log::error('Checkout Error (morning/scan): ' . $e->getMessage());
+                return response()->json(['status' => 'error', 'message' => 'Checkout failed: ' . $e->getMessage()], 500);
+            }
         }
 
         if (!empty($record->afternoon_in) && empty($record->afternoon_out)) {
-            $record->update(['afternoon_out' => $timeString]);
+            try {
+                $record->update(['afternoon_out' => $timeString]);
 
-            $checkIn  = Carbon::parse($record->date->format('Y-m-d') . ' ' . $record->afternoon_in);
-            $workMins = $checkIn->diffInMinutes($now);
-            $workHrs  = floor($workMins / 60);
-            $workRem  = $workMins % 60;
+                $afternoonInParsed = Carbon::parse($today . ' ' . $record->afternoon_in);
+                $workMins = max(0, $afternoonInParsed->diffInMinutes($now));
+                $workHrs  = floor($workMins / 60);
+                $workRem  = $workMins % 60;
 
-            $this->sendTelegramNotification($teacher, 'check-out', 'Afternoon', $now->format('h:i:s A'));
+                $this->sendTelegramNotification($teacher, 'check-out', 'Afternoon', $now->format('h:i:s A'));
 
-            return response()->json([
-                'status'        => 'success',
-                'action'        => 'check-out',
-                'teacher_name'  => $teacher->name,
-                'teacher_name_kh'=> $teacher->name_kh,
-                'photo'         => $teacher->photo ? url($teacher->photo) : null,
-                'employee_id'   => $teacher->employee_id,
-                'department'    => $teacher->department,
-                'shift'         => 'Afternoon',
-                'time'          => $now->format('h:i:s A'),
-                'working_hours' => "{$workHrs}h {$workRem}m",
-                'message'       => 'Afternoon Check-out recorded',
-            ]);
+                return response()->json([
+                    'status'        => 'success',
+                    'action'        => 'check-out',
+                    'teacher_name'  => $teacher->name,
+                    'teacher_name_kh'=> $teacher->name_kh,
+                    'photo'         => $teacher->photo ? url($teacher->photo) : null,
+                    'employee_id'   => $teacher->employee_id,
+                    'department'    => $teacher->department,
+                    'shift'         => 'Afternoon',
+                    'time'          => $now->format('h:i:s A'),
+                    'working_hours' => "{$workHrs}h {$workRem}m",
+                    'message'       => 'Afternoon Check-out recorded',
+                ]);
+            } catch (\Throwable $e) {
+                \Log::error('Checkout Error (afternoon/scan): ' . $e->getMessage());
+                return response()->json(['status' => 'error', 'message' => 'Checkout failed: ' . $e->getMessage()], 500);
+            }
         }
 
         // --- 2. If NO open shift, determine Shift based on current time for CHECK-IN ---
@@ -529,53 +539,63 @@ class AttendanceController extends Controller
 
         // --- 1. Check if there's an open check-in that needs checking out ---
         if (!empty($record->morning_in) && empty($record->morning_out)) {
-            $record->update(['morning_out' => $timeString]);
+            try {
+                $record->update(['morning_out' => $timeString]);
 
-            $checkIn  = Carbon::parse($record->date->format('Y-m-d') . ' ' . $record->morning_in);
-            $workMins = $checkIn->diffInMinutes($now);
-            $workHrs  = floor($workMins / 60);
-            $workRem  = $workMins % 60;
+                $morningInParsed = Carbon::parse($today . ' ' . $record->morning_in);
+                $workMins = max(0, $morningInParsed->diffInMinutes($now));
+                $workHrs  = floor($workMins / 60);
+                $workRem  = $workMins % 60;
 
-            $this->sendTelegramNotification($teacher, 'check-out', 'Morning', $now->format('h:i:s A'));
+                $this->sendTelegramNotification($teacher, 'check-out', 'Morning', $now->format('h:i:s A'));
 
-            return response()->json([
-                'status'        => 'success',
-                'action'        => 'check-out',
-                'teacher_name'  => $teacher->name,
-                'teacher_name_kh'=> $teacher->name_kh,
-                'photo'         => $teacher->photo ? url($teacher->photo) : null,
-                'employee_id'   => $teacher->employee_id,
-                'department'    => $teacher->department,
-                'shift'         => 'Morning',
-                'time'          => $now->format('h:i:s A'),
-                'working_hours' => "{$workHrs}h {$workRem}m",
-                'message'       => "Morning Check-out recorded for {$teacher->name}",
-            ]);
+                return response()->json([
+                    'status'        => 'success',
+                    'action'        => 'check-out',
+                    'teacher_name'  => $teacher->name,
+                    'teacher_name_kh'=> $teacher->name_kh,
+                    'photo'         => $teacher->photo ? url($teacher->photo) : null,
+                    'employee_id'   => $teacher->employee_id,
+                    'department'    => $teacher->department,
+                    'shift'         => 'Morning',
+                    'time'          => $now->format('h:i:s A'),
+                    'working_hours' => "{$workHrs}h {$workRem}m",
+                    'message'       => "Morning Check-out recorded for {$teacher->name}",
+                ]);
+            } catch (\Throwable $e) {
+                \Log::error('Checkout Error (morning/adminScan): ' . $e->getMessage());
+                return response()->json(['status' => 'error', 'message' => 'Checkout failed: ' . $e->getMessage()], 500);
+            }
         }
 
         if (!empty($record->afternoon_in) && empty($record->afternoon_out)) {
-            $record->update(['afternoon_out' => $timeString]);
+            try {
+                $record->update(['afternoon_out' => $timeString]);
 
-            $checkIn  = Carbon::parse($record->date->format('Y-m-d') . ' ' . $record->afternoon_in);
-            $workMins = $checkIn->diffInMinutes($now);
-            $workHrs  = floor($workMins / 60);
-            $workRem  = $workMins % 60;
+                $afternoonInParsed = Carbon::parse($today . ' ' . $record->afternoon_in);
+                $workMins = max(0, $afternoonInParsed->diffInMinutes($now));
+                $workHrs  = floor($workMins / 60);
+                $workRem  = $workMins % 60;
 
-            $this->sendTelegramNotification($teacher, 'check-out', 'Afternoon', $now->format('h:i:s A'));
+                $this->sendTelegramNotification($teacher, 'check-out', 'Afternoon', $now->format('h:i:s A'));
 
-            return response()->json([
-                'status'        => 'success',
-                'action'        => 'check-out',
-                'teacher_name'  => $teacher->name,
-                'teacher_name_kh'=> $teacher->name_kh,
-                'photo'         => $teacher->photo ? url($teacher->photo) : null,
-                'employee_id'   => $teacher->employee_id,
-                'department'    => $teacher->department,
-                'shift'         => 'Afternoon',
-                'time'          => $now->format('h:i:s A'),
-                'working_hours' => "{$workHrs}h {$workRem}m",
-                'message'       => "Afternoon Check-out recorded for {$teacher->name}",
-            ]);
+                return response()->json([
+                    'status'        => 'success',
+                    'action'        => 'check-out',
+                    'teacher_name'  => $teacher->name,
+                    'teacher_name_kh'=> $teacher->name_kh,
+                    'photo'         => $teacher->photo ? url($teacher->photo) : null,
+                    'employee_id'   => $teacher->employee_id,
+                    'department'    => $teacher->department,
+                    'shift'         => 'Afternoon',
+                    'time'          => $now->format('h:i:s A'),
+                    'working_hours' => "{$workHrs}h {$workRem}m",
+                    'message'       => "Afternoon Check-out recorded for {$teacher->name}",
+                ]);
+            } catch (\Throwable $e) {
+                \Log::error('Checkout Error (afternoon/adminScan): ' . $e->getMessage());
+                return response()->json(['status' => 'error', 'message' => 'Checkout failed: ' . $e->getMessage()], 500);
+            }
         }
 
         // --- 2. If NO open shift, determine current shift for CHECK-IN ---
@@ -890,54 +910,69 @@ class AttendanceController extends Controller
             return;
         }
 
-        $mEnd = Setting::getValue('morning_shift_end', '12:00');
-        $aEnd = Setting::getValue('afternoon_shift_end', '17:30');
-        $delay = (int)Setting::getValue('auto_checkout_delay', '30');
-        
-        $now = now();
-        $today = $now->toDateString();
-        $yesterday = $now->copy()->subDay()->toDateString();
+        try {
+            $mEnd = Setting::getValue('morning_shift_end', '12:00');
+            $aEnd = Setting::getValue('afternoon_shift_end', '17:30');
+            $delay = (int)Setting::getValue('auto_checkout_delay', '30');
 
-        $records = Attendance::where(function($q) use ($today, $yesterday) {
-                $q->whereDate('date', $today)->orWhereDate('date', $yesterday);
-            })
-            ->where(function($q) {
-                $q->where(function($sq) {
-                    $sq->whereNotNull('morning_in')->whereNull('morning_out');
-                })->orWhere(function($sq) {
-                    $sq->whereNotNull('afternoon_in')->whereNull('afternoon_out');
-                });
-            })
-            ->get();
+            $now = now();
+            $today = $now->toDateString();
+            $yesterday = $now->copy()->subDay()->toDateString();
 
-        foreach ($records as $record) {
-            $updated = false;
-            $recordDateStr = $record->date->format('Y-m-d');
-            
-            // Check Morning Shift
-            if ($record->morning_in && !$record->morning_out) {
-                $shiftEndTime = Carbon::parse($recordDateStr . ' ' . $mEnd);
-                if ($now->greaterThan($shiftEndTime->addMinutes($delay))) {
-                    $record->morning_out = $mEnd;
-                    $record->manual_note = trim(($record->manual_note ?? '') . ' [Auto Morning Checkout]');
-                    $updated = true;
+            $records = Attendance::where(function($q) use ($today, $yesterday) {
+                    $q->whereDate('date', $today)->orWhereDate('date', $yesterday);
+                })
+                ->where(function($q) {
+                    $q->where(function($sq) {
+                        $sq->whereNotNull('morning_in')->whereNull('morning_out');
+                    })->orWhere(function($sq) {
+                        $sq->whereNotNull('afternoon_in')->whereNull('afternoon_out');
+                    });
+                })
+                ->get();
+
+            foreach ($records as $record) {
+                $updated = false;
+                $recordDateStr = ($record->date instanceof \Carbon\Carbon)
+                    ? $record->date->format('Y-m-d')
+                    : Carbon::parse($record->date)->format('Y-m-d');
+
+                // Check Morning Shift — use copy() to avoid mutating the original Carbon object
+                if ($record->morning_in && !$record->morning_out) {
+                    $shiftEndTime = Carbon::parse($recordDateStr . ' ' . $mEnd)->copy()->addMinutes($delay);
+                    if ($now->greaterThan($shiftEndTime)) {
+                        $record->morning_out = $mEnd . ':00';
+                        $record->manual_note = trim(($record->manual_note ?? '') . ' [Auto Morning Checkout]');
+                        $updated = true;
+                    }
+                }
+
+                // Check Afternoon Shift — use copy() to avoid mutating the original Carbon object
+                if ($record->afternoon_in && !$record->afternoon_out) {
+                    $shiftEndTime = Carbon::parse($recordDateStr . ' ' . $aEnd)->copy()->addMinutes($delay);
+                    if ($now->greaterThan($shiftEndTime)) {
+                        $record->afternoon_out = $aEnd . ':00';
+                        $record->manual_note = trim(($record->manual_note ?? '') . ' [Auto Afternoon Checkout]');
+                        $updated = true;
+                    }
+                }
+
+                if ($updated) {
+                    $record->save();
                 }
             }
-
-            // Check Afternoon Shift
-            if ($record->afternoon_in && !$record->afternoon_out) {
-                $shiftEndTime = Carbon::parse($recordDateStr . ' ' . $aEnd);
-                if ($now->greaterThan($shiftEndTime->addMinutes($delay))) {
-                    $record->afternoon_out = $aEnd;
-                    $record->manual_note = trim(($record->manual_note ?? '') . ' [Auto Afternoon Checkout]');
-                    $updated = true;
-                }
-            }
-
-            if ($updated) {
-                $record->save();
-            }
+        } catch (\Throwable $e) {
+            \Log::error('Auto-Checkout Error: ' . $e->getMessage());
+            // Do NOT re-throw — auto-checkout failure should not break the dashboard load
         }
+    }
+
+    /**
+     * Manual check-in/out from admin panel (alias for adminScan, kept for route compatibility).
+     */
+    public function manual(Request $request): JsonResponse
+    {
+        return $this->adminScan($request);
     }
 
     public function manualAdjustment(Request $request): JsonResponse
