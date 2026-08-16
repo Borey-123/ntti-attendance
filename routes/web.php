@@ -20,6 +20,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/lang/{locale}', function (string $locale) {
     if (in_array($locale, ['en', 'km'])) {
         session(['locale' => $locale]);
+        \Illuminate\Support\Facades\Cookie::queue('locale', $locale, 60 * 24 * 365);
     }
     return redirect()->back();
 })->name('lang.switch');
@@ -27,6 +28,7 @@ Route::get('/lang/{locale}', function (string $locale) {
 Route::get('/lang-portal/{locale}', function (string $locale) {
     if (in_array($locale, ['en', 'km'])) {
         session(['portal_locale' => $locale]);
+        \Illuminate\Support\Facades\Cookie::queue('portal_locale', $locale, 60 * 24 * 365);
     }
     return redirect()->back();
 })->name('lang.switch.portal');
@@ -34,6 +36,7 @@ Route::get('/lang-portal/{locale}', function (string $locale) {
 Route::get('/lang-live/{locale}', function (string $locale) {
     if (in_array($locale, ['en', 'km'])) {
         session(['live_locale' => $locale]);
+        \Illuminate\Support\Facades\Cookie::queue('live_locale', $locale, 60 * 24 * 365);
     }
     return redirect()->back();
 })->name('lang.switch.live');

@@ -362,10 +362,10 @@ class AttendanceController extends Controller
         }
 
         // --- 1. Check if there's an open check-in that needs checking out ---
-        if (!is_null($record->morning_in) && is_null($record->morning_out)) {
+        if (!empty($record->morning_in) && empty($record->morning_out)) {
             $record->update(['morning_out' => $timeString]);
 
-            $checkIn  = Carbon::createFromTimeString($record->morning_in);
+            $checkIn  = Carbon::parse($record->date->format('Y-m-d') . ' ' . $record->morning_in);
             $workMins = $checkIn->diffInMinutes($now);
             $workHrs  = floor($workMins / 60);
             $workRem  = $workMins % 60;
@@ -387,10 +387,10 @@ class AttendanceController extends Controller
             ]);
         }
 
-        if (!is_null($record->afternoon_in) && is_null($record->afternoon_out)) {
+        if (!empty($record->afternoon_in) && empty($record->afternoon_out)) {
             $record->update(['afternoon_out' => $timeString]);
 
-            $checkIn  = Carbon::createFromTimeString($record->afternoon_in);
+            $checkIn  = Carbon::parse($record->date->format('Y-m-d') . ' ' . $record->afternoon_in);
             $workMins = $checkIn->diffInMinutes($now);
             $workHrs  = floor($workMins / 60);
             $workRem  = $workMins % 60;
@@ -528,10 +528,10 @@ class AttendanceController extends Controller
         );
 
         // --- 1. Check if there's an open check-in that needs checking out ---
-        if (!is_null($record->morning_in) && is_null($record->morning_out)) {
+        if (!empty($record->morning_in) && empty($record->morning_out)) {
             $record->update(['morning_out' => $timeString]);
 
-            $checkIn  = Carbon::createFromTimeString($record->morning_in);
+            $checkIn  = Carbon::parse($record->date->format('Y-m-d') . ' ' . $record->morning_in);
             $workMins = $checkIn->diffInMinutes($now);
             $workHrs  = floor($workMins / 60);
             $workRem  = $workMins % 60;
@@ -553,10 +553,10 @@ class AttendanceController extends Controller
             ]);
         }
 
-        if (!is_null($record->afternoon_in) && is_null($record->afternoon_out)) {
+        if (!empty($record->afternoon_in) && empty($record->afternoon_out)) {
             $record->update(['afternoon_out' => $timeString]);
 
-            $checkIn  = Carbon::createFromTimeString($record->afternoon_in);
+            $checkIn  = Carbon::parse($record->date->format('Y-m-d') . ' ' . $record->afternoon_in);
             $workMins = $checkIn->diffInMinutes($now);
             $workHrs  = floor($workMins / 60);
             $workRem  = $workMins % 60;
