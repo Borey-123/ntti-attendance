@@ -465,6 +465,18 @@ class AttendanceController extends Controller
             $parts = explode(':', $afternoonLate);
             $lateCutoff = Carbon::today()->setTime($parts[0] ?? 14, $parts[1] ?? 15);
         } else {
+            // If they are checking out late and auto-checkout already ran
+            if (!empty($record->afternoon_out) || !empty($record->morning_out)) {
+                return response()->json([
+                    'status'  => 'info',
+                    'message' => 'You have already checked out for today. No active shift right now.',
+                    'teacher_name' => $teacher->name,
+                    'teacher_name_kh' => $teacher->name_kh,
+                    'photo'   => $teacher->photo ? url($teacher->photo) : null,
+                    'action'  => 'already-scanned',
+                ]);
+            }
+
             \Illuminate\Support\Facades\DB::table('security_logs')->insert([
                 'action'     => 'failed_scan',
                 'target'     => $uid,
@@ -641,6 +653,17 @@ class AttendanceController extends Controller
             $parts = explode(':', $afternoonLate);
             $lateCutoff = Carbon::today()->setTime($parts[0] ?? 14, $parts[1] ?? 15);
         } else {
+            if (!empty($record->afternoon_out) || !empty($record->morning_out)) {
+                return response()->json([
+                    'status'  => 'info',
+                    'action'  => 'already-checked-out',
+                    'teacher_name' => $teacher->name,
+                    'teacher_name_kh' => $teacher->name_kh,
+                    'photo'   => $teacher->photo ? url($teacher->photo) : null,
+                    'message' => "{$teacher->name} already checked out today. No active shift right now.",
+                ]);
+            }
+
             return response()->json([
                 'status'  => 'error',
                 'message' => 'No active shift at this time.',
