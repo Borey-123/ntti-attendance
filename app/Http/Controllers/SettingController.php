@@ -531,6 +531,36 @@ class SettingController extends Controller
                     }
 
                     @$pdo->exec('SET FOREIGN_KEY_CHECKS = 1;');
+                } else if ($driver === 'pgsql') {
+                    // PostgreSQL execution mode for MySQL/PostgreSQL dumps
+                    $sql = $content;
+                    $sql = preg_replace('/\/\*!\d+.*?\*\//s', '', $sql) ?? $sql;
+                    $sql = preg_replace('/^\s*--.*$/m', '', $sql) ?? $sql;
+                    $sql = preg_replace('/START\s+TRANSACTION;/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/COMMIT;/i', '', $sql) ?? $sql;
+
+                    // Sanitize MySQL-specific syntax to standard SQL / PostgreSQL
+                    $sql = preg_replace('/ENGINE\s*=\s*\w+/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/DEFAULT\s+CHARSET\s*=\s*\w+/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/COLLATE\s*=\s*[\w_]+/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/AUTO_INCREMENT\s*=\s*\d+/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/LOCK\s+TABLES.*?;/is', '', $sql) ?? $sql;
+                    $sql = preg_replace('/UNLOCK\s+TABLES;/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/SET\s+[\w_@]+\s*=\s*.*?;/i', '', $sql) ?? $sql;
+                    $sql = str_replace('`', '"', $sql);
+
+                    $statements = array_filter(
+                        array_map('trim', preg_split('/;\s*[\r\n]+/', $sql)),
+                        fn($stmt) => !empty($stmt)
+                    );
+
+                    foreach ($statements as $statement) {
+                        if (strlen($statement) > 2) {
+                            try {
+                                $pdo->exec($statement);
+                            } catch (\Throwable $ex) {}
+                        }
+                    }
                 } else {
                     // SQLite compatibility mode
                     $sql = $content;
