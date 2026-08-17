@@ -541,25 +541,36 @@ class SettingController extends Controller
 
                     // Sanitize MySQL-specific syntax to standard SQL / PostgreSQL
                     $sql = preg_replace('/ENGINE\s*=\s*\w+/i', '', $sql) ?? $sql;
-                    $sql = preg_replace('/DEFAULT\s+CHARSET\s*=\s*\w+/i', '', $sql) ?? $sql;
+                    $sql = preg_replace('/DEFAULT\s+CHARSET\s*=\s*[\w_]+/i', '', $sql) ?? $sql;
                     $sql = preg_replace('/COLLATE\s*=\s*[\w_]+/i', '', $sql) ?? $sql;
                     $sql = preg_replace('/AUTO_INCREMENT\s*=\s*\d+/i', '', $sql) ?? $sql;
                     $sql = preg_replace('/LOCK\s+TABLES.*?;/is', '', $sql) ?? $sql;
                     $sql = preg_replace('/UNLOCK\s+TABLES;/i', '', $sql) ?? $sql;
                     $sql = preg_replace('/SET\s+[\w_@]+\s*=\s*.*?;/i', '', $sql) ?? $sql;
                     $sql = str_replace('`', '"', $sql);
+                    $sql = str_replace("\\'", "''", $sql);
 
                     $statements = array_filter(
-                        array_map('trim', preg_split('/;\s*[\r\n]+/', $sql)),
-                        fn($stmt) => !empty($stmt)
+                        array_map('trim', explode(";\n", str_replace("\r\n", "\n", $sql))),
+                        fn($stmt) => !empty($stmt) && strlen($stmt) > 2
                     );
 
                     foreach ($statements as $statement) {
-                        if (strlen($statement) > 2) {
-                            try {
-                                $pdo->exec($statement);
-                            } catch (\Throwable $ex) {}
-                        }
+                        try {
+                            $pdo->exec($statement);
+                        } catch (\Throwable $ex) {}
+                    }
+
+                    // Reconnect DB to clear any failed transaction state in PostgreSQL
+                    \DB::reconnect();
+                    $pdo = \DB::connection()->getPdo();
+
+                    // Sync PostgreSQL auto-increment sequences after data insertion
+                    $tables = ['users', 'teachers', 'attendances', 'departments', 'rfid_cards', 'security_logs', 'attendance_corrections', 'holidays', 'settings'];
+                    foreach ($tables as $tbl) {
+                        try {
+                            @$pdo->exec("SELECT setval(pg_get_serial_sequence('{$tbl}', 'id'), coalesce(max(id), 1)) FROM \"{$tbl}\";");
+                        } catch (\Throwable $seqEx) {}
                     }
                 } else {
                     // SQLite compatibility mode
@@ -611,18 +622,19 @@ class SettingController extends Controller
                 }
             }
 
-            \Illuminate\Support\Facades\Artisan::call('cache:clear');
-            \Illuminate\Support\Facades\Artisan::call('config:clear');
+            try {
+                \Illuminate\Support\Facades\Artisan::call('cache:clear');
+            } catch (\Throwable $cEx) {}
 
-            SecurityLog::record('Imported Database', 'Database');
+            try {
+                SecurityLog::record('Imported Database', 'Database');
+            } catch (\Throwable $sEx) {}
 
             return back()->with('success', 'Database imported successfully! System records and settings have been restored.');
         } catch (\Throwable $e) {
-            // Restore previous database backup on error so system remains functional
-            if (file_exists($bakPath)) {
-                @copy($bakPath, $dbPath);
-            }
-            return back()->with('error', 'Failed to import database: ' . $e->getMessage() . '. Restored previous database backup.');
+            \Log::error('Database import failed: ' . $e->getMessage());
+            try { \DB::reconnect(); } catch (\Throwable $recEx) {}
+            return back()->with('error', 'Failed to import database: ' . $e->getMessage());
         }
     }
 }
