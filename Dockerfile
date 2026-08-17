@@ -36,12 +36,16 @@ WORKDIR /var/www/html
 # Copy project files
 COPY . /var/www/html
 
+# Environment setup for build step
+ENV COMPOSER_ALLOW_SUPERUSER 1
+RUN cp -n .env.example .env && \
+    mkdir -p database storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache && \
+    touch database/database.sqlite && \
+    chmod -R 777 storage bootstrap/cache database .env
+
 # Install Composer dependencies
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer install --no-dev --optimize-autoloader --no-interaction
-
-# Create SQLite database file if it doesn't exist
-RUN touch /var/www/html/database/database.sqlite
 
 # Set proper permissions for Laravel storage, cache, and database
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database \
