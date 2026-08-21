@@ -53,6 +53,16 @@ class PortalController extends Controller
                 })->first();
 
             if ($teacher) {
+                try {
+                    \App\Models\SecurityLog::create([
+                        'admin_id'   => null,
+                        'action'     => 'Teacher Portal Check-in',
+                        'target'     => ($teacher->name_kh ?: $teacher->name) . ' (' . $teacher->employee_id . ')',
+                        'ip_address' => $request->ip(),
+                        'details'    => 'Department: ' . ($teacher->department ?? '-'),
+                        'timestamp'  => now()
+                    ]);
+                } catch (\Exception $e) {}
                 // ── Month navigation: determine target month ──
                 $calendarMonth = $request->input('month', now()->month);
                 $calendarYear  = $request->input('year', now()->year);

@@ -242,15 +242,15 @@ class ReportController extends Controller
 
         // Document header
         $html .= '<table border="0" style="width:100%;border-collapse:collapse;">';
-        $html .= '<tr><td colspan="9" class="tc"><div class="h-title">' . htmlspecialchars($uName) . '</div></td></tr>';
-        $html .= '<tr><td colspan="9" class="tc"><div class="h-sub">' . $reportTypeLabel . '</div></td></tr>';
-        $html .= '<tr><td colspan="9" class="tc">' . __('Period') . ': ' . $from->format('d-m-Y') . ' ' . __('to') . ' ' . $to->format('d-m-Y') . '</td></tr>';
-        $html .= '<tr><td colspan="9" class="tc" style="color:#555;">';
+        $html .= '<tr><td colspan="10" class="tc"><div class="h-title">' . htmlspecialchars($uName) . '</div></td></tr>';
+        $html .= '<tr><td colspan="10" class="tc"><div class="h-sub">' . $reportTypeLabel . '</div></td></tr>';
+        $html .= '<tr><td colspan="10" class="tc">' . __('Period') . ': ' . $from->format('d-m-Y') . ' ' . __('to') . ' ' . $to->format('d-m-Y') . '</td></tr>';
+        $html .= '<tr><td colspan="10" class="tc" style="color:#555;">';
         $html .= __('Department') . ': ' . htmlspecialchars($deptLabel);
         $html .= ' &nbsp;|&nbsp; ' . __('Working Days') . ': ' . $totalWorkingDays;
         $html .= ' &nbsp;|&nbsp; ' . __('Export Date') . ': ' . now()->format('d-m-Y H:i');
         $html .= '</td></tr>';
-        $html .= '<tr><td colspan="9" style="border:none;height:12pt;"></td></tr>';
+        $html .= '<tr><td colspan="10" style="border:none;height:12pt;"></td></tr>';
         $html .= '</table>';
 
         // $exportType is already set above
@@ -264,8 +264,8 @@ class ReportController extends Controller
                 $html .= '<tr>';
                 $html .= '<th ' . $thStyle . ' width="40">#</th>';
                 $html .= '<th ' . $thStyle . ' width="100">' . __('Teacher ID') . '</th>';
-                $html .= '<th ' . $thStyle . ' style="min-width:220px;white-space:nowrap;">' . __('Teacher Name') . '</th>';
-                $html .= '<th ' . $thStyle . ' style="min-width:180px;white-space:nowrap;">' . __('Department') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="250" style="min-width:250px;white-space:nowrap;">' . __('Teacher Name') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="220" style="min-width:220px;white-space:nowrap;">' . __('Department') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="80">' . __('Present') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="80">' . __('Late') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="80">' . __('Absent') . '</th>';
@@ -277,6 +277,7 @@ class ReportController extends Controller
                 $sRow = 1;
                 foreach ($teacherStats as $stat) {
                     $t = $stat['teacher'];
+                    $teacherName = $t->name_kh ? ($t->name_kh . ' ' . $t->name) : $t->name;
                     $deptName = $isKm && isset($depts[$t->department]) ? $depts[$t->department]->name_kh : $t->department;
                     
                     $present = $late = 0;
@@ -307,8 +308,8 @@ class ReportController extends Controller
                     $html .= '<tr>';
                     $html .= '<td class="tc">' . $sRow++ . '</td>';
                     $html .= '<td class="tc" style="mso-number-format:\'\@\';">' . htmlspecialchars($t->employee_id ?? '') . '</td>';
-                    $html .= '<td style="white-space:nowrap;min-width:220px;">' . htmlspecialchars($t->name) . '</td>';
-                    $html .= '<td style="white-space:nowrap;min-width:180px;">' . htmlspecialchars($deptName ?? '') . '</td>';
+                    $html .= '<td style="white-space:nowrap;min-width:250px;">' . htmlspecialchars($teacherName) . '</td>';
+                    $html .= '<td style="white-space:nowrap;min-width:220px;">' . htmlspecialchars($deptName ?? '') . '</td>';
                     $html .= '<td class="tc">' . $present . '</td>';
                     $html .= '<td class="tc">' . $late . '</td>';
                     $html .= '<td class="tc">' . $absent . '</td>';

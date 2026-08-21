@@ -1084,12 +1084,6 @@
                     <span id="liveWeatherText" style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary);">--°C</span>
                 </div>
 
-                {{-- Dashboard Link --}}
-                <a href="{{ route('dashboard') }}" class="toolbar-btn" style="width: auto; padding: 0 0.8rem; gap: 0.4rem; background: rgba(var(--primary-rgb), 0.15); color: var(--primary); border: 1px solid rgba(var(--primary-rgb), 0.3);" title="{{ __('Back to Dashboard') }}">
-                    <i class="ph ph-arrow-left" style="font-size: 1.1rem;"></i>
-                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary);">{{ __('Dashboard') }}</span>
-                </a>
-
                 <div class="toolbar-divider"></div>
 
                 {{-- Theme Toggle --}}

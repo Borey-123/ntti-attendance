@@ -362,6 +362,8 @@ nav[role="navigation"] span, nav[role="navigation"] a {
                             $badgeClass = 'danger'; $badgeIcon = 'ph-trash';
                         } elseif (str_contains($action, 'login') || str_contains($action, 'logout')) {
                             $badgeClass = 'success'; $badgeIcon = 'ph-sign-in';
+                        } elseif (str_contains($action, 'portal') || str_contains($action, 'check-in') || str_contains($action, 'scan')) {
+                            $badgeClass = 'success'; $badgeIcon = 'ph-user-check';
                         } elseif (str_contains($action, 'create') || str_contains($action, 'register') || str_contains($action, 'add')) {
                             $badgeClass = 'primary'; $badgeIcon = 'ph-plus-circle';
                         } elseif (str_contains($action, 'update') || str_contains($action, 'edit') || str_contains($action, 'adjust')) {
@@ -385,6 +387,10 @@ nav[role="navigation"] span, nav[role="navigation"] a {
                                     </div>
                                     <span style="font-weight: 600; font-size: 0.85rem;">{{ $log->admin->name }}</span>
                                 </div>
+                            @elseif(str_contains($action, 'portal') || str_contains($action, 'check-in') || str_contains($action, 'scan'))
+                                <span style="display: flex; align-items: center; gap: 0.4rem; color: #10b981; font-size: 0.82rem; font-weight: 700;">
+                                    <i class="ph ph-user-check"></i> {{ __('Teacher Portal') }}
+                                </span>
                             @else
                                 <span style="display: flex; align-items: center; gap: 0.4rem; color: var(--text-muted); font-size: 0.82rem;">
                                     <i class="ph ph-robot"></i> {{ __('System') }}
