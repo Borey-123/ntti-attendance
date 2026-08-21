@@ -539,5 +539,17 @@
     "Registry List": "បញ្ជីចុះឈ្មោះកាត",
     "Unassigned HODs": "ប្រធានផ្នែកដែលមិនទាន់កំណត់",
     "Search department...": "ស្វែងរកផ្នែក...",
-    "Filter, analyze and export institution data": "តម្រង វិភាគ និងនាំចេញទិន្នន័យស្ថាប័ន"
+    "Filter, analyze and export institution data": "តម្រង វិភាគ និងនាំចេញទិន្នន័យស្ថាប័ន",
+    "Manual": "បញ្ចូលដោយដៃ",
+    "Portal": "ផតថល",
+    "Scan Pulse": "ចង្វាក់ស្កេន",
+    "Live Activity Log": "កំណត់ត្រាសកម្មភាពផ្ទាល់",
+    "Daily": "ប្រចាំថ្ងៃ",
+    "Monthly": "ប្រចាំខែ",
+    "Daily Attendance": "វត្តមានប្រចាំថ្ងៃ",
+    "Daily Attendance Report": "របាយការណ៍វត្តមានប្រចាំថ្ងៃ",
+    "Absent Report": "របាយការណ៍អវត្តមាន",
+    "Late Report": "របាយការណ៍យឺត",
+    "Working Days": "ថ្ងៃធ្វើការ",
+    "Monthly Attendance": "វត្តមានប្រចាំខែ"
 }

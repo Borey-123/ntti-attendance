@@ -1,5 +1,6 @@
 
 :root {
+    color-scheme: dark;
     --bg-dark: #0d1117;
     --bg-card: #161b22;
     --bg-elevated: #1e242d;
@@ -24,6 +25,7 @@
 
 /* ---------- Light Theme Overrides ---------- */
 [data-theme="light"] {
+    color-scheme: light;
     --bg-dark: #f6f8fa;
     --bg-card: #ffffff;
     --bg-elevated: #f6f8fa;
@@ -241,6 +243,15 @@ a:hover {
     color: var(--text-muted);
 }
 
+/* Removed date/time picker overrides as they are now handled globally in app.blade.php with custom SVGs */
+
+/* High Contrast Select Dropdown Options */
+select.form-control option,
+select option {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+}
+
 /* Input with icon */
 .input-icon-wrapper {
     position: relative;
@@ -252,7 +263,7 @@ a:hover {
     left: 0.875rem;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--text-muted);
+    color: var(--primary);
     font-size: 1rem;
     pointer-events: none;
 }
@@ -542,19 +553,23 @@ a:hover {
 }
 
 .sidebar-logo-badge {
-    width: 54px;
-    height: 54px;
+    width: 70px;
+    height: 70px;
     margin: 0 auto;
-    border-radius: 14px;
+    border-radius: 50%;
     overflow: hidden;
-    background: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-    border: 1px solid rgba(255,255,255,0.15);
     flex-shrink: 0;
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform: translateZ(0);
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent;
+}
+.sidebar-logo-badge:focus, .sidebar-logo-badge:active {
+    outline: none !important;
+    border: none !important;
 }
 
 .sidebar-logo-badge:hover {
@@ -563,18 +578,15 @@ a:hover {
 
 /* Keep badge identical when sidebar is collapsed */
 .sidebar.collapsed .sidebar-logo-badge {
-    width: 54px;
-    height: 54px;
-    border-radius: 14px;
-    background: white;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    width: 48px;
+    height: 48px;
 }
 
 .sidebar-logo-badge img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
-    padding: 2px;
+    object-fit: cover;
+    border-radius: 50%;
     transform: translateZ(0);
     will-change: transform;
     backface-visibility: hidden;

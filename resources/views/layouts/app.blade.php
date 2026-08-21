@@ -59,6 +59,42 @@
             border-radius: var(--border-radius) !important;
         }
         
+        /* Force Native Date & Time Picker Icons: WHITE in Dark Mode, BLACK in Light Mode */
+        input[type="date"],
+        input[type="time"],
+        input[type="datetime-local"],
+        .form-control,
+        .form-control-minimal {
+            color-scheme: dark !important;
+        }
+
+        [data-theme="light"] input[type="date"],
+        [data-theme="light"] input[type="time"],
+        [data-theme="light"] input[type="datetime-local"],
+        [data-theme="light"] .form-control,
+        [data-theme="light"] .form-control-minimal {
+            color-scheme: light !important;
+        }
+
+        /* Custom Date/Time Picker Icons */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer !important;
+            opacity: 1 !important;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2300d4a0"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>') !important;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            cursor: pointer !important;
+            opacity: 1 !important;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2300d4a0"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>') !important;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        
         /* Global Glassmorphism for Panels */
         .card, .stat-card, .glass-panel {
             background: var(--card-bg-glass) !important;
@@ -158,14 +194,19 @@
     margin: 0 auto;
     border-radius: 50%;
     overflow: hidden;
-    background: white;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     cursor: pointer;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
     transition: all 0.3s ease;
+    transform: translateZ(0);
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent;
+}
+.sidebar-logo-badge:focus, .sidebar-logo-badge:active {
+    outline: none !important;
+    border: none !important;
 }
 
 .sidebar.collapsed .sidebar-logo-badge {
@@ -177,16 +218,11 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: 50%;
 }
 
 .sidebar-logo-badge:hover {
     transform: scale(1.05);
-    box-shadow: 0 10px 25px rgba(var(--primary-rgb), 0.4);
-}
-
-.sidebar-logo-badge:hover {
-    transform: scale(1.05);
-    box-shadow: 0 10px 25px rgba(var(--primary-rgb), 0.5);
 }
 
 .insight-header { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; }
@@ -767,8 +803,8 @@
                 const avatarContainer = document.getElementById('insight-avatar-container');
                 const initial = t.name ? t.name.charAt(0).toUpperCase() : '?';
                 avatarContainer.innerHTML = t.photo 
-                    ? `<div class="teacher-avatar" style="width:80px; height:80px;"><img src="${t.photo}"></div>`
-                    : `<div class="avatar-placeholder" style="width:80px; height:80px; font-size:2rem; border-radius:1rem;">${initial}</div>`;
+                    ? `<div class="teacher-avatar" style="width:80px; height:80px; border-radius:50%; overflow:hidden; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="document.getElementById('imageViewerImg').src='${t.photo}'; document.getElementById('imageViewerModal').classList.add('active');"><img src="${t.photo}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;"></div>`
+                    : `<div class="avatar-placeholder" style="width:80px; height:80px; font-size:2rem; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(var(--primary-rgb),0.1); color:var(--primary);">${initial}</div>`;
 
                 const list = document.getElementById('insight-recent-list');
                 list.innerHTML = data.recent.map(r => `
@@ -1165,13 +1201,23 @@
             </div>
         </div>
     </div>
+    
+    {{-- Global Image Viewer Modal --}}
+    <div id="imageViewerModal" class="modal-overlay" style="z-index: 1000000; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);" onclick="if(event.target == this) this.classList.remove('active')">
+        <div style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 2rem;">
+            <button class="modal-close" style="position: absolute; top: 2rem; right: 2rem; background: rgba(255,255,255,0.1); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; transition: 0.2s;" onclick="document.getElementById('imageViewerModal').classList.remove('active')" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                <i class="ph ph-x"></i>
+            </button>
+            <img id="imageViewerImg" src="" style="max-width: 90%; max-height: 90vh; object-fit: contain; border-radius: 1rem; box-shadow: 0 15px 40px rgba(0,0,0,0.5); background: var(--bg-card);">
+        </div>
+    </div>
     {{-- Global School Info Modal --}}
     <div id="schoolInfoModal" class="modal-overlay" onclick="if(event.target == this) closeSchoolInfo()">
         <div class="modal-content" style="max-width: 450px; padding: 2.5rem; border-radius: 2.5rem; text-align: center;">
             <div style="margin-bottom: 2rem;">
                 @if($uLogo)
-                    <div style="width: 120px; height: 120px; margin: 0 auto 1.5rem; border-radius: 50%; overflow: hidden; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
-                        <img src="{{ to_asset_url($uLogo) }}" alt="Logo" style="width: 85%; height: 85%; object-fit: contain;">
+                    <div style="width: 120px; height: 120px; margin: 0 auto 1.5rem; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; transform: translateZ(0);">
+                        <img src="{{ to_asset_url($uLogo) }}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                     </div>
                 @endif
                 <h2 style="margin: 0; font-weight: 800; color: var(--text-primary); font-size: 1.6rem; line-height: 1.2;">{{ $uName }}</h2>

@@ -34,6 +34,35 @@ class TelegramWebhookController extends Controller
             // Find if this chat ID belongs to any teacher
             $teacher = Teacher::where('telegram_chat_id', (string)$chatId)->first();
 
+            $justLinked = false;
+            if (!$teacher) {
+                // Check if the user sent a valid Teacher ID or Phone Number to link their account
+                $inputStr = trim($text);
+                
+                // Find by Employee ID first
+                $potentialTeacher = Teacher::where('employee_id', 'LIKE', $inputStr)->first();
+                
+                // If not found, try by Phone Number
+                if (!$potentialTeacher) {
+                    $cleanPhone = preg_replace('/[^0-9]/', '', $inputStr);
+                    if (strlen($cleanPhone) >= 8) {
+                        // Strip leading 0 or +855 to match any phone format
+                        $searchPhone = ltrim($cleanPhone, '0');
+                        if (str_starts_with($searchPhone, '855')) {
+                            $searchPhone = substr($searchPhone, 3);
+                        }
+                        
+                        $potentialTeacher = Teacher::where('phone', 'LIKE', '%' . $searchPhone . '%')->first();
+                    }
+                }
+                
+                if ($potentialTeacher) {
+                    $potentialTeacher->update(['telegram_chat_id' => (string)$chatId]);
+                    $teacher = $potentialTeacher;
+                    $justLinked = true;
+                }
+            }
+
             // Store the incoming message
             TelegramMessage::create([
                 'teacher_id' => $teacher ? $teacher->id : null,
@@ -43,8 +72,14 @@ class TelegramWebhookController extends Controller
                 'is_incoming' => true,
             ]);
 
-            // Reply back to the user acknowledging receipt
-            $this->sendReply($chatId, "Thank you. Your message has been received and recorded in the system.");
+            // Reply back to the user
+            if ($justLinked) {
+                $this->sendReply($chatId, "✅ Success! Your Telegram account has been securely linked to Teacher ID: {$teacher->employee_id} ({$teacher->name}). You will now receive attendance notifications here.");
+            } elseif ($teacher) {
+                $this->sendReply($chatId, "Thank you, {$teacher->name}. Your message has been received.");
+            } else {
+                $this->sendReply($chatId, "👋 Welcome to NTTI Attendance Bot! Your account is not yet linked.\n\nTo link your account, please reply with your exact Teacher ID (e.g., T0001) or your registered Phone Number.");
+            }
 
             return response()->json(['status' => 'success']);
 

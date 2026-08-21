@@ -190,13 +190,19 @@
 
 /* ── Modal form field theming (dark + light) ── */
 .modal-field-label {
-    display: block;
+    display: flex;
+    align-items: center;
     font-size: 0.75rem;
     font-weight: 800;
     color: var(--text-secondary);
     margin-bottom: 0.35rem;
     text-transform: uppercase;
     letter-spacing: 0.4px;
+}
+.modal-field-label i {
+    color: var(--primary);
+    font-size: 0.95rem;
+    margin-right: 0.35rem;
 }
 .modal-section-card {
     background: var(--bg-dark);
@@ -273,7 +279,7 @@
 .input-with-icon i {
     position: absolute;
     left: 1rem;
-    color: var(--text-secondary);
+    color: var(--primary);
     font-size: 1.1rem;
     pointer-events: none;
 }
@@ -289,19 +295,21 @@
     border-radius: 0.5rem;
     transition: all 0.2s;
     min-width: 50px;
+    color: var(--text-primary);
 }
-.btn-icon-label:hover { background: rgba(255,255,255,0.05); }
-.btn-icon-label i { font-size: 1.25rem; }
+.btn-icon-label:hover { background: rgba(255,255,255,0.08); }
+[data-theme="light"] .btn-icon-label:hover { background: rgba(0,0,0,0.05); }
+.btn-icon-label i { font-size: 1.25rem; color: var(--primary); }
 .btn-icon-label span { font-size: 0.65rem; font-weight: 800; color: var(--text-secondary); }
 
 @media print {
-    @page { margin: 10mm; size: A4 landscape; }
+    @page { margin: 20mm; size: A4 landscape; }
     html, body { height: auto !important; overflow: visible !important; font-family: 'Kantumruy Pro', 'Inter', sans-serif !important; background: white !important; color: black !important; }
     
     /* Hide ALL UI Elements */
-    .sidebar, .topbar, .no-print, .pill-tabs, .chart-glass-card, button, select, input, .ph, .page-title, .no-print *, .skeleton, .summary-search-wrap { display: none !important; }
-    /* Hide action columns entirely in print */
-    th.col-action, td.col-action { display: none !important; }
+    .sidebar, .topbar, .main-footer, .no-print, .pill-tabs, .chart-glass-card, button, select, input, .ph, .page-title, .no-print *, .skeleton, .summary-search-wrap { display: none !important; }
+    /* Hide action and source columns entirely in print */
+    th.col-action, td.col-action, th.col-source, td.col-source { display: none !important; }
 
     /* Hide analytic grid in print (we use print-stats-row instead) */
     .analytic-grid { display: none !important; }
@@ -329,9 +337,15 @@
         text-align: center; 
         border-bottom: 2px solid #000; 
         padding-bottom: 1.5rem; 
-        margin-bottom: 1.5rem; 
+        margin-bottom: 1.5rem;
+        padding-top: 40px !important;
     }
-    .print-header .logo { max-height: 80px; margin-bottom: 0.5rem; }
+    .print-header .logo { 
+        max-height: 80px; 
+        margin-bottom: 0.5rem; 
+        border-radius: 50%;
+        background: transparent !important;
+    }
     .print-header .title { font-size: 1.4rem; font-weight: 800; text-transform: uppercase; margin: 0; color: #000 !important; }
     .print-header .subtitle { font-size: 1.1rem; font-weight: 700; margin: 0.2rem 0 0.5rem 0; color: #000 !important; }
     
@@ -397,17 +411,6 @@
     .time-pill { border: none !important; padding: 0 !important; background: none !important; font-size: 0.72rem !important; font-weight: 900 !important; color: #000 !important; }
     .time-pill i { display: none !important; }
 
-    .print-footer {
-        display: block !important;
-        text-align: center;
-        font-size: 0.75rem;
-        font-weight: 900 !important;
-        color: #000 !important;
-        margin-top: 2rem;
-        border-top: 1px solid #000;
-        padding-top: 1rem;
-    }
-
     .stagger-item {
         opacity: 1 !important;
         animation: none !important;
@@ -440,8 +443,8 @@
     /* Signature Block */
     .print-signature-block {
         display: flex !important;
-        justify-content: space-around;
-        margin-top: 3rem;
+        justify-content: space-between;
+        margin-top: 1.5rem;
         padding-top: 1rem;
         border-top: 1px solid #ccc;
     }
@@ -449,12 +452,12 @@
         display: flex !important;
         flex-direction: column;
         align-items: center;
-        width: 30%;
+        width: 25%;
     }
     .sig-line {
         width: 100%;
         border-bottom: 1px solid #000;
-        height: 40px;
+        height: 60px;
         margin-bottom: 6px;
     }
     .sig-title { font-size: 0.85rem; font-weight: 800; color: #000; }
@@ -644,7 +647,7 @@
                     <th>{{ __('Afternoon') }}</th>
                     <th>{{ __('Working Hours') }}</th>
                     <th>{{ __('Status') }}</th>
-                    <th>{{ __('Source') }}</th>
+                    <th class="col-source">{{ __('Source') }}</th>
                     <th class="col-action">{{ __('Action') }}</th>
                 </tr>
             </thead>
@@ -674,6 +677,7 @@
                         <th style="text-align:center;">{{ __('Late') }}</th>
                         <th style="text-align:center;">{{ __('Absent') }}</th>
                         <th style="text-align:center;">{{ __('Working Days') }}</th>
+                        <th style="text-align:center;">{{ __('Total Hours') }}</th>
                         <th style="text-align:center;">{{ __('Attendance %') }}</th>
                     </tr>
                 </thead>
@@ -743,12 +747,6 @@
     </div>
 </div>
 
-
-{{-- Premium Print Footer --}}
-<div class="print-footer" style="display: none;">
-    {{ __('This is an electronically generated document. No signature is required.') }} — {{ $uName }} — {{ now()->format('Y') }}
-</div>
-
 {{-- Official Signature Block (print only) --}}
 <div class="print-signature-block" style="display: none;">
     <div class="sig-col">
@@ -767,7 +765,6 @@
         <div class="sig-sub">{{ __('Director / Principal') }}</div>
     </div>
 </div>
-
 
 {{-- Manual Attendance Modal --}}
 <div id="manualAttendanceModal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(6px);">
@@ -829,15 +826,15 @@
                     </div>
                     <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem;">
                         <div>
-                            <label class="modal-field-label">{{ __('Check In') }}</label>
+                            <label class="modal-field-label"><i class="ph ph-clock"></i>{{ __('Check In') }}</label>
                             <input type="time" id="manual_morning_in" class="form-control" style="width:100%;">
                         </div>
                         <div>
-                            <label class="modal-field-label">{{ __('Check Out') }}</label>
+                            <label class="modal-field-label"><i class="ph ph-clock"></i>{{ __('Check Out') }}</label>
                             <input type="time" id="manual_morning_out" class="form-control" style="width:100%;">
                         </div>
                         <div>
-                            <label class="modal-field-label">{{ __('Status') }} <span style="color:var(--danger);">*</span></label>
+                            <label class="modal-field-label"><i class="ph ph-check-circle"></i>{{ __('Status') }} <span style="color:var(--danger);">*</span></label>
                             <select id="manual_morning_status" class="form-control" required style="width:100%;">
                                 <option value="none">— {{ __('None') }} —</option>
                                 <option value="present">✓ {{ __('Present') }}</option>
@@ -857,15 +854,15 @@
                     </div>
                     <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem;">
                         <div>
-                            <label class="modal-field-label">{{ __('Check In') }}</label>
+                            <label class="modal-field-label"><i class="ph ph-clock"></i>{{ __('Check In') }}</label>
                             <input type="time" id="manual_afternoon_in" class="form-control" style="width:100%;">
                         </div>
                         <div>
-                            <label class="modal-field-label">{{ __('Check Out') }}</label>
+                            <label class="modal-field-label"><i class="ph ph-clock"></i>{{ __('Check Out') }}</label>
                             <input type="time" id="manual_afternoon_out" class="form-control" style="width:100%;">
                         </div>
                         <div>
-                            <label class="modal-field-label">{{ __('Status') }} <span style="color:var(--danger);">*</span></label>
+                            <label class="modal-field-label"><i class="ph ph-check-circle"></i>{{ __('Status') }} <span style="color:var(--danger);">*</span></label>
                             <select id="manual_afternoon_status" class="form-control" required style="width:100%;">
                                 <option value="none">— {{ __('None') }} —</option>
                                 <option value="present">✓ {{ __('Present') }}</option>
@@ -914,15 +911,15 @@
                 <h4 style="margin:0 0 0.5rem; font-size:0.9rem; color:var(--text-primary); border-bottom:1px solid var(--border); padding-bottom:0.25rem;">{{ __('Morning Session') }}</h4>
                 <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin-bottom:1rem;">
                     <div>
-                        <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.2rem;">{{ __('Check In') }}</label>
+                        <label class="modal-field-label"><i class="ph ph-clock"></i>{{ __('Check In') }}</label>
                         <input type="time" id="edit_morning_in" class="form-control" style="width:100%;">
                     </div>
                     <div>
-                        <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.2rem;">{{ __('Check Out') }}</label>
+                        <label class="modal-field-label"><i class="ph ph-clock"></i>{{ __('Check Out') }}</label>
                         <input type="time" id="edit_morning_out" class="form-control" style="width:100%;">
                     </div>
                     <div>
-                        <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.2rem;">{{ __('Status') }} *</label>
+                        <label class="modal-field-label"><i class="ph ph-check-circle"></i>{{ __('Status') }} <span style="color:var(--danger);">*</span></label>
                         <select id="edit_morning_status" class="form-control" required style="width:100%;">
                             <option value="none">None</option>
                             <option value="present">Present</option>
@@ -936,15 +933,15 @@
                 <h4 style="margin:1.5rem 0 0.5rem; font-size:0.9rem; color:var(--text-primary); border-bottom:1px solid var(--border); padding-bottom:0.25rem;">{{ __('Afternoon Session') }}</h4>
                 <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin-bottom:1rem;">
                     <div>
-                        <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.2rem;">{{ __('Check In') }}</label>
+                        <label class="modal-field-label"><i class="ph ph-clock"></i>{{ __('Check In') }}</label>
                         <input type="time" id="edit_afternoon_in" class="form-control" style="width:100%;">
                     </div>
                     <div>
-                        <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.2rem;">{{ __('Check Out') }}</label>
+                        <label class="modal-field-label"><i class="ph ph-clock"></i>{{ __('Check Out') }}</label>
                         <input type="time" id="edit_afternoon_out" class="form-control" style="width:100%;">
                     </div>
                     <div>
-                        <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.2rem;">{{ __('Status') }} *</label>
+                        <label class="modal-field-label"><i class="ph ph-check-circle"></i>{{ __('Status') }} <span style="color:var(--danger);">*</span></label>
                         <select id="edit_afternoon_status" class="form-control" required style="width:100%;">
                             <option value="none">None</option>
                             <option value="present">Present</option>
@@ -956,7 +953,7 @@
                 </div>
                 
                 <div style="margin-bottom:1rem;">
-                    <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.2rem;">{{ __('Reason for Edit') }} *</label>
+                    <label class="modal-field-label"><i class="ph ph-note-pencil" style="margin-right:0.25rem;"></i>{{ __('Reason for Edit') }} <span style="color:var(--danger);">*</span></label>
                     <input type="text" id="edit_reason" class="form-control" required style="width:100%;" placeholder="{{ __('Why is this being edited?') }}">
                 </div>
 
@@ -964,7 +961,7 @@
                     <button type="button" onclick="closeModal('editAttendanceModal')" class="btn-cancel">
                         <i class="ph ph-x"></i> {{ __('Cancel') }}
                     </button>
-                    <button type="submit" class="btn btn-warning" style="padding:0.55rem 1.5rem; border-radius:0.75rem; font-weight:800; border:none; color:#000; display:inline-flex; align-items:center; gap:0.4rem;">
+                    <button type="submit" style="padding:0.55rem 1.5rem; border-radius:0.75rem; font-weight:800; border:none; background:linear-gradient(135deg, var(--primary), #00b894); color:#000; display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer; font-size:0.85rem; transition:all 0.2s;">
                         <i class="ph ph-pencil-simple"></i> {{ __('Save Changes') }}
                     </button>
                 </div>
@@ -1119,17 +1116,20 @@ async function loadDaily(params) {
             tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="padding:2rem;color:var(--text-secondary);">{{ __('No records found for this period.') }}</td></tr>`;
         } else {
             let html = '';
+            const currentLocale = document.documentElement.lang || 'en';
             res.records.forEach((r, i) => {
                 const bc = r.status === 'present' ? 'success' : (r.status === 'late' ? 'warning' : 'danger');
                 const morningStatus = r.morning_status === 'late' ? 'warning' : 'success';
                 const afternoonStatus = r.afternoon_status === 'late' ? 'warning' : 'success';
                 const statusLabel = r.status === 'present' ? '{{ __("Present") }}' : (r.status === 'late' ? '{{ __("Late") }}' : '{{ __("Absent") }}');
+                const mainName = currentLocale === 'km' ? (r.teacher.name_kh || r.teacher.name) : r.teacher.name;
+                const subName = currentLocale === 'km' ? r.teacher.name : (r.teacher.name_kh || '');
                 html += `
                 <tr class="stagger-item" style="animation-delay: ${(i * 0.02).toFixed(2)}s">
                     <td><div style="font-weight:700;">${r.date}</div></td>
                     <td>
-                        <div style="font-weight:800; color: var(--primary); font-size: 1.05rem;">${r.teacher.name_kh || ''}</div>
-                        <div style="font-weight:700; opacity: 0.8;">${r.teacher.name}</div>
+                        <div style="font-weight:800; color: var(--primary); font-size: 1.05rem;">${mainName}</div>
+                        <div style="font-weight:700; opacity: 0.8;">${subName}</div>
                         <div style="font-size:0.72rem;color:var(--text-secondary);font-family:monospace;">${r.teacher.employee_id}</div>
                     </td>
                     <td style="color:var(--text-secondary);font-size:0.8rem;font-weight:600;">${window.transDept ? window.transDept(r.teacher.department) : r.teacher.department}</td>
@@ -1149,9 +1149,9 @@ async function loadDaily(params) {
                         ${r.working_hours||'0.0h'}
                     </td>
                     <td><span class="badge badge-${bc}" style="border-radius:2rem; padding: 0.4rem 0.8rem;">${statusLabel}</span></td>
-                    <td>
+                    <td class="col-source">
                         <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); background: rgba(255,255,255,0.05); padding: 0.2rem 0.5rem; border-radius: 0.5rem;">
-                            ${r.source}
+                            ${r.source === 'Manual' ? '{{ __("Manual") }}' : (r.source === 'Portal' ? '{{ __("Portal") }}' : r.source)}
                             ${r.source === 'Edited' ? ` <i class="ph ph-info" style="cursor:pointer; color:var(--primary);" onclick="viewHistory(${r.id})" title="View History"></i>` : ''}
                         </span>
                     </td>
@@ -1226,21 +1226,25 @@ async function loadMonthly(params) {
             tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:2rem;">{{ __('No data found.') }}</td></tr>`;
             return;
         }
+        const currentLocale = document.documentElement.lang || 'en';
         res.summary.forEach((t, i) => {
             const rateColor = t.attendance_rate >= 80 ? 'var(--success)' : t.attendance_rate >= 50 ? 'var(--warning)' : 'var(--danger)';
+            const mainName = currentLocale === 'km' ? (t.name_kh || t.name) : t.name;
+            const subName = currentLocale === 'km' ? t.name : (t.name_kh || '');
             tbody.innerHTML += `
             <tr class="stagger-item" style="animation-delay: ${(i * 0.03).toFixed(2)}s">
                 <td class="tc">${i + 1}</td>
                 <td class="tc">${t.employee_id}</td>
                 <td>
-                    <div style="font-weight:700; color: var(--primary); font-size: 1rem;">${t.name_kh || ''}</div>
-                    <div style="font-weight:600; font-size: 0.9rem; opacity: 0.8;">${t.name}</div>
+                    <div style="font-weight:700; color: var(--primary); font-size: 1rem;">${mainName}</div>
+                    <div style="font-weight:600; font-size: 0.9rem; opacity: 0.8;">${subName}</div>
                 </td>
                 <td style="color:var(--text-secondary);">${window.transDept(t.department)}</td>
                 <td class="tc"><span class="badge badge-success">${t.days_present}</span></td>
                 <td class="tc"><span class="badge badge-warning">${t.days_late}</span></td>
                 <td class="tc"><span class="badge badge-danger">${t.days_absent}</span></td>
                 <td class="tc">${res.total_working_days}</td>
+                <td class="tc" style="font-weight:bold; color:var(--primary);">${t.total_hours_label || '0h 0m'}</td>
                 <td class="tc" style="font-weight:bold;color:${rateColor};">${t.attendance_rate}%</td>
             </tr>`;
         });
@@ -1260,17 +1264,20 @@ async function loadAbsent(params) {
             tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:2rem;">{{ __('No absent records found.') }}</td></tr>`;
             return;
         }
+        const currentLocale = document.documentElement.lang || 'en';
         res.rows.forEach((r, i) => {
+            const mainName = currentLocale === 'km' ? (r.teacher_name_kh || r.teacher_name) : r.teacher_name;
+            const subName = currentLocale === 'km' ? r.teacher_name : (r.teacher_name_kh || '');
             const editBtn = `<button onclick='openManualForAbsent(${JSON.stringify({teacher_db_id: r.teacher_db_id, date: r.absent_date_raw, teacher_name: r.teacher_name, department: r.department})})' class="btn btn-sm" title="{{ __('Add Manual Attendance') }}" style="background:rgba(var(--primary-rgb),0.12); border:1px solid rgba(var(--primary-rgb),0.25); color:var(--primary); border-radius:0.5rem; padding:0.3rem 0.6rem; display:inline-flex; align-items:center; gap:0.3rem; font-size:0.78rem; font-weight:700;">
-                <i class="ph ph-plus-circle"></i> Manual
+                <i class="ph ph-plus-circle"></i> {{ __('Manual') }}
             </button>`;
             tbody.innerHTML += `
             <tr class="stagger-item" style="animation-delay: ${(i * 0.02).toFixed(2)}s">
                 <td class="tc">${i + 1}</td>
                 <td class="tc">${r.teacher_id}</td>
                 <td>
-                    <div style="font-weight:700; color: var(--primary);">${r.teacher_name_kh || ''}</div>
-                    <div style="font-weight:600; opacity: 0.8;">${r.teacher_name}</div>
+                    <div style="font-weight:700; color: var(--primary);">${mainName}</div>
+                    <div style="font-weight:600; opacity: 0.8;">${subName}</div>
                 </td>
                 <td>${window.transDept(r.department)}</td>
                 <td>${r.absent_date}</td>
@@ -1299,7 +1306,10 @@ async function loadLate(params) {
             tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:2rem;">{{ __('No late records found.') }}</td></tr>`;
             return;
         }
+        const currentLocale = document.documentElement.lang || 'en';
         res.rows.forEach((r, i) => {
+            const mainName = currentLocale === 'km' ? (r.teacher_name_kh || r.teacher_name) : r.teacher_name;
+            const subName = currentLocale === 'km' ? r.teacher_name : (r.teacher_name_kh || '');
             // Build a record object compatible with openEditModal
             const recForEdit = {
                 id: r.id,
@@ -1310,15 +1320,15 @@ async function loadLate(params) {
                 manual_note: r.manual_note
             };
             const editBtn = `<button onclick='openEditModal(${JSON.stringify(recForEdit).replace(/'/g, "&#39;")})' class="btn btn-sm" title="{{ __('Edit') }}" style="background:rgba(var(--warning-rgb),0.12); border:1px solid rgba(var(--warning-rgb),0.3); color:var(--warning); border-radius:0.5rem; padding:0.3rem 0.6rem; display:inline-flex; align-items:center; gap:0.3rem; font-size:0.78rem; font-weight:700;">
-                <i class="ph ph-pencil-simple"></i> Edit
+                <i class="ph ph-pencil-simple"></i> {{ __('Edit') }}
             </button>`;
             tbody.innerHTML += `
             <tr class="stagger-item" style="animation-delay: ${(i * 0.02).toFixed(2)}s">
                 <td class="tc">${i + 1}</td>
                 <td class="tc">${r.teacher_id}</td>
                 <td>
-                    <div style="font-weight:700; color: var(--primary);">${r.teacher_name_kh || ''}</div>
-                    <div style="font-weight:600; opacity: 0.8;">${r.teacher_name}</div>
+                    <div style="font-weight:700; color: var(--primary);">${mainName}</div>
+                    <div style="font-weight:600; opacity: 0.8;">${subName}</div>
                 </td>
                 <td>${window.transDept(r.department)}</td>
                 <td>${r.date}</td>

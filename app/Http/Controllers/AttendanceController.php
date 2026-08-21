@@ -114,45 +114,51 @@ class AttendanceController extends Controller
                 $absentTeachers = collect();
             }
 
-            // Volatility & Trend Data (Last 10 days)
             $trendData = [];
-            $totalT = Teacher::count();
-            for ($i = 9; $i >= 0; $i--) {
-                $d = today()->subDays($i);
-                $presentC = Attendance::whereDate('date', $d)->where('morning_status', 'present')->count();
-                $lateC    = Attendance::whereDate('date', $d)->where('morning_status', 'late')->count();
-                $totalAtt = Attendance::whereDate('date', $d)->count();
-                $absentC  = max(0, $totalT - $totalAtt);
+            $topOnTime = collect();
+            $topLate = collect();
 
-                $trendData[] = [
-                    'day'     => $d->locale(app()->getLocale())->isoFormat('dddd, D MMM'),
-                    'present' => $presentC,
-                    'late'    => $lateC,
-                    'absent'  => $absentC
-                ];
+            // Only run these expensive queries on initial page load, not during AJAX polling
+            if (!$request->ajax() && !$request->wantsJson()) {
+                // Volatility & Trend Data (Last 10 days)
+                $totalT = Teacher::count();
+                for ($i = 9; $i >= 0; $i--) {
+                    $d = today()->subDays($i);
+                    $presentC = Attendance::whereDate('date', $d)->where('morning_status', 'present')->count();
+                    $lateC    = Attendance::whereDate('date', $d)->where('morning_status', 'late')->count();
+                    $totalAtt = Attendance::whereDate('date', $d)->count();
+                    $absentC  = max(0, $totalT - $totalAtt);
+
+                    $trendData[] = [
+                        'day'     => $d->locale(app()->getLocale())->isoFormat('dddd, D MMM'),
+                        'present' => $presentC,
+                        'late'    => $lateC,
+                        'absent'  => $absentC
+                    ];
+                }
+
+                // Monthly Performance
+                $monthStart = now()->startOfMonth();
+                $topOnTime = Attendance::with('teacher')
+                    ->where('date', '>=', $monthStart)
+                    ->where('morning_status', 'present')
+                    ->get()
+                    ->groupBy('teacher_id')
+                    ->map(fn($group) => (object)['teacher' => $group->first()->teacher, 'count' => $group->count()])
+                    ->sortByDesc('count')
+                    ->take(5);
+
+                $topLate = Attendance::with('teacher')
+                    ->where('date', '>=', $monthStart)
+                    ->where(function($q) {
+                        $q->where('morning_status', 'late')->orWhere('afternoon_status', 'late');
+                    })
+                    ->get()
+                    ->groupBy('teacher_id')
+                    ->map(fn($group) => (object)['teacher' => $group->first()->teacher, 'count' => $group->count()])
+                    ->sortByDesc('count')
+                    ->take(5);
             }
-
-            // Monthly Performance
-            $monthStart = now()->startOfMonth();
-            $topOnTime = Attendance::with('teacher')
-                ->where('date', '>=', $monthStart)
-                ->where('morning_status', 'present')
-                ->get()
-                ->groupBy('teacher_id')
-                ->map(fn($group) => (object)['teacher' => $group->first()->teacher, 'count' => $group->count()])
-                ->sortByDesc('count')
-                ->take(5);
-
-            $topLate = Attendance::with('teacher')
-                ->where('date', '>=', $monthStart)
-                ->where(function($q) {
-                    $q->where('morning_status', 'late')->orWhere('afternoon_status', 'late');
-                })
-                ->get()
-                ->groupBy('teacher_id')
-                ->map(fn($group) => (object)['teacher' => $group->first()->teacher, 'count' => $group->count()])
-                ->sortByDesc('count')
-                ->take(5);
 
             // Handle AJAX/JSON requests
             if ($request->ajax() || $request->wantsJson()) {

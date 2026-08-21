@@ -257,35 +257,35 @@
             color-adjust: exact !important;
             print-color-adjust: exact !important;
         }
-        body.printing-cards * {
-            visibility: hidden !important;
+        body.printing-cards #mainSidebar,
+        body.printing-cards .topbar,
+        body.printing-cards .main-footer,
+        body.printing-cards .content-wrapper > *:not(#print-cards-container) {
+            display: none !important;
         }
-        body.printing-cards #print-cards-container, 
-        body.printing-cards #print-cards-container * {
-            visibility: visible !important;
-        }
+        body.printing-cards .main-content,
+        body.printing-cards .content-wrapper,
         body.printing-cards #print-cards-container {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
-            background: #ffffff !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: none !important;
+            width: 100% !important;
+            max-width: none !important;
+            position: static !important;
             display: block !important;
         }
         .print-card-page {
-            width: 210mm !important;
-            height: 297mm !important;
-            padding: 10mm 0 !important;
+            width: 100% !important;
             box-sizing: border-box !important;
             background: #ffffff !important;
             margin: 0 auto !important;
+            padding: 10mm 0 !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             page-break-inside: avoid !important;
-            page-break-after: auto !important;
         }
         .print-card-page:not(:last-child) {
             page-break-after: always !important;
@@ -295,8 +295,8 @@
         }
         .cards-grid-8 {
             display: grid !important;
-            grid-template-columns: repeat(2, 88mm) !important;
-            grid-template-rows: repeat(4, 58mm) !important;
+            grid-template-columns: repeat(2, 85.6mm) !important;
+            grid-template-rows: repeat(4, 54mm) !important;
             gap: 4mm 8mm !important;
             justify-content: center !important;
             align-content: center !important;
@@ -304,8 +304,8 @@
             height: 100% !important;
         }
         .id-card {
-            width: 88mm !important;
-            height: 58mm !important;
+            width: 85.6mm !important;
+            height: 54mm !important;
             border: 1.5px solid #0f2942 !important;
             border-radius: 3.5mm !important;
             box-sizing: border-box !important;
@@ -1084,7 +1084,10 @@
     }
 
     // Global teacher list and university details for card printing
-    const teachersData = @json($teachers->load('rfidCard'));
+    const teachersData = @json($teachers->load('rfidCard')->map(function($t) {
+        $t->photo_url = $t->photo ? to_asset_url($t->photo) : null;
+        return $t;
+    }));
     const universityName = @json($uName);
     const universityNameKh = @json($uNameKh ?? 'វិទ្យាស្ថានជាតិបណ្ដុះបណ្ដាលបច្ចេកទេស');
     const universityLogo = @json($uLogo);
@@ -1125,7 +1128,7 @@
     function generateCardHtml(teacher) {
         const deptLabel = window.transDept ? window.transDept(teacher.department) : teacher.department;
         const posInfo = getPositionTitles(teacher.position);
-        const photoUrl = teacher.photo ? (teacher.photo.startsWith('http') || teacher.photo.startsWith('/') ? teacher.photo : '/' + teacher.photo) : null;
+        const photoUrl = teacher.photo_url || (teacher.photo ? (teacher.photo.startsWith('http') || teacher.photo.startsWith('/') ? teacher.photo : '/' + teacher.photo) : null);
 
         const buildingSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v8h20v-8a2 2 0 0 0-2-2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>`;
         const envelopeSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`;

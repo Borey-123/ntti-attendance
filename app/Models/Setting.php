@@ -8,13 +8,33 @@ class Setting extends Model
 {
     protected $fillable = ['key', 'value'];
 
+    protected static $cache = [];
+
+    protected static function booted()
+    {
+        static::saved(function ($setting) {
+            self::$cache[$setting->key] = $setting->value;
+        });
+        static::deleted(function ($setting) {
+            unset(self::$cache[$setting->key]);
+        });
+    }
+
     /**
      * Get a setting value by key, optionally providing a default.
+     * Uses in-memory caching to prevent redundant database queries in the same request.
      */
     public static function getValue($key, $default = null)
     {
+        if (array_key_exists($key, self::$cache)) {
+            return self::$cache[$key] ?? $default;
+        }
+
         $setting = self::where('key', $key)->first();
-        return ($setting && !empty($setting->value)) ? $setting->value : $default;
+        $value = ($setting && !empty($setting->value)) ? $setting->value : null;
+        self::$cache[$key] = $value;
+
+        return $value !== null ? $value : $default;
     }
 
     /**

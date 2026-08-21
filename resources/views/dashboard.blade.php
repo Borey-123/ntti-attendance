@@ -438,6 +438,22 @@
             <tbody id="attendance-body">
                 @foreach($attendance as $record)
                 @php
+                    $completedWorkedSeconds = 0;
+                    if ($record->morning_in && $record->morning_out) {
+                        $mIn = \Carbon\Carbon::createFromTimeString($record->morning_in);
+                        $mOut = \Carbon\Carbon::createFromTimeString($record->morning_out);
+                        if ($mOut->greaterThanOrEqualTo($mIn)) {
+                            $completedWorkedSeconds += $mOut->diffInSeconds($mIn);
+                        }
+                    }
+                    if ($record->afternoon_in && $record->afternoon_out) {
+                        $aIn = \Carbon\Carbon::createFromTimeString($record->afternoon_in);
+                        $aOut = \Carbon\Carbon::createFromTimeString($record->afternoon_out);
+                        if ($aOut->greaterThanOrEqualTo($aIn)) {
+                            $completedWorkedSeconds += $aOut->diffInSeconds($aIn);
+                        }
+                    }
+
                     $activeStartTime = null;
                     if ($record->afternoon_in && !$record->afternoon_out) $activeStartTime = $record->afternoon_in;
                     elseif ($record->morning_in && !$record->morning_out) $activeStartTime = $record->morning_in;
@@ -455,8 +471,8 @@
                                 @endif
                             </div>
                             <div>
-                                <div style="font-weight:700; color:var(--primary); font-size: 1.1rem; line-height: 1.2;" translate="no" class="notranslate">{{ $record->teacher->name_kh }}</div>
-                                <div style="font-weight:600; color:var(--text-primary); font-size: 0.85rem; opacity: 0.8;" translate="no" class="notranslate">{{ $record->teacher->name }}</div>
+                                <div style="font-weight:700; color:var(--primary); font-size: 1.1rem; line-height: 1.2;" translate="no" class="notranslate">{{ app()->getLocale() == 'km' ? ($record->teacher->name_kh ?: $record->teacher->name) : $record->teacher->name }}</div>
+                                <div style="font-weight:600; color:var(--text-primary); font-size: 0.85rem; opacity: 0.8;" translate="no" class="notranslate">{{ app()->getLocale() == 'km' ? $record->teacher->name : ($record->teacher->name_kh ?: '') }}</div>
                                 <div style="font-size:0.75rem;color:var(--text-secondary);">{{ $record->teacher->employee_id }}</div>
                             </div>
                         </div>
@@ -486,14 +502,26 @@
                         @if($activeStartTime)
                             @php
                                 $start = \Carbon\Carbon::createFromTimeString($activeStartTime);
-                                $diff = now()->diffInSeconds($start);
+                                $diff = now()->diffInSeconds($start) + $completedWorkedSeconds;
                                 $h = str_pad(floor($diff / 3600), 2, '0', STR_PAD_LEFT);
                                 $m = str_pad(floor(($diff % 3600) / 60), 2, '0', STR_PAD_LEFT);
                                 $s = str_pad($diff % 60, 2, '0', STR_PAD_LEFT);
                                 $initialDuration = "$h:$m:$s";
                             @endphp
-                            <div class="runtime-timer" data-start="{{ $activeStartTime }}" style="font-family:'JetBrains Mono', monospace; font-weight:700; color:var(--primary); font-size:0.9rem;">
+                            <div class="runtime-timer" data-start="{{ $activeStartTime }}" data-completed="{{ $completedWorkedSeconds }}" style="font-family:'JetBrains Mono', monospace; font-weight:700; color:var(--primary); font-size:0.9rem;">
                                 {{ $initialDuration }}
+                                @if(str_contains($record->manual_note ?? '', '[Auto'))
+                                    <i class="ph ph-robot" style="margin-left:4px; font-size:0.85rem; color:var(--text-muted);" title="{{ $record->manual_note }}"></i>
+                                @endif
+                            </div>
+                        @elseif($completedWorkedSeconds > 0)
+                            @php
+                                $h = str_pad(floor($completedWorkedSeconds / 3600), 2, '0', STR_PAD_LEFT);
+                                $m = str_pad(floor(($completedWorkedSeconds % 3600) / 60), 2, '0', STR_PAD_LEFT);
+                                $formattedCompleted = "{$h}h {$m}m";
+                            @endphp
+                            <div style="font-family:'JetBrains Mono', monospace; font-weight:700; color:var(--success); font-size:0.9rem; display:inline-flex; align-items:center; gap:4px;">
+                                <i class="ph ph-clock" style="font-size:0.85rem;"></i> {{ $formattedCompleted }}
                                 @if(str_contains($record->manual_note ?? '', '[Auto'))
                                     <i class="ph ph-robot" style="margin-left:4px; font-size:0.85rem; color:var(--text-muted);" title="{{ $record->manual_note }}"></i>
                                 @endif
@@ -533,8 +561,8 @@
                                 @endif
                             </div>
                             <div>
-                                <div style="font-weight:700; color:var(--primary); font-size: 1.1rem; line-height: 1.2;" translate="no" class="notranslate">{{ $teacher->name_kh }}</div>
-                                <div style="font-weight:600; color:var(--text-secondary); font-size: 0.85rem;" translate="no" class="notranslate">{{ $teacher->name }}</div>
+                                <div style="font-weight:700; color:var(--primary); font-size: 1.1rem; line-height: 1.2;" translate="no" class="notranslate">{{ app()->getLocale() == 'km' ? ($teacher->name_kh ?: $teacher->name) : $teacher->name }}</div>
+                                <div style="font-weight:600; color:var(--text-secondary); font-size: 0.85rem;" translate="no" class="notranslate">{{ app()->getLocale() == 'km' ? $teacher->name : ($teacher->name_kh ?: '') }}</div>
                                 <div style="font-size:0.75rem;color:var(--text-muted);">{{ $teacher->employee_id }}</div>
                             </div>
                         </div>
@@ -1132,12 +1160,14 @@
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: var(--bg-card);
-    border: 2px solid rgba(var(--primary-rgb), 0.3);
+    background: transparent;
+    border: none;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    transform: translateZ(0);
+    outline: none !important;
 }
 
 .teacher-avatar img {
@@ -1383,23 +1413,24 @@
             btnLate.classList.replace('btn-secondary', 'btn-primary');
         }
     }
-    const POLL_INTERVAL = 5000; // 5 seconds
-    const DEVICE_INTERVAL = 10000; // 10 seconds
+    const POLL_INTERVAL = 10000; // 10 seconds
+    const DEVICE_INTERVAL = 15000; // 15 seconds
 
 
 
     // ── Build a table row (present/late) ──────────
     function buildRow(r, index = 0, animate = false) {
-        let sourceBadge = `<span class="badge-pill secondary"><i class="ph ph-hand-tap"></i> Manual</span>`;
+        let sourceBadge = `<span class="badge-pill secondary"><i class="ph ph-hand-tap"></i> {{ __('Manual') }}</span>`;
         if (r.rfid_uid === 'PORTAL') {
-            sourceBadge = `<span class="badge-pill" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;"><i class="ph ph-globe"></i> Portal</span>`;
+            sourceBadge = `<span class="badge-pill" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;"><i class="ph ph-globe"></i> {{ __('Portal') }}</span>`;
         } else if (r.rfid_uid && r.rfid_uid !== 'MANUAL') {
             sourceBadge = `<span class="badge-pill info"><i class="ph ph-identification-card"></i> RFID</span>`;
         }
 
-        const initial = r.teacher.name ? r.teacher.name.charAt(0).toUpperCase() : '?';
-        const avatar = r.photo 
-            ? `<img src="${r.photo}" alt="">` 
+        const initial = r.teacher && r.teacher.name ? r.teacher.name.charAt(0).toUpperCase() : '?';
+        const photoUrl = r.teacher && r.teacher.photo ? (r.teacher.photo.startsWith('data:') || r.teacher.photo.startsWith('http') ? r.teacher.photo : '{{ url('/') }}/' + r.teacher.photo) : null;
+        const avatar = photoUrl 
+            ? `<img src="${photoUrl}" alt="">` 
             : `<div class="avatar-placeholder">${initial}</div>`;
 
         // Generate shift columns
@@ -1413,32 +1444,54 @@
         const aLate = r.afternoon_status === 'late' ? '<span class="badge badge-warning" style="font-size:0.65rem; padding:1px 6px;">LATE</span>' : '';
         const aCell = r.afternoon_in ? `<div style="font-size:0.85rem;"><span style="color:var(--success); font-weight:700;">${aIn}</span> <i class="ph ph-arrow-right" style="font-size:0.7rem; opacity:0.5;"></i> ${aOut}</div>${aLate}` : '—';
 
+        let completedSeconds = 0;
+        if (r.morning_in && r.morning_out) {
+            const [h1, m1, s1] = r.morning_in.split(':').map(Number);
+            const [h2, m2, s2] = r.morning_out.split(':').map(Number);
+            const sec1 = h1 * 3600 + m1 * 60 + (s1 || 0);
+            const sec2 = h2 * 3600 + m2 * 60 + (s2 || 0);
+            if (sec2 >= sec1) completedSeconds += (sec2 - sec1);
+        }
+        if (r.afternoon_in && r.afternoon_out) {
+            const [h1, m1, s1] = r.afternoon_in.split(':').map(Number);
+            const [h2, m2, s2] = r.afternoon_out.split(':').map(Number);
+            const sec1 = h1 * 3600 + m1 * 60 + (s1 || 0);
+            const sec2 = h2 * 3600 + m2 * 60 + (s2 || 0);
+            if (sec2 >= sec1) completedSeconds += (sec2 - sec1);
+        }
+
         let activeStart = null;
         if (r.afternoon_in && !r.afternoon_out) activeStart = r.afternoon_in;
         else if (r.morning_in && !r.morning_out) activeStart = r.morning_in;
-
-        let initialDuration = '00:00:00';
-        if (activeStart) {
-            const now = new Date();
-            const [h, m, s] = activeStart.split(':').map(Number);
-            const startDate = new Date();
-            startDate.setHours(h, m, s, 0);
-            let diff = Math.floor((now - startDate) / 1000);
-            if (diff < 0) diff = 0;
-            const hours = String(Math.floor(diff / 3600)).padStart(2, '0');
-            const minutes = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
-            const seconds = String(diff % 60).padStart(2, '0');
-            initialDuration = `${hours}:${minutes}:${seconds}`;
-        }
 
         const autoMark = (r.manual_note && r.manual_note.includes('[Auto')) 
             ? `<i class="ph ph-robot" style="margin-left:4px; font-size:0.85rem; color:var(--text-muted);" title="${r.manual_note}"></i>` 
             : '';
 
-        const runtimeCell = activeStart 
-            ? `<div class="runtime-timer" data-start="${activeStart}" style="font-family:'JetBrains Mono', monospace; font-weight:700; color:var(--primary); font-size:0.9rem;">${initialDuration}${autoMark}</div>`
-            : `<div style="display: flex; align-items: center; gap: 4px;"><span style="color:var(--text-muted);">—</span>${autoMark}</div>`;
+        let runtimeCell = '';
+        if (activeStart) {
+            const now = new Date();
+            const [h, m, s] = activeStart.split(':').map(Number);
+            const startDate = new Date();
+            startDate.setHours(h, m, s || 0, 0);
+            let diff = Math.floor((now - startDate) / 1000) + completedSeconds;
+            if (diff < 0) diff = 0;
+            const hours = String(Math.floor(diff / 3600)).padStart(2, '0');
+            const minutes = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+            const seconds = String(diff % 60).padStart(2, '0');
+            const initialDuration = `${hours}:${minutes}:${seconds}`;
+            runtimeCell = `<div class="runtime-timer" data-start="${activeStart}" data-completed="${completedSeconds}" style="font-family:'JetBrains Mono', monospace; font-weight:700; color:var(--primary); font-size:0.9rem;">${initialDuration}${autoMark}</div>`;
+        } else if (completedSeconds > 0) {
+            const hours = String(Math.floor(completedSeconds / 3600)).padStart(2, '0');
+            const minutes = String(Math.floor((completedSeconds % 3600) / 60)).padStart(2, '0');
+            runtimeCell = `<div style="font-family:'JetBrains Mono', monospace; font-weight:700; color:var(--success); font-size:0.9rem; display:inline-flex; align-items:center; gap:4px;"><i class="ph ph-clock" style="font-size:0.85rem;"></i> ${hours}h ${minutes}m${autoMark}</div>`;
+        } else {
+            runtimeCell = `<div style="display: flex; align-items: center; gap: 4px;"><span style="color:var(--text-muted);">—</span>${autoMark}</div>`;
+        }
 
+        const currentLocale = document.documentElement.lang || 'en';
+        const mainName = currentLocale === 'km' ? (r.teacher.name_kh || r.teacher.name) : r.teacher.name;
+        const subName = currentLocale === 'km' ? r.teacher.name : (r.teacher.name_kh || '');
         const delay = (index * 0.04).toFixed(2);
         const rowClass = animate ? `class="stagger-item" style="animation-delay: ${delay}s"` : '';
         return `<tr ${rowClass}>
@@ -1446,8 +1499,8 @@
                 <div style="display:flex; align-items:center; gap:1rem; cursor:pointer;" onclick="openTeacherInsights(${r.teacher.id})">
                     <div class="teacher-avatar">${avatar}</div>
                     <div>
-                        <div style="font-weight:700; color:var(--primary); font-size: 1.1rem; line-height: 1.2;" translate="no" class="notranslate">${r.teacher.name_kh || ''}</div>
-                        <div style="font-weight:600; color:var(--text-primary); font-size: 0.85rem; opacity: 0.8;" translate="no" class="notranslate">${r.teacher.name}</div>
+                        <div style="font-weight:700; color:var(--primary); font-size: 1.1rem; line-height: 1.2;" translate="no" class="notranslate">${mainName}</div>
+                        <div style="font-weight:600; color:var(--text-primary); font-size: 0.85rem; opacity: 0.8;" translate="no" class="notranslate">${subName}</div>
                         <div style="font-size:0.75rem;color:var(--text-secondary);">${r.teacher.employee_id}</div>
                     </div>
                 </div>
@@ -1464,10 +1517,14 @@
     // ── Build an absent row ───────────────────────
     function buildAbsentRow(t, index = 0, animate = false) {
         const initial = t.name ? t.name.charAt(0).toUpperCase() : '?';
-        const avatar = t.photo 
-            ? `<img src="${t.photo}" alt="">` 
+        const photoUrl = t.photo ? (t.photo.startsWith('data:') || t.photo.startsWith('http') ? t.photo : '{{ url('/') }}/' + t.photo) : null;
+        const avatar = photoUrl 
+            ? `<img src="${photoUrl}" alt="">` 
             : `<div class="avatar-placeholder">${initial}</div>`;
 
+        const currentLocale = document.documentElement.lang || 'en';
+        const mainName = currentLocale === 'km' ? (t.name_kh || t.name) : t.name;
+        const subName = currentLocale === 'km' ? t.name : (t.name_kh || '');
         const delay = (index * 0.04).toFixed(2);
         const rowClass = animate ? `class="stagger-item" style="animation-delay: ${delay}s"` : '';
         return `<tr ${rowClass}>
@@ -1475,8 +1532,8 @@
                 <div style="display:flex; align-items:center; gap:1rem; cursor:pointer;" onclick="openTeacherInsights(${t.id})">
                     <div class="teacher-avatar grayscale">${avatar}</div>
                     <div>
-                        <div style="font-weight:700; color:var(--primary); font-size: 1.1rem; line-height: 1.2;" translate="no" class="notranslate">${t.name_kh || ''}</div>
-                        <div style="font-weight:600; color:var(--text-secondary); font-size: 0.85rem;" translate="no" class="notranslate">${t.name}</div>
+                        <div style="font-weight:700; color:var(--primary); font-size: 1.1rem; line-height: 1.2;" translate="no" class="notranslate">${mainName}</div>
+                        <div style="font-weight:600; color:var(--text-secondary); font-size: 0.85rem;" translate="no" class="notranslate">${subName}</div>
                         <div style="font-size:0.75rem;color:var(--text-muted);">${t.employee_id}</div>
                     </div>
                 </div>
@@ -1523,20 +1580,25 @@
         
         timers.forEach(timer => {
             const startStr = timer.getAttribute('data-start'); // HH:MM:SS
+            const completedSec = parseInt(timer.getAttribute('data-completed') || '0', 10);
             if (!startStr) return;
 
             const [h, m, s] = startStr.split(':').map(Number);
             const startDate = new Date();
-            startDate.setHours(h, m, s, 0);
+            startDate.setHours(h, m, s || 0, 0);
 
-            let diff = Math.floor((now - startDate) / 1000);
-            if (diff < 0) diff = 0; // Prevent negative if clocks slightly out of sync
+            let diff = Math.floor((now - startDate) / 1000) + completedSec;
+            if (diff < 0) diff = 0;
 
             const hours = String(Math.floor(diff / 3600)).padStart(2, '0');
             const minutes = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
             const seconds = String(diff % 60).padStart(2, '0');
 
-            timer.textContent = `${hours}:${minutes}:${seconds}`;
+            if (timer.childNodes.length > 0 && timer.childNodes[0].nodeType === 3) {
+                timer.childNodes[0].nodeValue = `${hours}:${minutes}:${seconds}`;
+            } else {
+                timer.textContent = `${hours}:${minutes}:${seconds}`;
+            }
         });
     }
     setInterval(updateTimers, 1000);

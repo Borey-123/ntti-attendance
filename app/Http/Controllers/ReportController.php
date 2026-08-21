@@ -264,26 +264,23 @@ class ReportController extends Controller
                 $html .= '<tr>';
                 $html .= '<th ' . $thStyle . ' width="40">#</th>';
                 $html .= '<th ' . $thStyle . ' width="100">' . __('Teacher ID') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="200">' . __('Teacher Name') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="150">' . __('Department') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="100">' . __('Present') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="100">' . __('Late') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="100">' . __('Absent') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="150">' . __('Afternoon') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="120">' . __('Working Hours') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="100">' . __('Status') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="100">' . __('Source') . '</th>';
+                $html .= '<th ' . $thStyle . ' style="min-width:220px;white-space:nowrap;">' . __('Teacher Name') . '</th>';
+                $html .= '<th ' . $thStyle . ' style="min-width:180px;white-space:nowrap;">' . __('Department') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="80">' . __('Present') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="80">' . __('Late') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="80">' . __('Absent') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="80">' . __('Leave') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="130">' . __('Working Hours') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="90">' . __('Attendance %') . '</th>';
                 $html .= '</tr>';
                 
-                // We reuse the teacherStats logic built above, but need to add leave calculation
                 $sRow = 1;
                 foreach ($teacherStats as $stat) {
                     $t = $stat['teacher'];
                     $deptName = $isKm && isset($depts[$t->department]) ? $depts[$t->department]->name_kh : $t->department;
                     
-                    // We need to recount properly for leave since it wasn't tracked in $teacherStats array initially
-                    // For simplicity, let's just make an API call to teacherSummary or calculate here
                     $present = $late = $leave = 0;
+                    $totalTeacherMins = 0;
                     foreach ($dateRange as $date) {
                         $rec = $records->get($date->toDateString(), collect())->get($t->id);
                         if ($rec) {
@@ -293,21 +290,32 @@ class ReportController extends Controller
                                 if ($rec->morning_status === 'late' || $rec->afternoon_status === 'late') $late++;
                                 else $present++;
                             }
+                            if ($rec->morning_in && $rec->morning_out) {
+                                $totalTeacherMins += Carbon::createFromTimeString($rec->morning_in)
+                                    ->diffInMinutes(Carbon::createFromTimeString($rec->morning_out));
+                            }
+                            if ($rec->afternoon_in && $rec->afternoon_out) {
+                                $totalTeacherMins += Carbon::createFromTimeString($rec->afternoon_in)
+                                    ->diffInMinutes(Carbon::createFromTimeString($rec->afternoon_out));
+                            }
                         }
                     }
                     $absent = max(0, $totalWorkingDays - $present - $late - $leave);
                     $rate = $totalWorkingDays > 0 ? round(($present + $late) / $totalWorkingDays * 100, 1) : 0;
+                    $workHoursLabel = $totalTeacherMins > 0
+                        ? floor($totalTeacherMins / 60) . 'h ' . ($totalTeacherMins % 60) . 'm'
+                        : '0h 0m';
                     
                     $html .= '<tr>';
                     $html .= '<td class="tc">' . $sRow++ . '</td>';
-                    $html .= '<td class="tc" style="mso-number-format:\'\\@\';">'. htmlspecialchars($t->employee_id ?? '') . '</td>';
-                    $html .= '<td>' . htmlspecialchars($t->name) . '</td>';
-                    $html .= '<td class="tc">' . htmlspecialchars($deptName ?? '') . '</td>';
+                    $html .= '<td class="tc" style="mso-number-format:\'\@\';">' . htmlspecialchars($t->employee_id ?? '') . '</td>';
+                    $html .= '<td style="white-space:nowrap;min-width:220px;">' . htmlspecialchars($t->name) . '</td>';
+                    $html .= '<td style="white-space:nowrap;min-width:180px;">' . htmlspecialchars($deptName ?? '') . '</td>';
                     $html .= '<td class="tc">' . $present . '</td>';
                     $html .= '<td class="tc">' . $late . '</td>';
                     $html .= '<td class="tc">' . $absent . '</td>';
                     $html .= '<td class="tc">' . $leave . '</td>';
-                    $html .= '<td class="tc">' . $totalWorkingDays . '</td>';
+                    $html .= '<td class="tc" style="font-weight:bold;color:#1a73e8;">' . $workHoursLabel . '</td>';
                     $html .= '<td class="tc">' . $rate . '%</td>';
                     $html .= '</tr>';
                 }

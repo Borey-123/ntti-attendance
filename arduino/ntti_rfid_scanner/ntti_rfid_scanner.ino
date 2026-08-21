@@ -4,16 +4,16 @@
 #include <HTTPClient.h>
 #include <LiquidCrystal_I2C.h>
 #include <MFRC522.h>
-#include <Preferences.h> // Added to save IP permanently
+#include <Preferences.h>  // Added to save IP permanently
 #include <SPI.h>
 #include <WiFi.h>
-#include <WiFiManager.h> // Added for WiFi Manager
+#include <WiFiManager.h>  // Added for WiFi Manager
 #include <Wire.h>
 
 // ---------------------------
 // Network & API Configuration
 // ---------------------------
-String serverIP = "192.168.1.19"; // Default IP
+String serverIP = "66.42.61.106";  // Vultr Live Server IP
 String serverUrl = "";
 String heartbeatUrl = "";
 Preferences preferences;
@@ -22,7 +22,7 @@ const char *deviceId = "SCANNER_01";
 
 unsigned long lastHeartbeat = 0;
 const unsigned long heartbeatInterval =
-    60000; // Send heartbeat every 60 seconds
+  60000;  // Send heartbeat every 60 seconds
 
 // ---------------------------
 // Hardware Pins (ESP32)
@@ -70,7 +70,9 @@ void lcdPrint(String line1, String line2 = "") {
   lcd2.print(p2);
 }
 
-void lcdIdle() { lcdPrint("NTTI Attendance", "Scan your card.."); }
+void lcdIdle() {
+  lcdPrint("NTTI Attendance", "Scan your card..");
+}
 
 void sendHeartbeat() {
   if (WiFi.status() != WL_CONNECTED)
@@ -189,7 +191,7 @@ void connectWiFi() {
 
   // Load saved Server IP from memory
   preferences.begin("scanner", false);
-  serverIP = preferences.getString("serverIP", "192.168.1.19");
+  serverIP = preferences.getString("serverIP", "66.42.61.106");
   preferences.end();
 
   WiFiManager wifiManager;
@@ -220,14 +222,14 @@ void connectWiFi() {
     String baseHost = serverIP;
     baseHost.trim();
     if (!baseHost.startsWith("http://") && !baseHost.startsWith("https://")) {
-        if (baseHost.indexOf(":") == -1 && (baseHost.startsWith("192.") || baseHost.startsWith("10.") || baseHost.startsWith("172."))) {
-            baseHost = "http://" + baseHost + ":8001";
-        } else {
-            baseHost = "http://" + baseHost;
-        }
+      if (baseHost.indexOf(":") == -1 && (baseHost.startsWith("192.") || baseHost.startsWith("10.") || baseHost.startsWith("172."))) {
+        baseHost = "http://" + baseHost + ":8001";
+      } else {
+        baseHost = "http://" + baseHost;
+      }
     }
     if (baseHost.endsWith("/")) {
-        baseHost = baseHost.substring(0, baseHost.length() - 1);
+      baseHost = baseHost.substring(0, baseHost.length() - 1);
     }
 
     serverUrl = baseHost + "/api/attendance/scan";
@@ -243,7 +245,7 @@ void connectWiFi() {
     lcdPrint("WiFi FAILED!", "Restarting...");
     errorSignal();
     delay(3000);
-    ESP.restart(); // Reboot and try again
+    ESP.restart();  // Reboot and try again
   }
 }
 

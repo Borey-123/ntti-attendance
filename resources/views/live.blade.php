@@ -324,18 +324,18 @@
             width: 180px;
             height: 180px;
             margin: 0 auto 2rem;
-            border-radius: 2rem;
+            border-radius: 50%;
             border: 4px solid var(--primary);
             box-shadow: 0 20px 40px rgba(0,0,0,0.3);
             display: none; /* Shown only when photo exists */
-            background: #2d3748;
+            background: transparent;
         }
 
         .teacher-photo-container img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 2rem;
+            border-radius: 50%;
         }
 
         .teacher-photo-placeholder {
@@ -1045,8 +1045,8 @@
         <div class="header-brand hcard">
             @php $logo = \App\Models\Setting::getAssetUrl('university_logo', '/images/ntti_logo.png'); @endphp
             @if($logo)
-                <div style="width:58px; height:58px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.15); border:3px solid rgba(255,255,255,0.15); flex-shrink:0;">
-                    <img src="{{ $logo }}" alt="Logo" style="width:85%; height:85%; object-fit:contain;">
+                <div style="width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; transform: translateZ(0);">
+                    <img src="{{ $logo }}" alt="Logo" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
                 </div>
             @endif
             <div class="header-brand-text">
@@ -1617,7 +1617,7 @@
             setRadarStyle(savedStyle);
 
             pollLatest();
-            setInterval(pollLatest, 2000);
+            setInterval(pollLatest, 5000);
         });
 
         // ── Theme Toggle (Live-specific, independent from admin) ──────────────────────────────

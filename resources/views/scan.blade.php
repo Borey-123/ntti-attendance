@@ -441,11 +441,11 @@
         
         <div style="display:flex; flex-direction:column; gap:0.5rem;">
             <div class="input-wrapper" style="position:relative;">
-                <i class="ph ph-magnifying-glass" style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                <i class="ph ph-magnifying-glass" style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:var(--primary);"></i>
                 <input type="text" id="teacherSearch" class="form-control" style="padding-left:2.5rem; border-radius:1rem;" placeholder="{{ __('Search...') }}">
             </div>
             <div class="input-wrapper" style="position:relative;">
-                <i class="ph ph-buildings" style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                <i class="ph ph-buildings" style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:var(--primary);"></i>
                 <select id="deptFilter" class="form-control" style="padding-left:2.5rem; border-radius:1rem;">
                     <option value="">{{ __('All Departments') }}</option>
                     @foreach($departments as $dept)

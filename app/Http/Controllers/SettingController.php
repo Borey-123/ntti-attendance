@@ -160,6 +160,18 @@ class SettingController extends Controller
                             if ($username) {
                                 Setting::updateOrCreate(['key' => 'telegram_bot_username'], ['value' => $username]);
                             }
+                            
+                            // Set webhook
+                            $webhookUrl = url('api/telegram/webhook');
+                            if (strpos($webhookUrl, 'http://') === 0 && !app()->environment('local')) {
+                                $webhookUrl = str_replace('http://', 'https://', $webhookUrl);
+                            } else {
+                                $webhookUrl = str_replace('http://', 'https://', $webhookUrl);
+                            }
+                            
+                            \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$token}/setWebhook", [
+                                'url' => $webhookUrl
+                            ]);
                         }
                     } catch (\Exception $e) {
                         // Suppress network errors
@@ -418,8 +430,38 @@ class SettingController extends Controller
     public function fetchTelegramChats()
     {
         try {
-            // Since Webhooks are enabled, Telegram's getUpdates API is blocked (Error 409 Conflict).
-            // We must now fetch recent chats from our local telegram_messages database table.
+            $token = \App\Models\Setting::getValue('telegram_bot_token');
+            if ($token) {
+                // Check if webhook is returning 503 or not set, fallback to polling
+                $webhookInfo = \Illuminate\Support\Facades\Http::get("https://api.telegram.org/bot{$token}/getWebhookInfo")->json();
+                $hasWebhookError = isset($webhookInfo['result']['last_error_date']) || empty($webhookInfo['result']['url']);
+                
+                if ($hasWebhookError) {
+                    // Temporarily delete webhook to allow getUpdates
+                    if (!empty($webhookInfo['result']['url'])) {
+                        \Illuminate\Support\Facades\Http::get("https://api.telegram.org/bot{$token}/deleteWebhook");
+                    }
+                    
+                    $updates = \Illuminate\Support\Facades\Http::get("https://api.telegram.org/bot{$token}/getUpdates")->json();
+                    
+                    if (!empty($updates['result'])) {
+                        $highestUpdateId = 0;
+                        foreach ($updates['result'] as $update) {
+                            $highestUpdateId = max($highestUpdateId, $update['update_id']);
+                            // Simulate webhook payload
+                            $request = new \Illuminate\Http\Request();
+                            $request->replace($update);
+                            app(\App\Http\Controllers\TelegramWebhookController::class)->handle($request);
+                        }
+                        // Acknowledge updates
+                        if ($highestUpdateId > 0) {
+                            \Illuminate\Support\Facades\Http::get("https://api.telegram.org/bot{$token}/getUpdates?offset=" . ($highestUpdateId + 1));
+                        }
+                    }
+                }
+            }
+
+            // We fetch recent chats from our local telegram_messages database table.
             $recentMessages = \App\Models\TelegramMessage::orderBy('created_at', 'desc')
                 ->get()
                 ->unique('chat_id');
@@ -454,13 +496,75 @@ class SettingController extends Controller
 
     public function downloadDatabaseSqlite()
     {
-        $dbPath = database_path('database.sqlite');
-        if (!file_exists($dbPath)) {
-            return back()->with('error', 'Database file not found.');
+        $driver = \DB::connection()->getDriverName();
+        $dateStr = now()->format('Y-m-d_H-i-s');
+
+        if ($driver === 'mysql') {
+            $tables = ['users', 'teachers', 'attendances', 'departments', 'rfid_cards', 'security_logs', 'attendance_corrections', 'holidays', 'settings', 'migrations'];
+            $sqlDump = "-- NTTI Attendance Database Backup\n";
+            $sqlDump .= "-- Generated: " . now()->toDateTimeString() . "\n";
+            $sqlDump .= "-- Database Driver: MySQL\n\n";
+            $sqlDump .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
+
+            $pdo = \DB::connection()->getPdo();
+
+            foreach ($tables as $table) {
+                if (!\Schema::hasTable($table)) continue;
+
+                $sqlDump .= "-- --------------------------------------------------------\n";
+                $sqlDump .= "-- Table structure for `{$table}`\n";
+                $sqlDump .= "-- --------------------------------------------------------\n\n";
+
+                try {
+                    $createStmt = $pdo->query("SHOW CREATE TABLE `{$table}`")->fetch(\PDO::FETCH_ASSOC);
+                    if (isset($createStmt['Create Table'])) {
+                        $sqlDump .= "DROP TABLE IF EXISTS `{$table}`;\n";
+                        $sqlDump .= $createStmt['Create Table'] . ";\n\n";
+                    }
+                } catch (\Throwable $e) {}
+
+                $rows = \DB::table($table)->get();
+                if ($rows->count() > 0) {
+                    $sqlDump .= "-- Dumping data for table `{$table}`\n\n";
+                    foreach ($rows as $row) {
+                        $rowArray = (array)$row;
+                        $columns = array_keys($rowArray);
+                        $escapedColumns = array_map(fn($col) => "`{$col}`", $columns);
+                        
+                        $values = array_map(function($val) use ($pdo) {
+                            if (is_null($val)) return 'NULL';
+                            return $pdo->quote($val);
+                        }, array_values($rowArray));
+
+                        $sqlDump .= "INSERT INTO `{$table}` (" . implode(', ', $escapedColumns) . ") VALUES (" . implode(', ', $values) . ");\n";
+                    }
+                    $sqlDump .= "\n";
+                }
+            }
+
+            $sqlDump .= "SET FOREIGN_KEY_CHECKS=1;\n";
+
+            try { SecurityLog::record('Downloaded Database Backup (.sql)', 'Database'); } catch (\Throwable $sEx) {}
+            $filename = 'ntti_attendance_backup_' . $dateStr . '.sql';
+
+            return response($sqlDump, 200, [
+                'Content-Type' => 'text/x-sql',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]);
         }
 
-        $filename = 'ntti_attendance_db_' . now()->format('Y-m-d_H-i-s') . '.sqlite';
-        SecurityLog::record('Downloaded Database Backup', 'Database');
+        // SQLite connection driver fallback
+        $dbPath = config('database.connections.sqlite.database', database_path('database.sqlite'));
+        if (!file_exists($dbPath)) {
+            $dbPath = database_path('database.sqlite');
+        }
+
+        if (!file_exists($dbPath)) {
+            return back()->with('error', 'Database file not found at: ' . $dbPath);
+        }
+
+        $filename = 'ntti_attendance_db_' . $dateStr . '.sqlite';
+        try { SecurityLog::record('Downloaded Database Backup (.sqlite)', 'Database'); } catch (\Throwable $sEx) {}
 
         return response()->download($dbPath, $filename);
     }

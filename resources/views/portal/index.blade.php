@@ -136,16 +136,21 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: white;
             border-radius: 50%;
             overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             animation: fadeIn 1s ease;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: translateZ(0);
+            outline: none !important;
+            -webkit-tap-highlight-color: transparent;
         }
-        .logo-wrapper:hover { transform: scale(1.1) translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
-        .logo-img { width: 85%; height: 85%; object-fit: contain; }
+        .logo-wrapper:focus, .logo-wrapper:active {
+            outline: none !important;
+            border: none !important;
+        }
+        .logo-wrapper:hover { transform: scale(1.1) translateY(-5px); }
+        .logo-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
         h1 { font-size: 2rem; margin: 0; font-weight: 800; letter-spacing: -0.03em; }
         p.subtitle { color: var(--text-sub); font-size: 1rem; margin-top: 0.5rem; }
 
@@ -889,9 +894,14 @@
                                 <h4 style="margin: 0; font-size: 0.85rem; font-weight: 800; color: var(--text-main);">{{ __('Telegram Alerts Active') }}</h4>
                                 <p style="margin: 0.1rem 0 0; font-size: 0.7rem; color: var(--text-sub);">{{ __('Your account is connected to @') }}{{ $botUser }}</p>
                             </div>
-                            <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary); background: rgba(var(--primary-rgb), 0.1); padding: 0.25rem 0.5rem; border-radius: 0.5rem; display: inline-flex; align-items: center; gap: 0.25rem;">
-                                <i class="ph ph-check-circle"></i> {{ __('Active') }}
-                            </span>
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem;">
+                                <span style="font-size: 0.7rem; font-weight: 700; color: var(--primary); background: rgba(var(--primary-rgb), 0.1); padding: 0.2rem 0.5rem; border-radius: 0.5rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                    <i class="ph ph-check-circle"></i> {{ __('Active') }}
+                                </span>
+                                <a href="https://t.me/{{ $botUser }}" target="_blank" style="font-size: 0.7rem; font-weight: 700; color: var(--text-main); background: rgba(0,0,0,0.05); padding: 0.25rem 0.5rem; border-radius: 0.5rem; display: inline-flex; align-items: center; gap: 0.25rem; text-decoration: none; border: 1px solid var(--border); transition: all 0.2s;">
+                                    <i class="ph ph-arrows-left-right"></i> {{ __('Change') }}
+                                </a>
+                            </div>
                         </div>
                     @endif
 
@@ -1096,8 +1106,8 @@
     <div class="modal-content">
         <div style="margin-bottom: 2rem; text-align: center;">
             @if($uLogo)
-                <div style="width: 100px; height: 100px; margin: 0 auto 1.5rem; border-radius: 50%; overflow: hidden; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
-                    <img src="{{ to_asset_url($uLogo) }}" alt="Logo" style="width: 85%; height: 85%; object-fit: contain;">
+                <div style="width: 100px; height: 100px; margin: 0 auto 1.5rem; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; transform: translateZ(0);">
+                    <img src="{{ to_asset_url($uLogo) }}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                 </div>
             @endif
             <h2 style="margin: 0; font-weight: 800; color: var(--text-main); font-size: 1.6rem; line-height: 1.2;">{{ $uName }}</h2>

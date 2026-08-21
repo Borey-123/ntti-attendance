@@ -15,7 +15,11 @@ class SecurityLogController extends Controller
             ->orderBy('timestamp', 'desc')
             ->paginate(50);
             
-        return view('security.index', compact('logs'));
+        $rfidCards = \App\Models\RfidCard::with('teacher')
+            ->where('status', 'active')
+            ->get();
+            
+        return view('security.index', compact('logs', 'rfidCards'));
     }
 
     public function clearCache()

@@ -240,6 +240,19 @@
     font-weight: 600;
     line-height: 1.5;
 }
+
+/* ── Pagination Arrow Size Override ── */
+nav[role="navigation"] svg {
+    width: 1.2rem !important;
+    height: 1.2rem !important;
+    max-width: 1.2rem !important;
+    max-height: 1.2rem !important;
+}
+nav[role="navigation"] span, nav[role="navigation"] a {
+    font-size: 0.85rem !important;
+    padding: 0.35rem 0.65rem !important;
+    border-radius: 0.5rem !important;
+}
 </style>
 @endpush
 
@@ -490,6 +503,31 @@
         </div>
 
 
+
+        {{-- Teacher RFID Cards & IDs --}}
+        <div class="side-panel-card" style="border-top: 3px solid #3b82f6;">
+            <h4>
+                <i class="ph ph-identification-card" style="color: #3b82f6;"></i>
+                {{ __('Teacher Check-in IDs & Cards') }}
+            </h4>
+            <div style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 0.2rem;">
+                @forelse($rfidCards ?? [] as $card)
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.75rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 0.75rem; font-size: 0.8rem;">
+                        <div>
+                            <div style="font-weight: 700; color: var(--text-primary);">{{ $card->teacher->name ?? __('Unknown') }}</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">{{ __('ID') }}: {{ $card->teacher->employee_id ?? '-' }} &bull; {{ $card->teacher->department ?? '' }}</div>
+                        </div>
+                        <span style="font-family: monospace; font-size: 0.72rem; font-weight: 700; background: rgba(59,130,246,0.15); color: #3b82f6; padding: 0.2rem 0.5rem; border-radius: 0.4rem; border: 1px solid rgba(59,130,246,0.3);" title="{{ __('Card UID / Scanner ID') }}">
+                            {{ $card->uid }}
+                        </span>
+                    </div>
+                @empty
+                    <div style="font-size: 0.78rem; color: var(--text-muted); text-align: center; padding: 1rem;">
+                        {{ __('No teacher RFID cards assigned yet.') }}
+                    </div>
+                @endforelse
+            </div>
+        </div>
 
         {{-- Security Note --}}
         <div class="side-panel-card">

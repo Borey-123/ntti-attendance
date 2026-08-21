@@ -3,6 +3,7 @@
 @section('title', __('System Settings'))
 
 @push('styles')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
 <style>
 /* ── Settings Hub Layout ── */
 .settings-container {
@@ -10,6 +11,12 @@
     gap: 2rem;
     align-items: flex-start;
     min-height: calc(100vh - 180px);
+}
+
+/* ── Cropper Dynamic Shapes ── */
+.circle-cropper .cropper-view-box,
+.circle-cropper .cropper-face {
+    border-radius: 50%;
 }
 
 /* ── Sidebar Navigation ── */
@@ -144,21 +151,21 @@
 /* ── Fix native time/date picker icon visibility in dark mode ── */
 input[type="time"].form-control::-webkit-calendar-picker-indicator,
 input[type="date"].form-control::-webkit-calendar-picker-indicator {
-    filter: invert(0.7) sepia(1) saturate(3) hue-rotate(120deg);
+    filter: invert(1) brightness(1.8) !important;
     cursor: pointer;
-    opacity: 0.8;
+    opacity: 0.9 !important;
     transition: opacity 0.2s;
 }
 
 input[type="time"].form-control::-webkit-calendar-picker-indicator:hover,
 input[type="date"].form-control::-webkit-calendar-picker-indicator:hover {
-    opacity: 1;
+    opacity: 1 !important;
 }
 
 [data-theme="light"] input[type="time"].form-control::-webkit-calendar-picker-indicator,
 [data-theme="light"] input[type="date"].form-control::-webkit-calendar-picker-indicator {
-    filter: none;
-    opacity: 0.6;
+    filter: none !important;
+    opacity: 0.75 !important;
 }
 
 [data-theme="light"] input[type="time"].form-control::-webkit-calendar-picker-indicator:hover,
@@ -440,9 +447,11 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                         <label>{{ __('Brand Logo') }}</label>
                         <div style="display: flex; align-items: center; gap: 2rem; background: rgba(0,0,0,0.1); padding: 1.5rem; border-radius: 1rem; border: 1px dashed var(--border);">
                             @php $displayLogo = $universityLogo ?: '/images/ntti_logo.png'; @endphp
-                            <img src="{{ to_asset_url($displayLogo) }}" style="height: 60px; object-fit: contain;">
+                            <div style="border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; transform: translateZ(0); width: 80px; height: 80px;">
+                                <img id="logoPreview" src="{{ to_asset_url($displayLogo) }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                            </div>
                             <div style="flex: 1;">
-                                <input type="file" name="university_logo" class="form-control" accept="image/*">
+                                <input type="file" name="university_logo" id="logoInput" class="form-control" accept="image/*">
                                 <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">{{ __('Recommended: PNG with transparency, 512x512px.') }}</p>
                             </div>
                         </div>
@@ -450,9 +459,9 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                     <div class="form-group" style="margin-top: 2rem;">
                         <label>{{ __('Login Screen Wallpaper') }}</label>
                         <div style="position: relative; border-radius: 1rem; overflow: hidden; border: 1px solid var(--border);">
-                            <div style="height: 180px; background: url('{{ $loginBg ? to_asset_url($loginBg) : '' }}') center/cover #000;"></div>
+                            <div id="wallpaperPreview" style="height: 180px; background: url('{{ $loginBg ? to_asset_url($loginBg) : '' }}') center/cover #000; transition: background 0.3s ease;"></div>
                             <div style="padding: 1.5rem;">
-                                <input type="file" name="login_bg" class="form-control" accept="image/*">
+                                <input type="file" name="login_bg" id="wallpaperInput" class="form-control" accept="image/*">
                             </div>
                         </div>
                     </div>
@@ -627,8 +636,17 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                     <div style="margin-top: 1.5rem; background: rgba(59, 130, 246, 0.03); padding: 1.5rem; border-radius: 1rem; border: 1px dashed rgba(59, 130, 246, 0.5); display: flex; align-items: center; gap: 1.5rem;">
                         <i class="ph ph-hard-drives" style="font-size: 2.5rem; color: #3b82f6;"></i>
                         <div style="flex: 1;">
-                            <h4 style="margin: 0; font-size: 1rem;">{{ __('Full Database Backup & Import (.sqlite)') }}</h4>
-                            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Export your complete system database file or restore an existing .sqlite backup.') }}</p>
+                            <h4 style="margin: 0; font-size: 1rem;">{{ __('Full Database Backup & Import (.sql / .sqlite)') }}</h4>
+                            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Export system database or restore from a local backup file.') }}</p>
+                            @php
+                                $currentDriver = config('database.default');
+                                $localDbInfo = $currentDriver === 'mysql' 
+                                    ? 'MySQL (Local XAMPP): ' . config('database.connections.mysql.host') . ':' . config('database.connections.mysql.port') . ' / database: ' . config('database.connections.mysql.database')
+                                    : 'SQLite Path: ' . database_path('database.sqlite');
+                            @endphp
+                            <div style="font-size: 0.75rem; color: var(--primary); margin-top: 4px; font-family: 'JetBrains Mono', monospace; font-weight: 600;">
+                                <i class="ph ph-folder" style="vertical-align: middle; margin-right: 2px;"></i> {{ $localDbInfo }}
+                            </div>
                         </div>
                         <div style="display: flex; gap: 0.75rem;">
                             <a href="{{ route('settings.database.export') }}" class="btn-secondary" style="color: #3b82f6; border-color: rgba(59, 130, 246, 0.5); background: rgba(59, 130, 246, 0.08);">
@@ -668,6 +686,23 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                 <form id="systemCleanupForm" action="{{ route('settings.cleanup') }}" method="POST" style="display: none;">
                     @csrf
                 </form>
+            </div>
+        </div>
+
+        <!-- Crop Modal -->
+        <div class="modal-overlay" id="cropModal" style="z-index: 1000001;">
+            <div class="modal-content" style="max-width: 600px; padding: 2.5rem; border-radius: 2rem;">
+                <div class="modal-header" style="margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+                    <h3 style="font-weight: 800; color: var(--primary);">{{ __('Adjust Image') }}</h3>
+                    <button class="modal-close" type="button" onclick="closeCropModal()">&times;</button>
+                </div>
+                <div style="max-height: 400px; height: 400px; overflow: hidden; display: flex; justify-content: center; background: var(--bg-dark); border-radius: 1rem;">
+                    <img id="cropImage" src="" style="max-width: 100%; display: block;">
+                </div>
+                <div class="d-flex justify-between align-center mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="closeCropModal()">{{ __('Cancel') }}</button>
+                    <button type="button" class="btn btn-primary" style="width: auto;" onclick="applyCrop()">{{ __('Crop & Apply') }}</button>
+                </div>
             </div>
         </div>
 
@@ -1109,6 +1144,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
 
 
 @push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 <script>
 // ── Settings Hub Navigation ────────────────────
 document.querySelectorAll('.settings-nav-item').forEach(item => {
@@ -1138,6 +1174,101 @@ function toggleReset(id) {
     const el = document.getElementById(id);
     el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
+// ── Image Cropping Before Upload ────────────────────
+let currentCropper = null;
+let currentFileInput = null;
+let currentAspectRatio = 1;
+
+function initCropper(fileInput, aspectRatio) {
+    if (fileInput.files && fileInput.files[0]) {
+        currentFileInput = fileInput;
+        currentAspectRatio = aspectRatio;
+        
+        const cropModal = document.getElementById('cropModal');
+        if (aspectRatio === 1) {
+            cropModal.classList.add('circle-cropper');
+        } else {
+            cropModal.classList.remove('circle-cropper');
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            openCropper(e.target.result);
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    }
+}
+
+function openCropper(imageSrc) {
+    const cropImg = document.getElementById('cropImage');
+    cropImg.src = imageSrc;
+    document.getElementById('cropModal').classList.add('active');
+    
+    if (currentCropper) {
+        currentCropper.destroy();
+    }
+    
+    setTimeout(() => {
+        currentCropper = new Cropper(cropImg, {
+            aspectRatio: currentAspectRatio,
+            viewMode: 1,
+            autoCropArea: 1,
+            background: false,
+            checkOrientation: true,
+            crossOrigin: 'anonymous'
+        });
+    }, 50);
+}
+
+function closeCropModal() {
+    document.getElementById('cropModal').classList.remove('active');
+    if (currentCropper) {
+        currentCropper.destroy();
+        currentCropper = null;
+    }
+    // If cancelled without cropping, we don't clear the input to allow the user to keep the original if they want,
+    // but typically we'd clear it. Let's clear it so they don't upload uncropped.
+    if (currentFileInput && !document.getElementById('cropModal').hasAttribute('data-cropped')) {
+        currentFileInput.value = '';
+    }
+    document.getElementById('cropModal').removeAttribute('data-cropped');
+}
+
+function applyCrop() {
+    if (!currentCropper) return;
+    
+    currentCropper.getCroppedCanvas({
+        width: currentAspectRatio === 1 ? 512 : 1920,
+        height: currentAspectRatio === 1 ? 512 : 1080
+    }).toBlob(function(blob) {
+        const fileName = currentFileInput.name === 'university_logo' ? 'logo.jpg' : 'bg.jpg';
+        const file = new File([blob], fileName, { type: "image/jpeg", lastModified: new Date().getTime() });
+        const container = new DataTransfer();
+        container.items.add(file);
+        
+        // Inject the cropped file back into the original input
+        currentFileInput.files = container.files;
+        
+        // Update the visual preview
+        const url = URL.createObjectURL(blob);
+        if (currentFileInput.id === 'logoInput') {
+            document.getElementById('logoPreview').src = url;
+        } else if (currentFileInput.id === 'wallpaperInput') {
+            document.getElementById('wallpaperPreview').style.backgroundImage = `url('${url}')`;
+        }
+        
+        document.getElementById('cropModal').setAttribute('data-cropped', 'true');
+        closeCropModal();
+    }, 'image/jpeg', 0.9);
+}
+
+document.getElementById('logoInput')?.addEventListener('change', function(e) {
+    initCropper(this, 1); // 1:1 aspect ratio for Logo
+});
+
+document.getElementById('wallpaperInput')?.addEventListener('change', function(e) {
+    initCropper(this, 16/9); // 16:9 aspect ratio for Wallpaper
+});
 
 // ── Interface Scaling ───────────────────────────
 const fontSlider = document.getElementById('fontSlider');
