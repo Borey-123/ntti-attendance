@@ -520,14 +520,6 @@
         <p style="color: var(--text-secondary); font-size: 0.9rem;">{{ __('Manage personnel, credentials, and profile identities.') }}</p>
     </div>
     <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-        <select id="printDepartmentSelect" class="form-control" style="width: 200px; border-radius: 1.25rem; font-weight: 700; background: var(--bg-card); border: 1.5px solid var(--border); padding: 0.65rem 1rem;">
-            <option value="">{{ __('All Departments') }}</option>
-            @foreach($departments as $d)
-                <option value="{{ $d->name }}" {{ request('department') == $d->name ? 'selected' : '' }}>
-                    {{ app()->getLocale() == 'km' ? ($d->name_kh ?: $d->name) : $d->name }}
-                </option>
-            @endforeach
-        </select>
         <button class="btn" onclick="printFilteredCards()" style="display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 1.25rem; padding: 0.8rem 1.5rem; font-weight: 800; border: 1.5px solid #3b82f6; background: rgba(59, 130, 246, 0.1); color: #3b82f6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15); transition: all 0.2s ease; cursor: pointer;">
             <i class="ph ph-printer" style="font-size: 1.2rem;"></i> <span>{{ __('Print Cards') }}</span>
         </button>
@@ -1229,7 +1221,8 @@
     }
 
     function printFilteredCards() {
-        const selectedDept = document.getElementById('printDepartmentSelect') ? document.getElementById('printDepartmentSelect').value : '';
+        const mainDeptSelect = document.querySelector('select[name="department"]');
+        const selectedDept = mainDeptSelect ? mainDeptSelect.value : '';
         
         let listToPrint = teachersData;
         if (selectedDept) {

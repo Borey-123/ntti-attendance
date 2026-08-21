@@ -504,26 +504,33 @@ nav[role="navigation"] span, nav[role="navigation"] a {
 
 
 
-        {{-- Teacher RFID Cards & IDs --}}
-        <div class="side-panel-card" style="border-top: 3px solid #3b82f6;">
+        {{-- Today's Teacher Check-ins --}}
+        <div class="side-panel-card" style="border-top: 3px solid #10b981;">
             <h4>
-                <i class="ph ph-identification-card" style="color: #3b82f6;"></i>
-                {{ __('Teacher Check-in IDs & Cards') }}
+                <i class="ph ph-user-check" style="color: #10b981;"></i>
+                {{ __("Today's Teacher Check-ins") }}
             </h4>
-            <div style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 0.2rem;">
-                @forelse($rfidCards ?? [] as $card)
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.75rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 0.75rem; font-size: 0.8rem;">
+            <div style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 0.2rem;">
+                @forelse($todayCheckIns ?? [] as $att)
+                    @php
+                        $tName = $att->teacher ? (app()->getLocale() == 'km' ? ($att->teacher->name_kh ?: $att->teacher->name) : $att->teacher->name) : __('Unknown');
+                        $tId   = $att->teacher->employee_id ?? '-';
+                        $timeStr = $att->afternoon_in ? \Carbon\Carbon::parse($att->afternoon_in)->format('h:i A') : ($att->morning_in ? \Carbon\Carbon::parse($att->morning_in)->format('h:i A') : '');
+                    @endphp
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.75rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 0.75rem; font-size: 0.8rem;">
                         <div>
-                            <div style="font-weight: 700; color: var(--text-primary);">{{ $card->teacher->name ?? __('Unknown') }}</div>
-                            <div style="font-size: 0.7rem; color: var(--text-muted);">{{ __('ID') }}: {{ $card->teacher->employee_id ?? '-' }} &bull; {{ $card->teacher->department ?? '' }}</div>
+                            <div style="font-weight: 800; color: var(--text-primary);">{{ $tName }}</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">
+                                <span style="color: var(--primary); font-weight: 700;">ID: {{ $tId }}</span> &bull; {{ $att->teacher->department ?? '' }}
+                            </div>
                         </div>
-                        <span style="font-family: monospace; font-size: 0.72rem; font-weight: 700; background: rgba(59,130,246,0.15); color: #3b82f6; padding: 0.2rem 0.5rem; border-radius: 0.4rem; border: 1px solid rgba(59,130,246,0.3);" title="{{ __('Card UID / Scanner ID') }}">
-                            {{ $card->uid }}
+                        <span style="font-family: monospace; font-size: 0.75rem; font-weight: 800; background: rgba(16,185,129,0.15); color: #10b981; padding: 0.25rem 0.55rem; border-radius: 0.4rem; border: 1px solid rgba(16,185,129,0.3);" title="{{ __('Check-in time') }}">
+                            <i class="ph ph-clock" style="margin-right: 2px;"></i>{{ $timeStr }}
                         </span>
                     </div>
                 @empty
                     <div style="font-size: 0.78rem; color: var(--text-muted); text-align: center; padding: 1rem;">
-                        {{ __('No teacher RFID cards assigned yet.') }}
+                        {{ __('No teacher check-ins logged for today yet.') }}
                     </div>
                 @endforelse
             </div>

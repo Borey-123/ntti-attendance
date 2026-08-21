@@ -15,11 +15,15 @@ class SecurityLogController extends Controller
             ->orderBy('timestamp', 'desc')
             ->paginate(50);
             
-        $rfidCards = \App\Models\RfidCard::with('teacher')
-            ->where('status', 'active')
+        $todayCheckIns = \App\Models\Attendance::with('teacher')
+            ->whereDate('date', \Carbon\Carbon::today())
+            ->where(function($q) {
+                $q->whereNotNull('morning_in')->orWhereNotNull('afternoon_in');
+            })
+            ->orderBy('updated_at', 'desc')
             ->get();
             
-        return view('security.index', compact('logs', 'rfidCards'));
+        return view('security.index', compact('logs', 'todayCheckIns'));
     }
 
     public function clearCache()

@@ -269,7 +269,7 @@ class ReportController extends Controller
                 $html .= '<th ' . $thStyle . ' width="80">' . __('Present') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="80">' . __('Late') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="80">' . __('Absent') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="80">' . __('Leave') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="110">' . __('Working Days') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="130">' . __('Working Hours') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="90">' . __('Attendance %') . '</th>';
                 $html .= '</tr>';
@@ -279,28 +279,26 @@ class ReportController extends Controller
                     $t = $stat['teacher'];
                     $deptName = $isKm && isset($depts[$t->department]) ? $depts[$t->department]->name_kh : $t->department;
                     
-                    $present = $late = $leave = 0;
+                    $present = $late = 0;
                     $totalTeacherMins = 0;
                     foreach ($dateRange as $date) {
                         $rec = $records->get($date->toDateString(), collect())->get($t->id);
                         if ($rec) {
-                            if ($rec->morning_status === 'leave' || $rec->afternoon_status === 'leave') {
-                                $leave++;
-                            } elseif ($rec->morning_in || $rec->afternoon_in) {
+                            if ($rec->morning_in || $rec->afternoon_in) {
                                 if ($rec->morning_status === 'late' || $rec->afternoon_status === 'late') $late++;
                                 else $present++;
                             }
                             if ($rec->morning_in && $rec->morning_out) {
-                                $totalTeacherMins += Carbon::createFromTimeString($rec->morning_in)
-                                    ->diffInMinutes(Carbon::createFromTimeString($rec->morning_out));
+                                $totalTeacherMins += \Carbon\Carbon::createFromTimeString($rec->morning_in)
+                                    ->diffInMinutes(\Carbon\Carbon::createFromTimeString($rec->morning_out));
                             }
                             if ($rec->afternoon_in && $rec->afternoon_out) {
-                                $totalTeacherMins += Carbon::createFromTimeString($rec->afternoon_in)
-                                    ->diffInMinutes(Carbon::createFromTimeString($rec->afternoon_out));
+                                $totalTeacherMins += \Carbon\Carbon::createFromTimeString($rec->afternoon_in)
+                                    ->diffInMinutes(\Carbon\Carbon::createFromTimeString($rec->afternoon_out));
                             }
                         }
                     }
-                    $absent = max(0, $totalWorkingDays - $present - $late - $leave);
+                    $absent = max(0, $totalWorkingDays - $present - $late);
                     $rate = $totalWorkingDays > 0 ? round(($present + $late) / $totalWorkingDays * 100, 1) : 0;
                     $workHoursLabel = $totalTeacherMins > 0
                         ? floor($totalTeacherMins / 60) . 'h ' . ($totalTeacherMins % 60) . 'm'
@@ -314,7 +312,7 @@ class ReportController extends Controller
                     $html .= '<td class="tc">' . $present . '</td>';
                     $html .= '<td class="tc">' . $late . '</td>';
                     $html .= '<td class="tc">' . $absent . '</td>';
-                    $html .= '<td class="tc">' . $leave . '</td>';
+                    $html .= '<td class="tc">' . $totalWorkingDays . '</td>';
                     $html .= '<td class="tc" style="font-weight:bold;color:#1a73e8;">' . $workHoursLabel . '</td>';
                     $html .= '<td class="tc">' . $rate . '%</td>';
                     $html .= '</tr>';
