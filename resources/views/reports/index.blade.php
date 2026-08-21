@@ -670,9 +670,9 @@
                 <thead>
                     <tr>
                         <th style="width:40px;">#</th>
-                        <th>{{ __('Teacher ID') }}</th>
-                        <th>{{ __('Teacher Name') }}</th>
-                        <th>{{ __('Department') }}</th>
+                        <th style="min-width:120px;">{{ __('Teacher ID') }}</th>
+                        <th style="min-width:260px; padding-left:1.25rem; padding-right:1.25rem;">{{ __('Teacher Name') }}</th>
+                        <th style="min-width:220px; padding-left:1.25rem; padding-right:1.25rem;">{{ __('Department') }}</th>
                         <th style="text-align:center;">{{ __('Present') }}</th>
                         <th style="text-align:center;">{{ __('Late') }}</th>
                         <th style="text-align:center;">{{ __('Absent') }}</th>

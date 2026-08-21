@@ -638,15 +638,6 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                         <div style="flex: 1;">
                             <h4 style="margin: 0; font-size: 1rem;">{{ __('Full Database Backup & Import (.sql / .sqlite)') }}</h4>
                             <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Export system database or restore from a local backup file.') }}</p>
-                            @php
-                                $currentDriver = config('database.default');
-                                $localDbInfo = $currentDriver === 'mysql' 
-                                    ? 'MySQL (Local XAMPP): ' . config('database.connections.mysql.host') . ':' . config('database.connections.mysql.port') . ' / database: ' . config('database.connections.mysql.database')
-                                    : 'SQLite Path: ' . database_path('database.sqlite');
-                            @endphp
-                            <div style="font-size: 0.75rem; color: var(--primary); margin-top: 4px; font-family: 'JetBrains Mono', monospace; font-weight: 600;">
-                                <i class="ph ph-folder" style="vertical-align: middle; margin-right: 2px;"></i> {{ $localDbInfo }}
-                            </div>
                         </div>
                         <div style="display: flex; gap: 0.75rem;">
                             <a href="{{ route('settings.database.export') }}" class="btn-secondary" style="color: #3b82f6; border-color: rgba(59, 130, 246, 0.5); background: rgba(59, 130, 246, 0.08);">

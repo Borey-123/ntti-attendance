@@ -551,5 +551,11 @@
     "Absent Report": "របាយការណ៍អវត្តមាន",
     "Late Report": "របាយការណ៍យឺត",
     "Working Days": "ថ្ងៃធ្វើការ",
-    "Monthly Attendance": "វត្តមានប្រចាំខែ"
+    "Monthly Attendance": "វត្តមានប្រចាំខែ",
+    "Attendance Database Report (XLS)": "របាយការណ៍មូលដ្ឋានទិន្នន័យវត្តមាន (XLS)",
+    "Download a formatted spreadsheet of all attendance logs.": "ទាញយកសន្លឹកកិច្ចការដែលបានរៀបចំទម្រង់នៃកំណត់ត្រាវត្តមានទាំងអស់។",
+    "Full Database Backup & Import (.sql / .sqlite)": "ការបម្រុងទុក និងនាំចូលមូលដ្ឋានទិន្នន័យពេញលេញ (.sql / .sqlite)",
+    "Export system database or restore from a local backup file.": "នាំចេញមូលដ្ឋានទិន្នន័យប្រព័ន្ធ ឬស្តារឡើងវិញពីឯកសារបម្រុងទុកក្នុងស្រុក។",
+    "Export DB File": "នាំចេញឯកសារ DB",
+    "Import DB File": "នាំចូលឯកសារ DB"
 }

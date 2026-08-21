@@ -260,12 +260,12 @@ class ReportController extends Controller
         
         switch ($exportType) {
             case 'monthly':
-                $html .= '<table border="1" cellpadding="6" style="border-collapse:collapse;width:100%;">';
+                $html .= '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;">';
                 $html .= '<tr>';
                 $html .= '<th ' . $thStyle . ' width="40">#</th>';
-                $html .= '<th ' . $thStyle . ' width="100">' . __('Teacher ID') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="250" style="min-width:250px;white-space:nowrap;">' . __('Teacher Name') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="220" style="min-width:220px;white-space:nowrap;">' . __('Department') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="120">' . __('Teacher ID') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="280" style="min-width:280px;white-space:nowrap;padding:12px 16px;">' . __('Teacher Name') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="250" style="min-width:250px;white-space:nowrap;padding:12px 16px;">' . __('Department') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="80">' . __('Present') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="80">' . __('Late') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="80">' . __('Absent') . '</th>';
@@ -308,8 +308,8 @@ class ReportController extends Controller
                     $html .= '<tr>';
                     $html .= '<td class="tc">' . $sRow++ . '</td>';
                     $html .= '<td class="tc" style="mso-number-format:\'\@\';">' . htmlspecialchars($t->employee_id ?? '') . '</td>';
-                    $html .= '<td style="white-space:nowrap;min-width:250px;">' . htmlspecialchars($teacherName) . '</td>';
-                    $html .= '<td style="white-space:nowrap;min-width:220px;">' . htmlspecialchars($deptName ?? '') . '</td>';
+                    $html .= '<td style="white-space:nowrap;min-width:280px;padding:10px 16px;">' . htmlspecialchars($teacherName) . '</td>';
+                    $html .= '<td style="white-space:nowrap;min-width:250px;padding:10px 16px;">' . htmlspecialchars($deptName ?? '') . '</td>';
                     $html .= '<td class="tc">' . $present . '</td>';
                     $html .= '<td class="tc">' . $late . '</td>';
                     $html .= '<td class="tc">' . $absent . '</td>';
@@ -322,12 +322,12 @@ class ReportController extends Controller
                 break;
                 
             case 'absent':
-                $html .= '<table border="1" cellpadding="6" style="border-collapse:collapse;width:100%;">';
+                $html .= '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;">';
                 $html .= '<tr>';
                 $html .= '<th ' . $thStyle . ' width="40">No.</th>';
-                $html .= '<th ' . $thStyle . ' width="100">' . __('Teacher ID') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="200">' . __('Teacher Name') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="150">' . __('Department') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="120">' . __('Teacher ID') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="280" style="min-width:280px;white-space:nowrap;padding:12px 16px;">' . __('Teacher Name') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="250" style="min-width:250px;white-space:nowrap;padding:12px 16px;">' . __('Department') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="120">' . __('Absent Date') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="120">' . __('Day') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="100">' . __('Status') . '</th>';
@@ -336,6 +336,7 @@ class ReportController extends Controller
                 
                 $rowNum = 1;
                 foreach ($allTeachers as $t) {
+                    $teacherName = $t->name_kh ? ($t->name_kh . ' ' . $t->name) : $t->name;
                     $deptName = $isKm && isset($depts[$t->department]) ? $depts[$t->department]->name_kh : $t->department;
                     foreach ($dateRange as $date) {
                         $rec = $records->get($date->toDateString(), collect())->get($t->id);
@@ -345,8 +346,8 @@ class ReportController extends Controller
                             $html .= '<tr>';
                             $html .= '<td class="tc">' . $rowNum++ . '</td>';
                             $html .= '<td class="tc" style="mso-number-format:\'\\@\';">' . htmlspecialchars($t->employee_id ?? '') . '</td>';
-                            $html .= '<td>' . htmlspecialchars($t->name) . '</td>';
-                            $html .= '<td class="tc">' . htmlspecialchars($deptName ?? '') . '</td>';
+                            $html .= '<td style="white-space:nowrap;min-width:280px;padding:10px 16px;">' . htmlspecialchars($teacherName) . '</td>';
+                            $html .= '<td style="white-space:nowrap;min-width:250px;padding:10px 16px;">' . htmlspecialchars($deptName ?? '') . '</td>';
                             $html .= '<td class="tc">' . $date->format('d/m/Y') . '</td>';
                             $html .= '<td class="tc">' . $date->format('l') . '</td>';
                             $html .= '<td class="tc absent">' . __('Absent') . '</td>';
@@ -359,12 +360,12 @@ class ReportController extends Controller
                 break;
                 
             case 'late':
-                $html .= '<table border="1" cellpadding="6" style="border-collapse:collapse;width:100%;">';
+                $html .= '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;">';
                 $html .= '<tr>';
                 $html .= '<th ' . $thStyle . ' width="40">No.</th>';
-                $html .= '<th ' . $thStyle . ' width="100">' . __('Teacher ID') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="200">' . __('Teacher Name') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="150">' . __('Department') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="120">' . __('Teacher ID') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="280" style="min-width:280px;white-space:nowrap;padding:12px 16px;">' . __('Teacher Name') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="250" style="min-width:250px;white-space:nowrap;padding:12px 16px;">' . __('Department') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="120">' . __('Date') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="100">' . __('Check In') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="120">' . __('Expected Time') . '</th>';
@@ -380,6 +381,7 @@ class ReportController extends Controller
                     foreach ($allTeachers as $t) {
                         $rec = $dayRecs->get($t->id);
                         if ($rec && ($rec->morning_status === 'late' || $rec->afternoon_status === 'late')) {
+                            $teacherName = $t->name_kh ? ($t->name_kh . ' ' . $t->name) : $t->name;
                             $deptName = $isKm && isset($depts[$t->department]) ? $depts[$t->department]->name_kh : $t->department;
                             
                             $session = 'Morning'; $checkIn = $rec->morning_in; $cutoff = $morningCutoff;
@@ -392,8 +394,8 @@ class ReportController extends Controller
                             $html .= '<tr>';
                             $html .= '<td class="tc">' . $rowNum++ . '</td>';
                             $html .= '<td class="tc" style="mso-number-format:\'\\@\';">' . htmlspecialchars($t->employee_id ?? '') . '</td>';
-                            $html .= '<td>' . htmlspecialchars($t->name) . '</td>';
-                            $html .= '<td class="tc">' . htmlspecialchars($deptName ?? '') . '</td>';
+                            $html .= '<td style="white-space:nowrap;min-width:280px;padding:10px 16px;">' . htmlspecialchars($teacherName) . '</td>';
+                            $html .= '<td style="white-space:nowrap;min-width:250px;padding:10px 16px;">' . htmlspecialchars($deptName ?? '') . '</td>';
                             $html .= '<td class="tc">' . $date->format('d/m/Y') . '</td>';
                             $html .= '<td class="tc">' . ($checkIn ? Carbon::createFromTimeString($checkIn)->format('H:i') : '-') . '</td>';
                             $html .= '<td class="tc">' . $cutoff . '</td>';
@@ -406,12 +408,12 @@ class ReportController extends Controller
                 break;
                 
             case 'leave':
-                $html .= '<table border="1" cellpadding="6" style="border-collapse:collapse;width:100%;">';
+                $html .= '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;">';
                 $html .= '<tr>';
                 $html .= '<th ' . $thStyle . ' width="40">No.</th>';
-                $html .= '<th ' . $thStyle . ' width="100">' . __('Teacher ID') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="200">' . __('Teacher Name') . '</th>';
-                $html .= '<th ' . $thStyle . ' width="150">' . __('Department') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="120">' . __('Teacher ID') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="280" style="min-width:280px;white-space:nowrap;padding:12px 16px;">' . __('Teacher Name') . '</th>';
+                $html .= '<th ' . $thStyle . ' width="250" style="min-width:250px;white-space:nowrap;padding:12px 16px;">' . __('Department') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="120">' . __('Leave Date') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="120">' . __('Leave Type') . '</th>';
                 $html .= '<th ' . $thStyle . ' width="100">' . __('Status') . '</th>';
@@ -424,14 +426,15 @@ class ReportController extends Controller
                     foreach ($allTeachers as $t) {
                         $rec = $dayRecs->get($t->id);
                         if ($rec && ($rec->morning_status === 'leave' || $rec->afternoon_status === 'leave')) {
+                            $teacherName = $t->name_kh ? ($t->name_kh . ' ' . $t->name) : $t->name;
                             $deptName = $isKm && isset($depts[$t->department]) ? $depts[$t->department]->name_kh : $t->department;
                             $leaveType = ($rec->morning_status === 'leave' && $rec->afternoon_status === 'leave') ? 'Full Day' : (($rec->morning_status === 'leave') ? 'Morning' : 'Afternoon');
                             
                             $html .= '<tr>';
                             $html .= '<td class="tc">' . $rowNum++ . '</td>';
                             $html .= '<td class="tc" style="mso-number-format:\'\\@\';">' . htmlspecialchars($t->employee_id ?? '') . '</td>';
-                            $html .= '<td>' . htmlspecialchars($t->name) . '</td>';
-                            $html .= '<td class="tc">' . htmlspecialchars($deptName ?? '') . '</td>';
+                            $html .= '<td style="white-space:nowrap;min-width:280px;padding:10px 16px;">' . htmlspecialchars($teacherName) . '</td>';
+                            $html .= '<td style="white-space:nowrap;min-width:250px;padding:10px 16px;">' . htmlspecialchars($deptName ?? '') . '</td>';
                             $html .= '<td class="tc">' . $date->format('d/m/Y') . '</td>';
                             $html .= '<td class="tc">' . $leaveType . '</td>';
                             $html .= '<td class="tc present">' . __('Leave') . '</td>';
