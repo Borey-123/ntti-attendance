@@ -840,8 +840,7 @@
                                 <option value="present">✓ {{ __('Present') }}</option>
                                 <option value="late">⏰ {{ __('Late') }}</option>
                                 <option value="absent">✗ {{ __('Absent') }}</option>
-                                <option value="leave">📋 {{ __('Leave') }}</option>
-                            </select>
+                                                            </select>
                         </div>
                     </div>
                 </div>
@@ -868,8 +867,7 @@
                                 <option value="present">✓ {{ __('Present') }}</option>
                                 <option value="late">⏰ {{ __('Late') }}</option>
                                 <option value="absent">✗ {{ __('Absent') }}</option>
-                                <option value="leave">📋 {{ __('Leave') }}</option>
-                            </select>
+                                                            </select>
                         </div>
                     </div>
                 </div>
@@ -925,8 +923,7 @@
                             <option value="present">Present</option>
                             <option value="late">Late</option>
                             <option value="absent">Absent</option>
-                            <option value="leave">Leave</option>
-                        </select>
+                                                    </select>
                     </div>
                 </div>
 
@@ -947,8 +944,7 @@
                             <option value="present">Present</option>
                             <option value="late">Late</option>
                             <option value="absent">Absent</option>
-                            <option value="leave">Leave</option>
-                        </select>
+                                                    </select>
                     </div>
                 </div>
                 

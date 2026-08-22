@@ -58,6 +58,13 @@ class AttendanceController extends Controller
                 $absentTeachers = collect();
             }
 
+            // Shift-specific Absent Teachers
+            $mPresentIds = $attendance->filter(fn($a) => !empty($a->morning_in) || in_array($a->morning_status, ['present', 'late']))->pluck('teacher_id')->toArray();
+            $morningAbsentTeachers = $isWorkingDay ? (clone $teacherBaseQuery)->whereNotIn('id', $mPresentIds)->get() : collect();
+
+            $aPresentIds = $attendance->filter(fn($a) => !empty($a->afternoon_in) || in_array($a->afternoon_status, ['present', 'late']))->pluck('teacher_id')->toArray();
+            $afternoonAbsentTeachers = $isWorkingDay ? (clone $teacherBaseQuery)->whereNotIn('id', $aPresentIds)->get() : collect();
+
             // Stats
             $presentCount = (int)$attendance->count();
             $absentCount  = (int)$absentTeachers->count();
@@ -165,6 +172,8 @@ class AttendanceController extends Controller
                 return response()->json([
                     'attendance' => $attendance,
                     'absent_teachers' => $absentTeachers,
+                    'morning_absent_teachers' => $morningAbsentTeachers,
+                    'afternoon_absent_teachers' => $afternoonAbsentTeachers,
                     'present_count' => $presentCount,
                     'late_count' => $lateCount,
                     'absent_count' => $absentCount,
@@ -181,7 +190,7 @@ class AttendanceController extends Controller
             }
 
             return view('dashboard', compact(
-                'attendance', 'absentTeachers', 'presentCount', 'absentCount', 'lateCount',
+                'attendance', 'absentTeachers', 'morningAbsentTeachers', 'afternoonAbsentTeachers', 'presentCount', 'absentCount', 'lateCount',
                 'totalTeachers', 'totalRfidTeachers', 'totalDepartments', 'checkinCount', 'totalScans', 'currentlyCheckedInCount', 
                 'currentlyCheckedOutCount', 'rate', 'trendData', 'topOnTime', 'topLate', 'departments'
             ));

@@ -267,7 +267,7 @@
                     <div class="psi-val" id="stat-late" style="color: #f59e0b;">{{ $lateCount ?? 0 }}</div>
                     <div class="psi-label">{{ __('Late') }}</div>
                 </div>
-                <div class="psi stat-card" id="card-absent" onclick="setDashboardFilter('absent')">
+                <div class="psi stat-card" id="card-absent" onclick="showShiftAbsentModal()">
                     <div class="psi-icon" style="background: rgba(239,68,68,0.1); color: #ef4444;"><i class="ph ph-x-circle"></i></div>
                     <div class="psi-val" id="stat-absent" style="color: #ef4444;">{{ $absentCount ?? 0 }}</div>
                     <div class="psi-label">{{ __('Absent') }}</div>
@@ -718,6 +718,32 @@
     })();
 })();
 </script>
+
+
+<!-- SHIFT ABSENT MODAL -->
+<div class="modal-overlay" id="shiftAbsentModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-card, #fff); width:500px; max-width:90%; border-radius:1rem; padding:2rem; box-shadow:0 10px 25px rgba(0,0,0,0.2); max-height:80vh; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+            <h3 style="margin:0; color:var(--text-main, #333);"><i class="ph ph-x-circle" style="color:var(--danger, #ef4444); margin-right:0.5rem;"></i> {{ __('Absent Teachers by Shift') }}</h3>
+            <button onclick="closeShiftAbsentModal()" style="background:none; border:none; font-size:1.5rem; color:var(--text-muted, #888); cursor:pointer;"><i class="ph ph-x"></i></button>
+        </div>
+        <div style="overflow-y:auto; flex:1; padding-right:1rem;">
+            <h4 style="color:var(--primary, #3b82f6); border-bottom:1px solid var(--border-color, #eee); padding-bottom:0.5rem; margin-bottom:1rem;">{{ __('Morning Shift') }} (<span id="modal-morning-count">{{ isset($morningAbsentTeachers) ? $morningAbsentTeachers->count() : 0 }}</span>)</h4>
+            <div id="modal-morning-list" style="margin-bottom:2rem; display:flex; flex-direction:column; gap:0.5rem;">
+                @foreach($morningAbsentTeachers ?? [] as $t)
+                <div style="display:flex; align-items:center; gap:0.5rem;"><i class="ph ph-user"></i> {{ $t->name }}</div>
+                @endforeach
+            </div>
+
+            <h4 style="color:var(--primary, #3b82f6); border-bottom:1px solid var(--border-color, #eee); padding-bottom:0.5rem; margin-bottom:1rem;">{{ __('Afternoon Shift') }} (<span id="modal-afternoon-count">{{ isset($afternoonAbsentTeachers) ? $afternoonAbsentTeachers->count() : 0 }}</span>)</h4>
+            <div id="modal-afternoon-list" style="display:flex; flex-direction:column; gap:0.5rem;">
+                @foreach($afternoonAbsentTeachers ?? [] as $t)
+                <div style="display:flex; align-items:center; gap:0.5rem;"><i class="ph ph-user"></i> {{ $t->name }}</div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+</div>
 
 @endsection
 
@@ -1678,6 +1704,7 @@
             updateStatValue('stat-present', data.present_count);
             updateStatValue('stat-late', data.late_count);
             updateStatValue('stat-absent', data.absent_count);
+            if(data.morning_absent_teachers) updateShiftAbsentLists(data.morning_absent_teachers, data.afternoon_absent_teachers);
             updateStatValue('stat-total', data.total);
             updateStatValue('stat-checkins', data.checkin_count);
             updateStatValue('stat-currently-in', data.currently_checked_in);
@@ -1846,6 +1873,35 @@
             if(document.getElementById('deviceLabelHero')) document.getElementById('deviceLabelHero').textContent = '{{ __("Device Unknown") }}';
         }
     }
+
+    
+    let currentMorningAbsent = @json($morningAbsentTeachers ?? []);
+    let currentAfternoonAbsent = @json($afternoonAbsentTeachers ?? []);
+
+    function showShiftAbsentModal() {
+        document.getElementById('shiftAbsentModal').style.display = 'flex';
+    }
+    function closeShiftAbsentModal() {
+        document.getElementById('shiftAbsentModal').style.display = 'none';
+    }
+
+    function updateShiftAbsentLists(morning, afternoon) {
+        currentMorningAbsent = morning || [];
+        currentAfternoonAbsent = afternoon || [];
+        
+        document.getElementById('modal-morning-count').innerText = currentMorningAbsent.length;
+        let mHtml = '';
+        currentMorningAbsent.forEach(t => { mHtml += '<div style="display:flex; align-items:center; gap:0.5rem;"><i class="ph ph-user"></i> ' + t.name + '</div>'; });
+        if(currentMorningAbsent.length === 0) mHtml = '<div style="color:var(--text-muted); font-style:italic;">All checked in</div>';
+        document.getElementById('modal-morning-list').innerHTML = mHtml;
+
+        document.getElementById('modal-afternoon-count').innerText = currentAfternoonAbsent.length;
+        let aHtml = '';
+        currentAfternoonAbsent.forEach(t => { aHtml += '<div style="display:flex; align-items:center; gap:0.5rem;"><i class="ph ph-user"></i> ' + t.name + '</div>'; });
+        if(currentAfternoonAbsent.length === 0) aHtml = '<div style="color:var(--text-muted); font-style:italic;">All checked in</div>';
+        document.getElementById('modal-afternoon-list').innerHTML = aHtml;
+    }
+
 
     function closeTeacherInsights() {
         document.getElementById('insightModal').classList.remove('active');
