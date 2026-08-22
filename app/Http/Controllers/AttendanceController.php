@@ -50,7 +50,6 @@ class AttendanceController extends Controller
                 });
             }
             
-            $isWorkingDay = !now()->isWeekend() && !\App\Models\Holiday::where('date', $today)->exists();
             
             if ($isWorkingDay) {
                 $absentTeachers = $absentQuery->get();
@@ -60,10 +59,10 @@ class AttendanceController extends Controller
 
             // Shift-specific Absent Teachers
             $mPresentIds = $attendance->filter(fn($a) => !empty($a->morning_in) || in_array($a->morning_status, ['present', 'late']))->pluck('teacher_id')->toArray();
-            $morningAbsentTeachers = $isWorkingDay ? (clone $teacherBaseQuery)->whereNotIn('id', $mPresentIds)->get() : collect();
+            $morningAbsentTeachers = (clone $teacherBaseQuery)->whereNotIn('id', $mPresentIds)->get();
 
             $aPresentIds = $attendance->filter(fn($a) => !empty($a->afternoon_in) || in_array($a->afternoon_status, ['present', 'late']))->pluck('teacher_id')->toArray();
-            $afternoonAbsentTeachers = $isWorkingDay ? (clone $teacherBaseQuery)->whereNotIn('id', $aPresentIds)->get() : collect();
+            $afternoonAbsentTeachers = (clone $teacherBaseQuery)->whereNotIn('id', $aPresentIds)->get();
 
             // Stats
             $presentCount = (int)$attendance->count();
