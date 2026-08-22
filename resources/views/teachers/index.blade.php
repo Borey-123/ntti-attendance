@@ -340,8 +340,10 @@
         }
         .id-card-logo {
             height: 8.5mm !important;
-            width: auto !important;
-            object-fit: contain !important;
+            width: 8.5mm !important;
+            object-fit: cover !important;
+            border-radius: 50% !important;
+            overflow: hidden !important;
             flex-shrink: 0 !important;
         }
         .id-card-header-titles {
