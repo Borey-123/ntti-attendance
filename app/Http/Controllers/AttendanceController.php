@@ -51,11 +51,7 @@ class AttendanceController extends Controller
             }
             
             
-            if ($isWorkingDay) {
-                $absentTeachers = $absentQuery->get();
-            } else {
-                $absentTeachers = collect();
-            }
+            $absentTeachers = $absentQuery->get();
 
             // Shift-specific Absent Teachers
             $mPresentIds = $attendance->filter(fn($a) => !empty($a->morning_in) || in_array($a->morning_status, ['present', 'late']))->pluck('teacher_id')->toArray();
