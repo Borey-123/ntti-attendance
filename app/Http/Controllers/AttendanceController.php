@@ -361,6 +361,29 @@ class AttendanceController extends Controller
         }
 
         $today = $now->toDateString();
+        
+        // --- Working Day Check ---
+        $workingDaysRaw = Setting::getValue('working_days', '["Mon","Tue","Wed","Thu","Fri","Sat"]');
+        $workingDays = json_decode($workingDaysRaw, true) ?: ['Mon','Tue','Wed','Thu','Fri','Sat'];
+        $todayAbbr = $now->format('D'); // e.g. 'Mon', 'Tue', ... 'Sun'
+        if (!in_array($todayAbbr, $workingDays)) {
+            \Illuminate\Support\Facades\DB::table('security_logs')->insert([
+                'action'     => 'failed_scan',
+                'target'     => $uid,
+                'details'    => 'Scanning not allowed on ' . $now->format('l') . ' (non-working day).',
+                'ip_address' => $ipAddress,
+                'timestamp'  => now(),
+            ]);
+            return response()->json([
+                'status'         => 'error',
+                'message'        => 'Today (' . $now->format('l') . ') is not a working day.',
+                'teacher_name'   => $teacher->name,
+                'teacher_name_kh'=> $teacher->name_kh,
+                'photo'          => $teacher->photo ? url($teacher->photo) : null,
+                'action'         => null,
+            ], 403);
+        }
+
         $record = Attendance::firstOrCreate(
             ['teacher_id' => $teacher->id, 'date' => $today],
             ['rfid_uid' => $uid] // Set UID on initial creation

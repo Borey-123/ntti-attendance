@@ -1146,10 +1146,17 @@ async function loadDaily(params) {
                     </td>
                     <td><span class="badge badge-${bc}" style="border-radius:2rem; padding: 0.4rem 0.8rem;">${statusLabel}</span></td>
                     <td class="col-source">
-                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); background: rgba(255,255,255,0.05); padding: 0.2rem 0.5rem; border-radius: 0.5rem;">
-                            ${r.source === 'Manual' ? '{{ __("Manual") }}' : (r.source === 'Portal' ? '{{ __("Portal") }}' : r.source)}
-                            ${r.source === 'Edited' ? ` <i class="ph ph-info" style="cursor:pointer; color:var(--primary);" onclick="viewHistory(${r.id})" title="View History"></i>` : ''}
-                        </span>
+                        ${(() => {
+                            const src = r.source || 'RFID';
+                            const note = r.manual_note ? ` title="${r.manual_note}"` : '';
+                            const historyIcon = `<i class="ph ph-clock-counter-clockwise" style="cursor:pointer; color:var(--primary); margin-left:0.25rem;" onclick="viewHistory(${r.id})" title="{{ __('View Edit History') }}"></i>`;
+                            if (src === 'Manual') {
+                                return `<span style="font-size:0.72rem;font-weight:800;color:var(--success,#10b981);background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);padding:0.2rem 0.55rem;border-radius:0.5rem;display:inline-flex;align-items:center;gap:0.3rem;"${note}><i class="ph ph-pencil-simple-line"></i> {{ __("Admin") }} ${historyIcon}</span>`;
+                            } else if (src.includes('Edited')) {
+                                return `<span style="font-size:0.72rem;font-weight:700;color:var(--warning,#f59e0b);background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);padding:0.2rem 0.55rem;border-radius:0.5rem;display:inline-flex;align-items:center;gap:0.3rem;"${note}><i class="ph ph-pencil-simple"></i> {{ __("Edited") }} ${historyIcon}</span>`;
+                            }
+                            return `<span style="font-size:0.72rem;font-weight:700;color:var(--text-secondary);background:rgba(255,255,255,0.05);padding:0.2rem 0.5rem;border-radius:0.5rem;">${src}</span>`;
+                        })()}
                     </td>
                     <td class="col-action">
                         <button onclick='openEditModal(${JSON.stringify(r).replace(/'/g, "&#39;")})' class="btn btn-sm" style="background: rgba(255,255,255,0.1); border: none; color: var(--text-primary); border-radius: 0.5rem; padding: 0.3rem 0.6rem;">
@@ -1699,22 +1706,29 @@ async function viewHistory(id) {
         
         let html = '';
         data.history.forEach(log => {
+            const isManual = log.action === 'Manual Attendance';
+            const actionColor = isManual ? 'var(--success,#10b981)' : 'var(--warning,#f59e0b)';
+            const actionIcon  = isManual ? 'ph-pencil-simple-line' : 'ph-pencil-simple';
+            const actionLabel = isManual ? '{{ __("Admin Entry") }}' : '{{ __("Admin Edit") }}';
             html += `<div style="margin-bottom:1rem; padding:1rem; border:1px solid var(--border); border-radius:0.5rem; background:rgba(255,255,255,0.02);">
-                <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.5rem;">${log.timestamp}</div>
-                <div style="font-weight:700; margin-bottom:0.5rem;">Reason: <span style="font-weight:400;">${log.new.reason || 'N/A'}</span></div>
+                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                    <span style="font-size:0.7rem; font-weight:800; color:${actionColor}; background:rgba(0,0,0,0.1); padding:0.15rem 0.5rem; border-radius:999px; display:inline-flex; align-items:center; gap:0.25rem;"><i class="${actionIcon}"></i> ${actionLabel}</span>
+                    <span style="font-size:0.78rem; color:var(--text-secondary); margin-left:auto;">${log.timestamp}</span>
+                </div>
+                <div style="font-weight:700; margin-bottom:0.5rem;">{{ __("Reason") }}: <span style="font-weight:400;">${log.new.reason || '—'}</span></div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
                     <div>
-                        <div style="font-weight:700; color:var(--danger); border-bottom:1px solid rgba(255,0,0,0.2); padding-bottom:0.2rem; margin-bottom:0.4rem;">Old</div>
+                        <div style="font-weight:700; color:var(--danger); border-bottom:1px solid rgba(255,0,0,0.2); padding-bottom:0.2rem; margin-bottom:0.4rem;">{{ __("Before") }}</div>
                         <div style="font-size:0.85rem;">
-                            Morning: ${log.old.morning_in||'--'} - ${log.old.morning_out||'--'} (${log.old.morning_status||''})<br>
-                            Afternoon: ${log.old.afternoon_in||'--'} - ${log.old.afternoon_out||'--'} (${log.old.afternoon_status||''})
+                            {{ __("Morning") }}: ${log.old.morning_in||'--'} - ${log.old.morning_out||'--'} (${log.old.morning_status||''})<br>
+                            {{ __("Afternoon") }}: ${log.old.afternoon_in||'--'} - ${log.old.afternoon_out||'--'} (${log.old.afternoon_status||''})
                         </div>
                     </div>
                     <div>
-                        <div style="font-weight:700; color:var(--success); border-bottom:1px solid rgba(0,255,0,0.2); padding-bottom:0.2rem; margin-bottom:0.4rem;">New</div>
+                        <div style="font-weight:700; color:var(--success); border-bottom:1px solid rgba(0,255,0,0.2); padding-bottom:0.2rem; margin-bottom:0.4rem;">{{ __("After") }}</div>
                         <div style="font-size:0.85rem;">
-                            Morning: ${log.new.morning_in||'--'} - ${log.new.morning_out||'--'} (${log.new.morning_status||''})<br>
-                            Afternoon: ${log.new.afternoon_in||'--'} - ${log.new.afternoon_out||'--'} (${log.new.afternoon_status||''})
+                            {{ __("Morning") }}: ${log.new.morning_in||'--'} - ${log.new.morning_out||'--'} (${log.new.morning_status||''})<br>
+                            {{ __("Afternoon") }}: ${log.new.afternoon_in||'--'} - ${log.new.afternoon_out||'--'} (${log.new.afternoon_status||''})
                         </div>
                     </div>
                 </div>

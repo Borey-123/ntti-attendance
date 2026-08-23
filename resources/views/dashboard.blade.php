@@ -722,25 +722,53 @@
 
 <!-- SHIFT ABSENT MODAL -->
 <div class="modal-overlay" id="shiftAbsentModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:var(--bg-card, #fff); width:500px; max-width:90%; border-radius:1rem; padding:2rem; box-shadow:0 10px 25px rgba(0,0,0,0.2); max-height:80vh; display:flex; flex-direction:column;">
+    <div style="background:var(--bg-card, #fff); width:560px; max-width:95%; border-radius:1rem; padding:2rem; box-shadow:0 10px 25px rgba(0,0,0,0.2); max-height:85vh; display:flex; flex-direction:column;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
             <h3 style="margin:0; color:var(--text-main, #333);"><i class="ph ph-x-circle" style="color:var(--danger, #ef4444); margin-right:0.5rem;"></i> {{ __('Absent Teachers by Shift') }}</h3>
             <button onclick="closeShiftAbsentModal()" style="background:none; border:none; font-size:1.5rem; color:var(--text-muted, #888); cursor:pointer;"><i class="ph ph-x"></i></button>
         </div>
-        <div style="overflow-y:auto; flex:1; padding-right:1rem;">
-            <h4 style="color:var(--primary, #3b82f6); border-bottom:1px solid var(--border-color, #eee); padding-bottom:0.5rem; margin-bottom:1rem;">{{ __('Morning Shift') }} (<span id="modal-morning-count">{{ isset($morningAbsentTeachers) ? $morningAbsentTeachers->count() : 0 }}</span>)</h4>
-            <div id="modal-morning-list" style="margin-bottom:2rem; display:flex; flex-direction:column; gap:0.5rem;">
-                @foreach($morningAbsentTeachers ?? [] as $t)
-                <div style="display:flex; align-items:center; gap:0.5rem;"><i class="ph ph-user"></i> {{ $t->name }}</div>
-                @endforeach
+        <div style="overflow-y:auto; flex:1; padding-right:0.5rem;">
+
+            {{-- Morning Shift Absent --}}
+            <h4 style="display:flex; align-items:center; gap:0.5rem; color:var(--warning, #f59e0b); border-bottom:1px solid var(--border-color, #eee); padding-bottom:0.5rem; margin-bottom:1rem;">
+                <i class="ph ph-sun-dim"></i> {{ __('Morning Shift') }}
+                <span style="margin-left:auto; background:rgba(245,158,11,0.15); color:var(--warning,#f59e0b); border-radius:999px; padding:0.1rem 0.6rem; font-size:0.8rem; font-weight:800;" id="modal-morning-count">{{ isset($morningAbsentTeachers) ? $morningAbsentTeachers->count() : 0 }}</span>
+            </h4>
+            <div id="modal-morning-list" style="margin-bottom:2rem; display:flex; flex-direction:column; gap:0.4rem;">
+                @forelse($morningAbsentTeachers ?? [] as $t)
+                <div style="display:flex; align-items:center; gap:0.5rem; padding:0.3rem 0.5rem; border-radius:0.5rem; background:rgba(255,255,255,0.03);"><i class="ph ph-user" style="color:var(--text-secondary);"></i> {{ $t->name }}</div>
+                @empty
+                <div style="color:var(--text-muted,#888); font-style:italic; font-size:0.85rem;">{{ __('All checked in') }}</div>
+                @endforelse
             </div>
 
-            <h4 style="color:var(--primary, #3b82f6); border-bottom:1px solid var(--border-color, #eee); padding-bottom:0.5rem; margin-bottom:1rem;">{{ __('Afternoon Shift') }} (<span id="modal-afternoon-count">{{ isset($afternoonAbsentTeachers) ? $afternoonAbsentTeachers->count() : 0 }}</span>)</h4>
-            <div id="modal-afternoon-list" style="display:flex; flex-direction:column; gap:0.5rem;">
-                @foreach($afternoonAbsentTeachers ?? [] as $t)
-                <div style="display:flex; align-items:center; gap:0.5rem;"><i class="ph ph-user"></i> {{ $t->name }}</div>
-                @endforeach
+            {{-- Afternoon Shift Absent --}}
+            <h4 style="display:flex; align-items:center; gap:0.5rem; color:var(--primary, #3b82f6); border-bottom:1px solid var(--border-color, #eee); padding-bottom:0.5rem; margin-bottom:1rem;">
+                <i class="ph ph-cloud-sun"></i> {{ __('Afternoon Shift') }}
+                <span style="margin-left:auto; background:rgba(59,130,246,0.15); color:var(--primary,#3b82f6); border-radius:999px; padding:0.1rem 0.6rem; font-size:0.8rem; font-weight:800;" id="modal-afternoon-count">{{ isset($afternoonAbsentTeachers) ? $afternoonAbsentTeachers->count() : 0 }}</span>
+            </h4>
+            <div id="modal-afternoon-list" style="margin-bottom:2rem; display:flex; flex-direction:column; gap:0.4rem;">
+                @forelse($afternoonAbsentTeachers ?? [] as $t)
+                <div style="display:flex; align-items:center; gap:0.5rem; padding:0.3rem 0.5rem; border-radius:0.5rem; background:rgba(255,255,255,0.03);"><i class="ph ph-user" style="color:var(--text-secondary);"></i> {{ $t->name }}</div>
+                @empty
+                <div style="color:var(--text-muted,#888); font-style:italic; font-size:0.85rem;">{{ __('All checked in') }}</div>
+                @endforelse
             </div>
+
+            {{-- Full Day Absent (no scan at all) --}}
+            @php $fulldayAbsent = $absentTeachers ?? collect(); @endphp
+            <h4 style="display:flex; align-items:center; gap:0.5rem; color:var(--danger, #ef4444); border-bottom:1px solid var(--border-color, #eee); padding-bottom:0.5rem; margin-bottom:1rem;">
+                <i class="ph ph-calendar-x"></i> {{ __('Full Day (No Scan)') }}
+                <span style="margin-left:auto; background:rgba(239,68,68,0.15); color:var(--danger,#ef4444); border-radius:999px; padding:0.1rem 0.6rem; font-size:0.8rem; font-weight:800;" id="modal-fullday-count">{{ $fulldayAbsent->count() }}</span>
+            </h4>
+            <div id="modal-fullday-list" style="display:flex; flex-direction:column; gap:0.4rem;">
+                @forelse($fulldayAbsent as $t)
+                <div style="display:flex; align-items:center; gap:0.5rem; padding:0.3rem 0.5rem; border-radius:0.5rem; background:rgba(239,68,68,0.04);"><i class="ph ph-user-minus" style="color:var(--danger,#ef4444);"></i> {{ $t->name }}</div>
+                @empty
+                <div style="color:var(--text-muted,#888); font-style:italic; font-size:0.85rem;">{{ __('All checked in') }}</div>
+                @endforelse
+            </div>
+
         </div>
     </div>
 </div>
@@ -1704,7 +1732,7 @@
             updateStatValue('stat-present', data.present_count);
             updateStatValue('stat-late', data.late_count);
             updateStatValue('stat-absent', data.absent_count);
-            if(data.morning_absent_teachers) updateShiftAbsentLists(data.morning_absent_teachers, data.afternoon_absent_teachers);
+            if(data.morning_absent_teachers) updateShiftAbsentLists(data.morning_absent_teachers, data.afternoon_absent_teachers, data.absent_teachers);
             updateStatValue('stat-total', data.total);
             updateStatValue('stat-checkins', data.checkin_count);
             updateStatValue('stat-currently-in', data.currently_checked_in);
@@ -1885,21 +1913,41 @@
         document.getElementById('shiftAbsentModal').style.display = 'none';
     }
 
-    function updateShiftAbsentLists(morning, afternoon) {
-        currentMorningAbsent = morning || [];
+    function updateShiftAbsentLists(morning, afternoon, fullday) {
+        currentMorningAbsent   = morning  || [];
         currentAfternoonAbsent = afternoon || [];
-        
+
+        // Morning list
         document.getElementById('modal-morning-count').innerText = currentMorningAbsent.length;
         let mHtml = '';
-        currentMorningAbsent.forEach(t => { mHtml += '<div style="display:flex; align-items:center; gap:0.5rem;"><i class="ph ph-user"></i> ' + t.name + '</div>'; });
-        if(currentMorningAbsent.length === 0) mHtml = '<div style="color:var(--text-muted); font-style:italic;">All checked in</div>';
+        currentMorningAbsent.forEach(t => {
+            mHtml += `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;border-radius:0.5rem;background:rgba(255,255,255,0.03);"><i class="ph ph-user" style="color:var(--text-secondary);"></i> ${t.name}</div>`;
+        });
+        if (currentMorningAbsent.length === 0) mHtml = '<div style="color:var(--text-muted);font-style:italic;font-size:0.85rem;">' + '{{ __("All checked in") }}' + '</div>';
         document.getElementById('modal-morning-list').innerHTML = mHtml;
 
+        // Afternoon list
         document.getElementById('modal-afternoon-count').innerText = currentAfternoonAbsent.length;
         let aHtml = '';
-        currentAfternoonAbsent.forEach(t => { aHtml += '<div style="display:flex; align-items:center; gap:0.5rem;"><i class="ph ph-user"></i> ' + t.name + '</div>'; });
-        if(currentAfternoonAbsent.length === 0) aHtml = '<div style="color:var(--text-muted); font-style:italic;">All checked in</div>';
+        currentAfternoonAbsent.forEach(t => {
+            aHtml += `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;border-radius:0.5rem;background:rgba(255,255,255,0.03);"><i class="ph ph-user" style="color:var(--text-secondary);"></i> ${t.name}</div>`;
+        });
+        if (currentAfternoonAbsent.length === 0) aHtml = '<div style="color:var(--text-muted);font-style:italic;font-size:0.85rem;">' + '{{ __("All checked in") }}' + '</div>';
         document.getElementById('modal-afternoon-list').innerHTML = aHtml;
+
+        // Full Day Absent list (no scan at all)
+        const fdList = fullday || [];
+        const fdEl = document.getElementById('modal-fullday-count');
+        const fdHtmlEl = document.getElementById('modal-fullday-list');
+        if (fdEl) fdEl.innerText = fdList.length;
+        if (fdHtmlEl) {
+            let fdHtml = '';
+            fdList.forEach(t => {
+                fdHtml += `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;border-radius:0.5rem;background:rgba(239,68,68,0.04);"><i class="ph ph-user-minus" style="color:var(--danger,#ef4444);"></i> ${t.name}</div>`;
+            });
+            if (fdList.length === 0) fdHtml = '<div style="color:var(--text-muted);font-style:italic;font-size:0.85rem;">' + '{{ __("All checked in") }}' + '</div>';
+            fdHtmlEl.innerHTML = fdHtml;
+        }
     }
 
 

@@ -1101,6 +1101,22 @@ class ReportController extends Controller
         $att->rfid_uid = 'Manual';
         $att->save();
 
+        // Audit log for manual admin entry
+        $teacher = \App\Models\Teacher::find($request->teacher_id);
+        \App\Models\SecurityLog::create([
+            'admin_id'   => \Illuminate\Support\Facades\Auth::id(),
+            'action'     => 'Manual Attendance',
+            'target'     => 'Teacher: ' . ($teacher->name ?? 'Unknown') . ', Date: ' . \Carbon\Carbon::parse($request->date)->format('d/m/Y'),
+            'details'    => json_encode([
+                'attendance_id'    => $att->id,
+                'morning_status'   => $request->morning_status,
+                'afternoon_status' => $request->afternoon_status,
+                'reason'           => $request->reason,
+            ]),
+            'ip_address' => $request->ip(),
+            'timestamp'  => now(),
+        ]);
+
         return response()->json(['success' => true]);
     }
 
@@ -1168,7 +1184,7 @@ class ReportController extends Controller
 
     public function getAttendanceHistory($id): JsonResponse
     {
-        $logs = \App\Models\SecurityLog::where('action', 'Edit Attendance')
+        $logs = \App\Models\SecurityLog::whereIn('action', ['Edit Attendance', 'Manual Attendance'])
             ->where('details', 'LIKE', '%"attendance_id":' . $id . '%')
             ->orderBy('timestamp', 'desc')
             ->get()
@@ -1176,8 +1192,9 @@ class ReportController extends Controller
                 $details = json_decode($log->details, true);
                 return [
                     'timestamp' => \Carbon\Carbon::parse($log->timestamp)->format('d/m/Y H:i:s'),
-                    'old' => $details['old'] ?? [],
-                    'new' => $details['new'] ?? [],
+                    'action'    => $log->action,
+                    'old'       => $details['old'] ?? [],
+                    'new'       => $details['new'] ?? $details,
                 ];
             });
 
