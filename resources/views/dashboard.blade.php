@@ -334,13 +334,13 @@
                 <div class="psg-bg-icon"><i class="ph ph-buildings" style="color: #6366f1;"></i></div>
             </div>
 
-            <div class="psg-item stat-card" id="card-scans">
+            <div class="psg-item stat-card" id="card-admins" onclick="window.location.href='{{ route('settings.index') }}'">
                 <div class="psg-icon-wrap" style="background: linear-gradient(135deg, rgba(var(--primary-rgb),0.15), rgba(var(--primary-rgb),0.05));">
-                    <i class="ph ph-scan" style="color: var(--primary);"></i>
+                    <i class="ph ph-shield-check" style="color: var(--primary);"></i>
                 </div>
-                <div class="psg-val" style="color: var(--primary);"><span id="stat-total-scans">{{ $totalScans ?? 0 }}</span></div>
-                <div class="psg-label">{{ __('Total Scans Today') }}</div>
-                <div class="psg-bg-icon"><i class="ph ph-scan" style="color: var(--primary);"></i></div>
+                <div class="psg-val" style="color: var(--primary);"><span id="stat-total-admins">{{ $totalAdmins ?? 0 }}</span></div>
+                <div class="psg-label">{{ __('System Admins') }}</div>
+                <div class="psg-bg-icon"><i class="ph ph-shield-check" style="color: var(--primary);"></i></div>
             </div>
         </div>
     </div>
@@ -1739,7 +1739,7 @@
             updateStatValue('stat-currently-out', data.currently_checked_out);
             updateStatValue('stat-rfid', data.total_rfid_teachers);
             updateStatValue('stat-rate', data.attendance_rate + '%');
-            if (data.total_scans !== undefined) updateStatSilent('stat-total-scans', data.total_scans);
+            if (data.total_admins !== undefined) updateStatSilent('stat-total-admins', data.total_admins);
 
             // Trigger ECG pulse on every live data refresh
             if (typeof window.ecgTriggerBeat === 'function') {

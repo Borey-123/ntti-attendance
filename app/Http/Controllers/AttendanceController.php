@@ -91,6 +91,7 @@ class AttendanceController extends Controller
 
             $rate = $totalTeachers > 0 ? round(($presentCount / $totalTeachers) * 100, 1) : 0;
             $totalDepartments = (int)Department::count();
+            $totalAdmins = (int)\App\Models\User::count();
             $departments = Department::all();
 
 
@@ -175,6 +176,7 @@ class AttendanceController extends Controller
                     'total' => $totalTeachers,
                     'total_rfid_teachers' => $totalRfidTeachers,
                     'total_departments' => $totalDepartments,
+                    'total_admins' => $totalAdmins,
                     'checkin_count' => $checkinCount,
                     'total_scans' => $totalScans,
                     'currently_checked_in' => $currentlyCheckedInCount,
@@ -186,7 +188,7 @@ class AttendanceController extends Controller
 
             return view('dashboard', compact(
                 'attendance', 'absentTeachers', 'morningAbsentTeachers', 'afternoonAbsentTeachers', 'presentCount', 'absentCount', 'lateCount',
-                'totalTeachers', 'totalRfidTeachers', 'totalDepartments', 'checkinCount', 'totalScans', 'currentlyCheckedInCount', 
+                'totalTeachers', 'totalRfidTeachers', 'totalDepartments', 'totalAdmins', 'checkinCount', 'totalScans', 'currentlyCheckedInCount', 
                 'currentlyCheckedOutCount', 'rate', 'trendData', 'topOnTime', 'topLate', 'departments'
             ));
         } catch (\Exception $e) {
