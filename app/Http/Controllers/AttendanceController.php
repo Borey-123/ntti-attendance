@@ -578,6 +578,21 @@ class AttendanceController extends Controller
         $today = $now->toDateString();
         $timeString = $now->format('H:i:s');
 
+        // --- Working Day Check ---
+        $workingDaysRaw = Setting::getValue('working_days', '["Mon","Tue","Wed","Thu","Fri","Sat"]');
+        $workingDays = json_decode($workingDaysRaw, true) ?: ['Mon','Tue','Wed','Thu','Fri','Sat'];
+        $todayAbbr = $now->format('D'); // e.g. 'Mon', 'Tue', ... 'Sun'
+        if (!in_array($todayAbbr, $workingDays)) {
+            return response()->json([
+                'status'         => 'error',
+                'message'        => 'Today (' . $now->format('l') . ') is not a working day.',
+                'teacher_name'   => $teacher->name,
+                'teacher_name_kh'=> $teacher->name_kh,
+                'photo'          => $teacher->photo ? url($teacher->photo) : null,
+                'action'         => null,
+            ], 403);
+        }
+
         $record = Attendance::firstOrCreate(
             ['teacher_id' => $teacher->id, 'date' => $today]
         );
