@@ -397,7 +397,7 @@
                     </thead>
                     <tbody id="cardsTableBody">
                         @forelse($cards as $index => $card)
-                        <tr class="card-row" style="transition: all 0.2s;" data-name="{{ strtolower(($card->teacher->name ?? '') . ' ' . ($card->teacher->name_kh ?? '') . ' ' . ($card->teacher->employee_id ?? '') . ' ' . ($card->uid ?? '')) }}">
+                        <tr class="card-row" style="transition: all 0.2s;" data-name="{{ strtolower(($card->teacher?->name ?? '') . ' ' . ($card->teacher?->name_kh ?? '') . ' ' . ($card->teacher?->employee_id ?? '') . ' ' . ($card->uid ?? '')) }}">
                             <td style="text-align: center;">
                                 <div style="width: 28px; height: 28px; border-radius: 0.5rem; background: rgba(59, 130, 246, 0.08); color: #3b82f6; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem;">
                                     {{ $index + 1 }}
@@ -413,9 +413,9 @@
                                         @endif
                                     </div>
                                     <div>
-                                        <div style="font-weight:800; font-size: 1rem; color: var(--primary);">{{ $card->teacher->name_kh ?? '' }}</div>
-                                        <div style="font-weight:600; font-size: 0.85rem; color: var(--text-primary);">{{ $card->teacher->name ?? 'Unassigned' }}</div>
-                                        <div style="font-size:0.72rem; color:var(--text-muted); font-weight: 600;">{{ $card->teacher->employee_id ?? '' }} · {{ $card->teacher ? __($card->teacher->department) : 'N/A' }}</div>
+                                        <div style="font-weight:800; font-size: 1rem; color: var(--primary);">{{ $card->teacher?->name_kh ?? '' }}</div>
+                                        <div style="font-weight:600; font-size: 0.85rem; color: var(--text-primary);">{{ $card->teacher?->name ?? 'Unassigned' }}</div>
+                                        <div style="font-size:0.72rem; color:var(--text-muted); font-weight: 600;">{{ $card->teacher?->employee_id ?? '' }} · {{ $card->teacher ? __($card->teacher->department) : 'N/A' }}</div>
                                     </div>
                                 </div>
                             </td>
@@ -446,7 +446,7 @@
                                         </button>
                                     @endif
                                     <button class="btn btn-sm edit-btn" style="border-radius: 0.6rem; width: 34px; height: 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center;"
-                                            data-id="{{ $card->id }}" data-uid="{{ $card->uid }}" data-name="{{ $card->teacher->name }}" title="{{ __('Edit UID') }}">
+                                            data-id="{{ $card->id }}" data-uid="{{ $card->uid }}" data-name="{{ $card->teacher?->name ?? '' }}" title="{{ __('Edit UID') }}">
                                         <i class="ph ph-pencil-simple"></i>
                                     </button>
                                     <button class="btn btn-sm btn-danger" style="border-radius: 0.6rem; width: 34px; height: 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center;" onclick="deleteCard({{ $card->id }})" title="{{ __('Delete') }}">

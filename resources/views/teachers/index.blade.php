@@ -1352,4 +1352,10 @@
         }
     });
 </script>
+<style>
+#cropModal .cropper-view-box,
+#cropModal .cropper-face {
+    border-radius: 50%;
+}
+</style>
 @endpush

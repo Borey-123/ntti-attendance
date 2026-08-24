@@ -1421,13 +1421,19 @@
             .then(data => {
                 if (data.status === 'success') {
                     // Update image on page
-                    document.getElementById('portal-profile-img').src = data.photo_url;
+                    const imgEl = document.getElementById('portal-profile-img');
+                    if (imgEl) {
+                        imgEl.src = data.photo_url;
+                    } else {
+                        // If there was no photo previously, the img tag might not exist. Reload to show it.
+                        window.location.reload();
+                    }
                     closePortalCropper();
                     // If window.showToast exists use it, else alert
                     if (typeof window.showToast === 'function') {
                         window.showToast(data.message, 'success');
                     } else {
-                        alert(data.message);
+                        if (imgEl) alert(data.message); // don't alert if we're reloading anyway
                     }
                 } else {
                     alert(data.message || 'Error uploading photo.');
