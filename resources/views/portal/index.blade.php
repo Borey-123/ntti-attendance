@@ -686,14 +686,6 @@
 
 
         <div class="search-card">
-            
-            @if(session('success'))
-                <div class="error-msg" style="background: rgba(16, 185, 129, 0.1); color: var(--success); border-color: rgba(16, 185, 129, 0.2);">
-                    <i class="ph ph-check-circle" style="font-size:1.2rem; vertical-align:middle; margin-right:0.3rem;"></i>
-                    {{ session('success') }}
-                </div>
-            @endif
-
             @if($error)
                 <div class="error-msg" style="display:block; border-radius:0.5rem; padding:0.75rem; background:rgba(239,68,68,0.1); border:1px solid var(--danger);">
                     <strong>{{ __('Error:') }}</strong> {{ $error }}
@@ -701,33 +693,19 @@
                 </div>
             @endif
 
-            
-                            <div class="carousel-slide" style="min-width: 100%; flex: 0 0 100%;">
-                                <div style="font-weight: 700; color: var(--text-main); font-size: 0.95rem;">👋 {{ __('Welcome to the Portal') }}</div>
-                                <div style="font-size: 0.8rem; color: var(--text-sub); font-weight: 600; margin-top: 0.15rem;">{{ __('Have a great day teaching!') }}</div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-
-                <form action="{{ route('portal.index') }}" method="GET">
-                    <div class="form-group">
-                        <label>{{ __('Employee ID') }}</label>
-                        <div class="input-wrapper">
-                            <i class="ph ph-identification-badge"></i>
-                            <input type="text" id="employee_id_input" name="employee_id" class="form-control" placeholder="{{ __('e.g. T0005') }}" required value="{{ request('employee_id') }}" autocomplete="off">
-                        </div>
-                    </div>
-
-                    <div style="display:flex; flex-direction:column; gap:1rem;">
-                        <button type="submit" class="btn-check">
-                            <i class="ph ph-magnifying-glass"></i>
-                            {{ __('View My Attendance') }}
-                        </button>
-                    </div>
+            {{-- Auth Controls --}}
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <button onclick="openChangePinModal()" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--success); padding: 0.6rem 1rem; border-radius: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="ph ph-key"></i> {{ __('Change PIN') }}
+                </button>
+                <form action="{{ route('portal.logout') }}" method="POST" style="margin: 0;">
+                    @csrf
+                    <button type="submit" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--danger); padding: 0.6rem 1rem; border-radius: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="ph ph-sign-out"></i> {{ __('Logout') }}
+                    </button>
                 </form>
-            @else
-                <div id="resultArea" style="display:block;">
+            </div>
+
                     <div class="teacher-header" style="margin-bottom: 1rem;">
                         <div class="teacher-photo-wrapper">
                             @if($teacher->photo)
@@ -992,20 +970,6 @@
                         @endforelse
                     </div>
 
-                    
-                    <div style="display: flex; gap: 1rem; margin-top: 2.5rem;">
-                        <button onclick="openChangePasswordModal()" class="btn-back" style="flex: 1; border-color: var(--primary); color: var(--primary);">
-                            <i class="ph ph-lock-key"></i>
-                            {{ __('Change PIN') }}
-                        </button>
-                        <form action="{{ route('portal.logout') }}" method="POST" style="flex: 1; margin: 0;">
-                            @csrf
-                            <button type="submit" class="btn-back" style="width: 100%;">
-                                <i class="ph ph-sign-out"></i>
-                                {{ __('Logout') }}
-                            </button>
-                        </form>
-                    </div>
                 </div>
         </div>
 
@@ -1068,45 +1032,6 @@
             if (icon) icon.className = isDark ? 'ph ph-sun' : 'ph ph-moon';
         })();
     </script>
-
-    <div class="modal-overlay" id="changePasswordModal">
-        <div class="modal-content">
-            <h2 style="margin-top:0; font-size:1.5rem; font-weight:800; color:var(--text-main);">{{ __('Change Portal PIN') }}</h2>
-            <form action="{{ route('portal.change-password') }}" method="POST">
-                @csrf
-                <div class="form-group">
-                    <label>{{ __('Current PIN') }}</label>
-                    <div class="input-wrapper">
-                        <i class="ph ph-lock-key"></i>
-                        <input type="password" name="current_pin" class="form-control" required pattern="\d{6}" maxlength="6" inputmode="numeric" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>{{ __('New PIN (6 digits)') }}</label>
-                    <div class="input-wrapper">
-                        <i class="ph ph-lock-key"></i>
-                        <input type="password" name="new_pin" class="form-control" required pattern="\d{6}" maxlength="6" inputmode="numeric" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>{{ __('Confirm New PIN') }}</label>
-                    <div class="input-wrapper">
-                        <i class="ph ph-lock-key"></i>
-                        <input type="password" name="new_pin_confirmation" class="form-control" required pattern="\d{6}" maxlength="6" inputmode="numeric" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;">
-                    </div>
-                </div>
-                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                    <button type="button" class="btn-back" onclick="closeChangePasswordModal()" style="flex:1;">{{ __('Cancel') }}</button>
-                    <button type="submit" class="btn-check" style="flex:1; padding:1.1rem;">{{ __('Save PIN') }}</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    <script>
-        function openChangePasswordModal() { document.getElementById("changePasswordModal").classList.add("active"); }
-        function closeChangePasswordModal() { document.getElementById("changePasswordModal").classList.remove("active"); }
-    </script>
-
 </body>
 
 <script>
@@ -1377,4 +1302,38 @@
 <button onclick="openFaqModal()" class="floating-faq-btn">
     <i class="ph ph-question"></i>
 </button>
+{{-- Change PIN Modal --}}
+<div id="changePinModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 400px; padding: 2rem;">
+        <h3 style="margin-top:0; display:flex; align-items:center; gap:0.5rem; color:var(--text-main);">
+            <i class="ph ph-key" style="color:var(--primary);"></i> 
+            {{ __('Change Portal PIN') }}
+        </h3>
+        
+        <form action="{{ route('portal.change_pin') }}" method="POST">
+            @csrf
+            <div class="form-group">
+                <label>{{ __('Current PIN') }}</label>
+                <input type="password" name="current_pin" class="form-control" required pattern="\d{6}" maxlength="6" inputmode="numeric">
+            </div>
+            <div class="form-group">
+                <label>{{ __('New PIN (6 digits)') }}</label>
+                <input type="password" name="new_pin" class="form-control" required pattern="\d{6}" maxlength="6" inputmode="numeric">
+            </div>
+            <div class="form-group">
+                <label>{{ __('Confirm New PIN') }}</label>
+                <input type="password" name="new_pin_confirmation" class="form-control" required pattern="\d{6}" maxlength="6" inputmode="numeric">
+            </div>
+            <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+                <button type="button" class="btn-secondary" style="flex:1; margin:0;" onclick="closeChangePinModal()">{{ __('Cancel') }}</button>
+                <button type="submit" class="btn-check" style="flex:2; margin:0;">{{ __('Save PIN') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openChangePinModal() { document.getElementById('changePinModal').classList.add('active'); }
+    function closeChangePinModal() { document.getElementById('changePinModal').classList.remove('active'); }
+</script>
 </html>
