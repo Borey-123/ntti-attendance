@@ -408,7 +408,7 @@
                 @php
                     $pendingCorrections = \App\Models\AttendanceCorrection::where('status', 'pending')->count();
                 @endphp
-                <button onclick="window.location.href='{{ route('dashboard') }}'" title="{{ __('Pending Corrections') }}" class="hide-mobile" style="background:none; border:1px solid var(--border); color:#f59e0b; padding:0.4rem 0.5rem; cursor:pointer; display:flex; align-items:center; font-size:1rem; transition:all 0.15s; position: relative; margin-right: 0.2rem;">
+                <button onclick="localStorage.setItem('settings_tab', 'section-corrections'); window.location.href='{{ route('settings.index') }}'" title="{{ __('Pending Corrections') }}" class="hide-mobile" style="background:none; border:1px solid var(--border); color:#f59e0b; padding:0.4rem 0.5rem; cursor:pointer; display:flex; align-items:center; font-size:1rem; transition:all 0.15s; position: relative; margin-right: 0.2rem;">
                     <i class="ph ph-clipboard-text"></i>
                     @if($pendingCorrections > 0)
                         <span style="position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 0.6rem; font-weight: 800; padding: 0.1rem 0.3rem; border-radius: 10px; animation: livePulse 2s infinite;">{{ $pendingCorrections }}</span>
