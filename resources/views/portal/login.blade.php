@@ -272,6 +272,12 @@
                                   background: {{ app()->getLocale() === 'km' ? 'var(--primary)' : 'transparent' }};
                                   color: {{ app()->getLocale() === 'km' ? '#000' : 'var(--text-sub)' }};">KH</a>
                     </div>
+                    <button id="portalThemeBtn" onclick="togglePortalTheme()" title="Dark Mode"
+                            style="background: var(--card); border: 1px solid var(--border); backdrop-filter: blur(10px); color: var(--text-sub); width: 34px; height: 34px; border-radius: 0.75rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s; flex-shrink: 0;"
+                            onmouseover="this.style.borderColor='var(--primary)'; this.style.color='var(--primary)';"
+                            onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text-sub)';">
+                        <i id="portalThemeIcon" class="ph ph-moon"></i>
+                    </button>
                 </div>
             </div>
 
@@ -322,9 +328,41 @@
     </div>
 
     <script>
-        // Check local storage for theme
-        const savedTheme = localStorage.getItem('portalTheme') || 'light';
-        document.documentElement.setAttribute('data-theme', savedTheme);
+        // Portal-specific theme (separate from admin system and live monitor)
+        const savedPortalTheme = localStorage.getItem('portal_theme');
+        const sysDefault = '{{ \App\Models\Setting::getValue("default_theme", "dark") }}';
+        if (savedPortalTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else if (savedPortalTheme === 'light') {
+            document.documentElement.removeAttribute('data-theme');
+        } else if (!savedPortalTheme && sysDefault === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+
+        function togglePortalTheme() {
+            const html = document.documentElement;
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            const btn = document.getElementById('portalThemeBtn');
+            const icon = document.getElementById('portalThemeIcon');
+            if (isDark) {
+                html.removeAttribute('data-theme');
+                localStorage.setItem('portal_theme', 'light');
+                icon.className = 'ph ph-moon';
+                btn.title = 'Dark Mode';
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                localStorage.setItem('portal_theme', 'dark');
+                icon.className = 'ph ph-sun';
+                btn.title = 'Light Mode';
+            }
+        }
+
+        // Sync button icon on load
+        (function() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const icon = document.getElementById('portalThemeIcon');
+            if (icon) icon.className = isDark ? 'ph ph-sun' : 'ph ph-moon';
+        })();
     </script>
 </body>
 </html>
