@@ -1303,6 +1303,48 @@
         }
     });
 
+    function openResetPinModal(id, name) {
+        document.getElementById("reset_pin_teacher_id").value = id;
+        document.getElementById("reset_pin_teacher_name").textContent = name;
+        document.getElementById("reset_pin_input").value = "";
+        openModal("resetPinModal");
+    }
+
+    async function submitResetPin(e) {
+        e.preventDefault();
+        const id = document.getElementById("reset_pin_teacher_id").value;
+        const pin = document.getElementById("reset_pin_input").value;
+        const btn = e.target.querySelector("button[type=submit]");
+        const originalText = btn.innerHTML;
+        
+        btn.innerHTML = `<i class="ph ph-spinner ph-spin"></i>`;
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(`/api-web/teachers/${id}/reset-pin`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ pin: pin })
+            });
+            const data = await res.json();
+            
+            if (data.status === "success") {
+                window.showToast(data.message, "success");
+                closeModal("resetPinModal");
+            } else {
+                window.showToast(data.message || "Failed to reset PIN", "error");
+            }
+        } catch (err) {
+            window.showToast("Network Error", "error");
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('action') === 'register') {

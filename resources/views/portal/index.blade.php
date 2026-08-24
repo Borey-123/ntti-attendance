@@ -707,13 +707,20 @@
             </div>
 
                     <div class="teacher-header" style="margin-bottom: 1rem;">
-                        <div class="teacher-photo-wrapper">
+                        <div class="teacher-photo-wrapper" style="position: relative; cursor: pointer;" onclick="document.getElementById('portalPhotoInput').click()" title="{{ __('Change Profile Picture') }}">
                             @if($teacher->photo)
                                 <img src="{{ to_asset_url($teacher->photo) }}" class="teacher-photo" alt="{{ $teacher->name }}">
                             @else
                                 <div class="teacher-photo" style="display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; background:var(--primary); font-size:2rem;">{{ substr($teacher->name, 0, 1) }}</div>
                             @endif
+                            <div style="position: absolute; bottom: 5px; right: 5px; background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; border: 2px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 10;">
+                                <i class="ph ph-camera"></i>
+                            </div>
                         </div>
+                        <form id="portalPhotoForm" action="{{ route('portal.change-photo') }}" method="POST" enctype="multipart/form-data" style="display: none;">
+                            @csrf
+                            <input type="file" id="portalPhotoInput" name="photo" accept="image/*" onchange="document.getElementById('portalPhotoForm').submit()">
+                        </form>
                         <div class="teacher-meta">
                             <h2 style="color:var(--primary); margin-bottom: 0.25rem;">{{ $teacher->name_kh ?: '' }}</h2>
                             <h3 style="margin:0; font-size:1.1rem; font-weight: 700; opacity:0.8;">{{ $teacher->name }}</h3>

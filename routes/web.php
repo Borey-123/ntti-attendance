@@ -72,6 +72,7 @@ Route::get('/portal', [PortalController::class, 'index'])->name('portal.index');
 Route::post('/portal/login', [PortalController::class, 'login'])->name('portal.login.post');
 Route::post('/portal/logout', [PortalController::class, 'logout'])->name('portal.logout');
 Route::post('/portal/change-password', [PortalController::class, 'changePassword'])->name('portal.change-password');
+Route::post('/portal/change-photo', [PortalController::class, 'changePhoto'])->name('portal.change-photo');
 Route::get('/api-web/portal/search', [PortalController::class, 'search'])->name('api.portal.search');
 
 // Architecture Diagram (public, no auth needed)

@@ -243,6 +243,37 @@ class PortalController extends Controller
         return redirect()->route('portal.index')->with('success', 'PIN changed successfully. Please log in with your new PIN.');
     }
 
+    public function changePhoto(Request $request)
+    {
+        $teacherId = session('portal_teacher_id');
+        if (!$teacherId) {
+            return redirect()->route('portal.index')->with('error', 'Unauthorized.');
+        }
+
+        $request->validate([
+            'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120'
+        ]);
+
+        $teacher = Teacher::find($teacherId);
+
+        if ($request->hasFile('photo')) {
+            // Delete old photo if exists
+            if ($teacher->photo && file_exists(public_path($teacher->photo))) {
+                unlink(public_path($teacher->photo));
+            }
+            
+            $file = $request->file('photo');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('uploads/teachers'), $filename);
+            $teacher->photo = 'uploads/teachers/' . $filename;
+            $teacher->save();
+            
+            return redirect()->back()->with('success', 'Profile picture updated successfully!');
+        }
+
+        return redirect()->back()->with('error', 'No photo provided.');
+    }
+
     public function export(Request $request)
     {
         $id = trim($request->employee_id);
