@@ -204,6 +204,8 @@ class PortalController extends Controller
         session(['portal_teacher_id' => $teacher->id]);
         session()->regenerate();
 
+        \App\Models\SecurityLog::recordPortal('Portal Login', 'Teacher ID: ' . $teacher->employee_id, 'Teacher successfully logged in to the portal.');
+
         return redirect()->route('portal.index');
     }
 
@@ -240,6 +242,8 @@ class PortalController extends Controller
         session()->forget('portal_teacher_id');
         session()->regenerateToken();
 
+        \App\Models\SecurityLog::recordPortal('Portal PIN Reset', 'Teacher ID: ' . $teacher->employee_id, 'Teacher updated their portal PIN.');
+
         return redirect()->route('portal.index')->with('success', 'PIN changed successfully. Please log in with your new PIN.');
     }
 
@@ -268,9 +272,21 @@ class PortalController extends Controller
             $teacher->photo = 'uploads/teachers/' . $filename;
             $teacher->save();
             
+            \App\Models\SecurityLog::recordPortal('Portal Photo Update', 'Teacher ID: ' . $teacher->employee_id, 'Teacher uploaded a new profile picture.');
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'success', 
+                    'message' => 'Profile picture updated successfully!',
+                    'photo_url' => to_asset_url($teacher->photo)
+                ]);
+            }
             return redirect()->back()->with('success', 'Profile picture updated successfully!');
         }
 
+        if ($request->expectsJson()) {
+            return response()->json(['status' => 'error', 'message' => 'No photo provided.'], 400);
+        }
         return redirect()->back()->with('error', 'No photo provided.');
     }
 

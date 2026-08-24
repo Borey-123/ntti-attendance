@@ -34,4 +34,16 @@ class SecurityLog extends Model
             'timestamp' => now()
         ]);
     }
+
+    public static function recordPortal($action, $target, $details = null)
+    {
+        return self::create([
+            'admin_id' => null, // Explicitly null for portal actions
+            'action' => $action,
+            'target' => $target,
+            'ip_address' => request()->ip(),
+            'details' => is_array($details) ? json_encode($details) : $details,
+            'timestamp' => now()
+        ]);
+    }
 }

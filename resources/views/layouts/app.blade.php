@@ -404,6 +404,17 @@
                        data-title="ខ្មែរ">KH</a>
                 </div>
 
+                {{-- Pending Corrections Button --}}
+                @php
+                    $pendingCorrections = \App\Models\AttendanceCorrection::where('status', 'pending')->count();
+                @endphp
+                <button onclick="window.location.href='{{ route('dashboard') }}'" title="{{ __('Pending Corrections') }}" class="hide-mobile" style="background:none; border:1px solid var(--border); color:#f59e0b; padding:0.4rem 0.5rem; cursor:pointer; display:flex; align-items:center; font-size:1rem; transition:all 0.15s; position: relative; margin-right: 0.2rem;">
+                    <i class="ph ph-clipboard-text"></i>
+                    @if($pendingCorrections > 0)
+                        <span style="position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 0.6rem; font-weight: 800; padding: 0.1rem 0.3rem; border-radius: 10px; animation: livePulse 2s infinite;">{{ $pendingCorrections }}</span>
+                    @endif
+                </button>
+
                 {{-- Telegram Chats Button --}}
                 <button onclick="openTelegramChatsModal()" title="{{ __('View Recent Chat IDs') }}" class="hide-mobile" style="background:none; border:1px solid var(--border); color:#0088cc; padding:0.4rem 0.5rem; cursor:pointer; display:flex; align-items:center; font-size:1rem; transition:all 0.15s; position: relative;">
                     <i class="ph ph-telegram-logo"></i>
@@ -413,11 +424,8 @@
                 <button id="themeToggle" title="{{ __('Toggle Theme') }}" style="background:none; border:1px solid var(--border); color:var(--text-secondary); padding:0.4rem 0.5rem; cursor:pointer; display:flex; align-items:center; font-size:1rem; transition:all 0.15s;">
                     <i class="ph ph-moon" id="themeIcon"></i>
                 </button>
-                <div onclick="openAdminProfile()" style="display: flex; align-items: center; gap: 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 0.25rem 0.25rem 0.25rem 0.85rem; border-radius: 2rem; margin-left: 0.5rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)';this.style.borderColor='var(--primary)';" onmouseout="this.style.background='rgba(255,255,255,0.03)';this.style.borderColor='var(--border)';">
-                    <div class="hide-mobile" style="display: flex; flex-direction: column; align-items: flex-end;">
-                        <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-primary); line-height: 1.2;">{{ auth()->user()->name }}</span>
-                        <span style="font-size: 0.6rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em;">{{ __('Administrator') }}</span>
-                    </div>
+                <div onclick="openAdminProfile()" style="display: flex; align-items: center; gap: 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 0.25rem 0.25rem 0.25rem 0.25rem; border-radius: 2rem; margin-left: 0.5rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)';this.style.borderColor='var(--primary)';" onmouseout="this.style.background='rgba(255,255,255,0.03)';this.style.borderColor='var(--border)';">
+
                     <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #00b894); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; border: 2px solid rgba(255,255,255,0.1); box-shadow: 0 4px 8px rgba(0,0,0,0.15);">
                         {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                     </div>

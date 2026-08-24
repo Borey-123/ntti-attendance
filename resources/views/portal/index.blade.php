@@ -13,6 +13,8 @@
     
     {{-- Phosphor Icons --}}
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     
     <style>
         :root {
@@ -717,9 +719,8 @@
                                 <i class="ph ph-camera"></i>
                             </div>
                         </div>
-                        <form id="portalPhotoForm" action="{{ route('portal.change-photo') }}" method="POST" enctype="multipart/form-data" style="display: none;">
-                            @csrf
-                            <input type="file" id="portalPhotoInput" name="photo" accept="image/*" onchange="document.getElementById('portalPhotoForm').submit()">
+                        <form id="portalPhotoForm" style="display: none;">
+                            <input type="file" id="portalPhotoInput" accept="image/*" onchange="initPortalCropper(this)">
                         </form>
                         <div class="teacher-meta">
                             <h2 style="color:var(--primary); margin-bottom: 0.25rem;">{{ $teacher->name_kh ?: '' }}</h2>
@@ -1339,8 +1340,130 @@
     </div>
 </div>
 
-<script>
     function openChangePinModal() { document.getElementById('changePinModal').classList.add('active'); }
     function closeChangePinModal() { document.getElementById('changePinModal').classList.remove('active'); }
+
+    // Cropper JS Logic
+    let portalCropper = null;
+
+    function initPortalCropper(fileInput) {
+        if (fileInput.files && fileInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('portalCropImage').src = e.target.result;
+                document.getElementById('portalCropModal').classList.add('active');
+                
+                if (portalCropper) {
+                    portalCropper.destroy();
+                }
+
+                portalCropper = new Cropper(document.getElementById('portalCropImage'), {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                    dragMode: 'move',
+                    autoCropArea: 1,
+                    restore: false,
+                    guides: false,
+                    center: false,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
+                });
+            }
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+    }
+
+    function closePortalCropper() {
+        document.getElementById('portalCropModal').classList.remove('active');
+        if (portalCropper) {
+            portalCropper.destroy();
+            portalCropper = null;
+        }
+        document.getElementById('portalPhotoInput').value = '';
+    }
+
+    function submitPortalCroppedImage() {
+        if (!portalCropper) return;
+        
+        const btn = document.getElementById('portalCropSaveBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> {{ __("Saving...") }}';
+        btn.disabled = true;
+
+        portalCropper.getCroppedCanvas({
+            width: 512,
+            height: 512,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high',
+        }).toBlob((blob) => {
+            const formData = new FormData();
+            formData.append('photo', blob, 'profile.jpg');
+            formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+
+            fetch("{{ route('portal.change-photo') }}", {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update image on page
+                    document.getElementById('portal-profile-img').src = data.photo_url;
+                    closePortalCropper();
+                    // If window.showToast exists use it, else alert
+                    if (typeof window.showToast === 'function') {
+                        window.showToast(data.message, 'success');
+                    } else {
+                        alert(data.message);
+                    }
+                } else {
+                    alert(data.message || 'Error uploading photo.');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('An error occurred while uploading the photo.');
+            })
+            .finally(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }, 'image/jpeg', 0.9);
+    }
 </script>
+
+{{-- Crop Photo Modal --}}
+<div id="portalCropModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px; padding: 2rem;">
+        <h3 style="margin-top:0; display:flex; align-items:center; gap:0.5rem; color:var(--text-main);">
+            <i class="ph ph-crop" style="color:var(--primary);"></i> 
+            {{ __('Adjust Profile Picture') }}
+        </h3>
+        
+        <div style="width: 100%; max-height: 400px; background: #000; display: flex; justify-content: center; align-items: center; border-radius: 0.5rem; overflow: hidden; margin-bottom: 1.5rem;">
+            <img id="portalCropImage" style="max-width: 100%; max-height: 400px; display: block;">
+        </div>
+
+        <div style="display:flex; gap:1rem;">
+            <button type="button" class="btn-secondary" style="flex:1; margin:0;" onclick="closePortalCropper()">{{ __('Cancel') }}</button>
+            <button type="button" class="btn-check" id="portalCropSaveBtn" style="flex:2; margin:0;" onclick="submitPortalCroppedImage()">{{ __('Save Picture') }}</button>
+        </div>
+    </div>
+</div>
+<style>
+.circle-cropper .cropper-view-box,
+.circle-cropper .cropper-face {
+  border-radius: 50%;
+}
+#portalCropModal .cropper-view-box,
+#portalCropModal .cropper-face {
+  border-radius: 50%;
+}
+</style>
+
 </html>
