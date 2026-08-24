@@ -1310,7 +1310,7 @@
             {{ __('Change Portal PIN') }}
         </h3>
         
-        <form action="{{ route('portal.change_pin') }}" method="POST">
+        <form action="{{ route('portal.change-password') }}" method="POST">
             @csrf
             <div class="form-group">
                 <label>{{ __('Current PIN') }}</label>
