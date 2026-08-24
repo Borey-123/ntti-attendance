@@ -1340,6 +1340,7 @@
     </div>
 </div>
 
+<script>
     function openChangePinModal() { document.getElementById('changePinModal').classList.add('active'); }
     function closeChangePinModal() { document.getElementById('changePinModal').classList.remove('active'); }
 
