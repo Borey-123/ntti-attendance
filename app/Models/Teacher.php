@@ -19,6 +19,11 @@ class Teacher extends Model
         'position',
         'status',
         'telegram_chat_id',
+        'portal_pin',
+    ];
+
+    protected $hidden = [
+        'portal_pin',
     ];
 
     public function rfidCard(): HasOne

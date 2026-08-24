@@ -1,0 +1,1 @@
+UPDATE attendance SET manual_note = NULL WHERE manual_note LIKE '%ß%';

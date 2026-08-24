@@ -1,0 +1,1 @@
+SELECT id, name, name_kh FROM teachers;

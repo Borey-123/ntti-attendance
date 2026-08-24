@@ -686,6 +686,14 @@
 
 
         <div class="search-card">
+            
+            @if(session('success'))
+                <div class="error-msg" style="background: rgba(16, 185, 129, 0.1); color: var(--success); border-color: rgba(16, 185, 129, 0.2);">
+                    <i class="ph ph-check-circle" style="font-size:1.2rem; vertical-align:middle; margin-right:0.3rem;"></i>
+                    {{ session('success') }}
+                </div>
+            @endif
+
             @if($error)
                 <div class="error-msg" style="display:block; border-radius:0.5rem; padding:0.75rem; background:rgba(239,68,68,0.1); border:1px solid var(--danger);">
                     <strong>{{ __('Error:') }}</strong> {{ $error }}
@@ -693,46 +701,7 @@
                 </div>
             @endif
 
-            @if(!$teacher)
-                {{-- Stat Mini Cards Row --}}
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
-                    {{-- Present Today --}}
-                    <div style="background: linear-gradient(135deg, rgba(var(--primary-rgb),0.12), rgba(var(--primary-rgb),0.04)); border: 1px solid rgba(var(--primary-rgb), 0.25); padding: 1rem 1.1rem; border-radius: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
-                        <div style="width: 38px; height: 38px; border-radius: 0.75rem; background: rgba(var(--primary-rgb), 0.15); display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.2rem; flex-shrink: 0;">
-                            <i class="ph ph-users-three"></i>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.65rem; font-weight: 800; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.06em;">{{ __('Present Today') }}</div>
-                            <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main); line-height: 1.2;">{{ $presentToday ?? 0 }} <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub);">/ {{ $totalTeachers ?? 0 }}</span></div>
-                        </div>
-                    </div>
-                    {{-- Scanner Status --}}
-                    <div style="background: {{ ($isOnline ?? false) ? 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04))' : 'linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.02))' }}; border: 1px solid {{ ($isOnline ?? false) ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.2)' }}; padding: 1rem 1.1rem; border-radius: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
-                        <div style="width: 38px; height: 38px; border-radius: 0.75rem; background: {{ ($isOnline ?? false) ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.1)' }}; display: flex; align-items: center; justify-content: center; color: {{ ($isOnline ?? false) ? 'var(--success)' : 'var(--danger)' }}; font-size: 1.2rem; flex-shrink: 0; position: relative;">
-                            <i class="ph ph-hard-drives"></i>
-                            @if($isOnline ?? false)<span class="pulse-dot"></span>@endif
-                        </div>
-                        <div>
-                            <div style="font-size: 0.65rem; font-weight: 800; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.06em;">{{ __('Scanner Status') }}</div>
-                            <div style="font-size: 1rem; font-weight: 800; color: {{ ($isOnline ?? false) ? 'var(--success)' : 'var(--danger)' }}; line-height: 1.2;">{{ ($isOnline ?? false) ? __('Online') : __('Offline') }}</div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Notice Board Carousel --}}
-                <div style="background: linear-gradient(135deg, rgba(var(--primary-rgb),0.06), rgba(139,92,246,0.04)); border: 1px solid rgba(var(--primary-rgb), 0.18); border-radius: 1.25rem; padding: 1rem 1.25rem; overflow: hidden; margin-bottom: 1.5rem; position: relative;">
-                    <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.65rem; font-weight: 800; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">
-                        <i class="ph ph-megaphone" style="color: var(--primary); font-size: 0.85rem;"></i> {{ __('Notice Board') }}
-                    </div>
-                    <div id="noticeTrack" style="display: flex; transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);">
-                        @if(isset($upcomingHolidays) && $upcomingHolidays->count() > 0)
-                            @foreach($upcomingHolidays as $holiday)
-                            <div class="carousel-slide" style="min-width: 100%; flex: 0 0 100%;">
-                                <div style="font-weight: 700; color: var(--text-main); font-size: 0.95rem;">🎉 {{ app()->getLocale() == 'km' ? ($holiday->name_kh ?: $holiday->name) : $holiday->name }}</div>
-                                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 600; margin-top: 0.15rem;">{{ \Carbon\Carbon::parse($holiday->date)->format('l, F j, Y') }} &mdash; {{ \Carbon\Carbon::parse($holiday->date)->diffForHumans() }}</div>
-                            </div>
-                            @endforeach
-                        @else
+            
                             <div class="carousel-slide" style="min-width: 100%; flex: 0 0 100%;">
                                 <div style="font-weight: 700; color: var(--text-main); font-size: 0.95rem;">👋 {{ __('Welcome to the Portal') }}</div>
                                 <div style="font-size: 0.8rem; color: var(--text-sub); font-weight: 600; margin-top: 0.15rem;">{{ __('Have a great day teaching!') }}</div>
@@ -1023,12 +992,21 @@
                         @endforelse
                     </div>
 
-                    <a href="{{ route('portal.index') }}" class="btn-back" style="margin-top: 2.5rem;">
-                        <i class="ph ph-arrow-left"></i>
-                        {{ __('Check Another ID') }}
-                    </a>
+                    
+                    <div style="display: flex; gap: 1rem; margin-top: 2.5rem;">
+                        <button onclick="openChangePasswordModal()" class="btn-back" style="flex: 1; border-color: var(--primary); color: var(--primary);">
+                            <i class="ph ph-lock-key"></i>
+                            {{ __('Change PIN') }}
+                        </button>
+                        <form action="{{ route('portal.logout') }}" method="POST" style="flex: 1; margin: 0;">
+                            @csrf
+                            <button type="submit" class="btn-back" style="width: 100%;">
+                                <i class="ph ph-sign-out"></i>
+                                {{ __('Logout') }}
+                            </button>
+                        </form>
+                    </div>
                 </div>
-            @endif
         </div>
 
         <footer style="text-align: center; margin-top: 3rem; padding-bottom: 2rem;">
@@ -1090,6 +1068,45 @@
             if (icon) icon.className = isDark ? 'ph ph-sun' : 'ph ph-moon';
         })();
     </script>
+
+    <div class="modal-overlay" id="changePasswordModal">
+        <div class="modal-content">
+            <h2 style="margin-top:0; font-size:1.5rem; font-weight:800; color:var(--text-main);">{{ __('Change Portal PIN') }}</h2>
+            <form action="{{ route('portal.change-password') }}" method="POST">
+                @csrf
+                <div class="form-group">
+                    <label>{{ __('Current PIN') }}</label>
+                    <div class="input-wrapper">
+                        <i class="ph ph-lock-key"></i>
+                        <input type="password" name="current_pin" class="form-control" required pattern="\d{6}" maxlength="6" inputmode="numeric" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>{{ __('New PIN (6 digits)') }}</label>
+                    <div class="input-wrapper">
+                        <i class="ph ph-lock-key"></i>
+                        <input type="password" name="new_pin" class="form-control" required pattern="\d{6}" maxlength="6" inputmode="numeric" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>{{ __('Confirm New PIN') }}</label>
+                    <div class="input-wrapper">
+                        <i class="ph ph-lock-key"></i>
+                        <input type="password" name="new_pin_confirmation" class="form-control" required pattern="\d{6}" maxlength="6" inputmode="numeric" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn-back" onclick="closeChangePasswordModal()" style="flex:1;">{{ __('Cancel') }}</button>
+                    <button type="submit" class="btn-check" style="flex:1; padding:1.1rem;">{{ __('Save PIN') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        function openChangePasswordModal() { document.getElementById("changePasswordModal").classList.add("active"); }
+        function closeChangePasswordModal() { document.getElementById("changePasswordModal").classList.remove("active"); }
+    </script>
+
 </body>
 
 <script>

@@ -281,4 +281,19 @@ class TeacherController extends Controller
             return back()->with('error', 'Failed to import teacher file: ' . $e->getMessage());
         }
     }
+
+    public function resetPin(Request $request, Teacher $teacher): JsonResponse
+    {
+        $validated = $request->validate([
+            'pin' => 'required|string|size:6',
+        ]);
+
+        $teacher->update([
+            'portal_pin' => \Illuminate\Support\Facades\Hash::make($validated['pin'])
+        ]);
+
+        SecurityLog::record('Reset Teacher PIN', $teacher->name, "ID: {$teacher->employee_id}");
+
+        return response()->json(['status' => 'success', 'message' => 'Teacher PIN has been successfully reset.']);
+    }
 }

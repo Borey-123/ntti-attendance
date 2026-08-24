@@ -1,0 +1,1 @@
+UPDATE attendance SET manual_note = NULL WHERE id IN (55, 114, 139, 219, 221, 309, 310);

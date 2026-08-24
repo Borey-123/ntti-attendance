@@ -69,6 +69,9 @@ Route::post('/portal/correction', [PortalController::class, 'storeCorrection'])-
 Route::post('/settings/attendance-corrections/{correction}', [SettingController::class, 'handleCorrection'])->name('settings.attendance_corrections.handle');
 
 Route::get('/portal', [PortalController::class, 'index'])->name('portal.index');
+Route::post('/portal/login', [PortalController::class, 'login'])->name('portal.login.post');
+Route::post('/portal/logout', [PortalController::class, 'logout'])->name('portal.logout');
+Route::post('/portal/change-password', [PortalController::class, 'changePassword'])->name('portal.change-password');
 Route::get('/api-web/portal/search', [PortalController::class, 'search'])->name('api.portal.search');
 
 // Architecture Diagram (public, no auth needed)
@@ -94,6 +97,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/api-web/teachers', [TeacherController::class, 'store'])->name('api.teachers.store');
     Route::put('/api-web/teachers/{teacher}', [TeacherController::class, 'update'])->name('api.teachers.update');
     Route::delete('/api-web/teachers/{teacher}', [TeacherController::class, 'destroy'])->name('api.teachers.destroy');
+    Route::post('/api-web/teachers/{teacher}/reset-pin', [TeacherController::class, 'resetPin'])->name('api.teachers.reset-pin');
 
     Route::get('/api-web/rfid-cards', [RfidCardController::class, 'index'])->name('api.rfid.list');
     Route::post('/api-web/rfid-cards', [RfidCardController::class, 'store'])->name('api.rfid.store');

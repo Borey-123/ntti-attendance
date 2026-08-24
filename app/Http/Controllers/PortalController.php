@@ -42,138 +42,134 @@ class PortalController extends Controller
             $isOnline = $diff <= 3;
         }
 
-        if ($request->has('employee_id')) {
-            $id = trim($request->employee_id);
+        $teacherId = session('portal_teacher_id');
+        
+        if (!$teacherId) {
+            return view('portal.login');
+        }
+
+        $teacher = Teacher::find($teacherId);
+
+        if (!$teacher || $teacher->status !== 'active') {
+            session()->forget('portal_teacher_id');
+            return redirect()->route('portal.index')->with('error', 'Session invalid or teacher inactive.');
+        }
+
+        try {
+            \App\Models\SecurityLog::create([
+                'admin_id'   => null,
+                'action'     => 'Teacher Portal Check-in',
+                'target'     => ($teacher->name_kh ?: $teacher->name) . ' (' . $teacher->employee_id . ')',
+                'ip_address' => $request->ip(),
+                'details'    => 'Department: ' . ($teacher->department ?? '-'),
+                'timestamp'  => now()
+            ]);
+        } catch (\Exception $e) {}
+
+        // ── Month navigation: determine target month ──
+        $calendarMonth = $request->input('month', now()->month);
+        $calendarYear  = $request->input('year', now()->year);
+        $targetDate    = Carbon::createFromDate($calendarYear, $calendarMonth, 1);
+        $startOfMonth  = $targetDate->copy()->startOfMonth();
+        $endOfMonth    = $targetDate->copy()->endOfMonth();
+        $daysInMonth   = $endOfMonth->day;
+        $isCurrentMonth = $targetDate->isSameMonth(now());
+        $calendarLabel = $targetDate->format('F Y');
+
+        // ── History records for the selected month ──
+        $historyRecords = Attendance::where('teacher_id', $teacher->id)
+            ->whereBetween('date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
+            ->orderBy('date', 'desc')
+            ->get();
+
+        $history = $historyRecords->map(function($a) {
+            $dateObj = is_string($a->date) ? \Carbon\Carbon::parse($a->date) : $a->date;
+            $isToday = $dateObj->isToday();
             
-            // Search for active teacher
-            $teacher = Teacher::where('status', 'active')
-                ->where(function($q) use ($id) {
-                    $q->where('employee_id', $id)
-                      ->orWhere('employee_id', 'LIKE', '%' . $id . '%');
-                })->first();
+            return (object)[
+                'date' => $dateObj->format('M d, Y'),
+                'day'  => $dateObj->format('D'),
+                'morning' => $this->formatShiftStatus($a->morning_in, $a->morning_out, $isToday, 'morning'),
+                'afternoon' => $this->formatShiftStatus($a->afternoon_in, $a->afternoon_out, $isToday, 'afternoon'),
+                'has_late' => ($a->morning_status === 'late' || $a->afternoon_status === 'late'),
+                'morning_late' => ($a->morning_status === 'late'),
+                'afternoon_late' => ($a->afternoon_status === 'late')
+            ];
+        });
 
-            if ($teacher) {
-                try {
-                    \App\Models\SecurityLog::create([
-                        'admin_id'   => null,
-                        'action'     => 'Teacher Portal Check-in',
-                        'target'     => ($teacher->name_kh ?: $teacher->name) . ' (' . $teacher->employee_id . ')',
-                        'ip_address' => $request->ip(),
-                        'details'    => 'Department: ' . ($teacher->department ?? '-'),
-                        'timestamp'  => now()
-                    ]);
-                } catch (\Exception $e) {}
-                // ── Month navigation: determine target month ──
-                $calendarMonth = $request->input('month', now()->month);
-                $calendarYear  = $request->input('year', now()->year);
-                $targetDate    = Carbon::createFromDate($calendarYear, $calendarMonth, 1);
-                $startOfMonth  = $targetDate->copy()->startOfMonth();
-                $endOfMonth    = $targetDate->copy()->endOfMonth();
-                $daysInMonth   = $endOfMonth->day;
-                $isCurrentMonth = $targetDate->isSameMonth(now());
-                $calendarLabel = $targetDate->format('F Y');
+        // ── Stats: present, late, absent ──
+        $monthHolidays = \App\Models\Holiday::whereBetween('date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
+            ->get()->keyBy(function($item) {
+                return is_string($item->date) ? substr($item->date, 0, 10) : $item->date->format('Y-m-d');
+            });
 
-                // ── History records for the selected month ──
-                $historyRecords = Attendance::where('teacher_id', $teacher->id)
-                    ->whereBetween('date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
-                    ->orderBy('date', 'desc')
-                    ->get();
-
-                $history = $historyRecords->map(function($a) {
-                    $dateObj = is_string($a->date) ? \Carbon\Carbon::parse($a->date) : $a->date;
-                    $isToday = $dateObj->isToday();
-                    
-                    return (object)[
-                        'date' => $dateObj->format('M d, Y'),
-                        'day'  => $dateObj->format('D'),
-                        'morning' => $this->formatShiftStatus($a->morning_in, $a->morning_out, $isToday, 'morning'),
-                        'afternoon' => $this->formatShiftStatus($a->afternoon_in, $a->afternoon_out, $isToday, 'afternoon'),
-                        'has_late' => ($a->morning_status === 'late' || $a->afternoon_status === 'late'),
-                        'morning_late' => ($a->morning_status === 'late'),
-                        'afternoon_late' => ($a->afternoon_status === 'late')
-                    ];
-                });
-
-                // ── Stats: present, late, absent ──
-                // Count working days (weekdays minus holidays) up to today in the selected month
-                $monthHolidays = \App\Models\Holiday::whereBetween('date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
-                    ->get()->keyBy(function($item) {
-                        return is_string($item->date) ? substr($item->date, 0, 10) : $item->date->format('Y-m-d');
-                    });
-
-                $lastCountDate = $isCurrentMonth ? now() : $endOfMonth;
-                $workingDays = 0;
-                for ($d = 1; $d <= $lastCountDate->day; $d++) {
-                    $dt = $startOfMonth->copy()->addDays($d - 1);
-                    $dtStr = $dt->format('Y-m-d');
-                    if (!$dt->isWeekend() && !$monthHolidays->has($dtStr) && ($dt->isPast() || $dt->isToday())) {
-                        $workingDays++;
-                    }
-                }
-
-                $presentCount = $historyRecords->count();
-                $lateCount = $historyRecords->filter(fn($a) => $a->morning_status === 'late' || $a->afternoon_status === 'late')->count();
-                $absentCount = max(0, $workingDays - $presentCount);
-
-                $stats = [
-                    'present' => $presentCount,
-                    'late'    => $lateCount,
-                    'absent'  => $absentCount,
-                ];
-
-                // ── Today's attendance record ──
-                $todayRecord = Attendance::where('teacher_id', $teacher->id)
-                    ->where('date', now()->toDateString())
-                    ->first();
-
-                // ── Calendar data ──
-                $monthAttendances = $historyRecords->keyBy(function($item) {
-                    return is_string($item->date) ? substr($item->date, 0, 10) : $item->date->format('Y-m-d');
-                });
-
-                for ($i = 1; $i <= $daysInMonth; $i++) {
-                    $date = $startOfMonth->copy()->addDays($i - 1);
-                    $dateStr = $date->format('Y-m-d');
-                    
-                    $status = 'none';
-                    if ($date->isFuture()) {
-                        $status = 'future';
-                    } elseif ($monthAttendances->has($dateStr)) {
-                        $att = $monthAttendances->get($dateStr);
-                        if ($att->morning_status === 'late' || $att->afternoon_status === 'late') {
-                            $status = 'late';
-                        } else {
-                            $status = 'present';
-                        }
-                    } elseif ($monthHolidays->has($dateStr)) {
-                        $status = 'holiday';
-                    } elseif ($date->isWeekend()) {
-                        $status = 'weekend';
-                    } else {
-                        if ($date->isPast() && !$date->isToday()) {
-                            $status = 'absent';
-                        }
-                    }
-                    
-                    $calendar[] = (object)[
-                        'day' => $i,
-                        'date' => $dateStr,
-                        'status' => $status,
-                        'is_today' => $date->isToday()
-                    ];
-                }
-
-
-
-                // Get Corrections History
-                $corrections = AttendanceCorrection::where('teacher_id', $teacher->id)
-                    ->orderBy('created_at', 'desc')
-                    ->take(10)
-                    ->get();
-            } else {
-                $error = 'Employee ID "' . $id . '" not found or inactive.';
+        $lastCountDate = $isCurrentMonth ? now() : $endOfMonth;
+        $workingDays = 0;
+        for ($d = 1; $d <= $lastCountDate->day; $d++) {
+            $dt = $startOfMonth->copy()->addDays($d - 1);
+            $dtStr = $dt->format('Y-m-d');
+            if (!$dt->isWeekend() && !$monthHolidays->has($dtStr) && ($dt->isPast() || $dt->isToday())) {
+                $workingDays++;
             }
         }
+
+        $presentCount = $historyRecords->count();
+        $lateCount = $historyRecords->filter(fn($a) => $a->morning_status === 'late' || $a->afternoon_status === 'late')->count();
+        $absentCount = max(0, $workingDays - $presentCount);
+
+        $stats = [
+            'present' => $presentCount,
+            'late'    => $lateCount,
+            'absent'  => $absentCount,
+        ];
+
+        // ── Today's attendance record ──
+        $todayRecord = Attendance::where('teacher_id', $teacher->id)
+            ->where('date', now()->toDateString())
+            ->first();
+
+        // ── Calendar data ──
+        $monthAttendances = $historyRecords->keyBy(function($item) {
+            return is_string($item->date) ? substr($item->date, 0, 10) : $item->date->format('Y-m-d');
+        });
+
+        for ($i = 1; $i <= $daysInMonth; $i++) {
+            $date = $startOfMonth->copy()->addDays($i - 1);
+            $dateStr = $date->format('Y-m-d');
+            
+            $status = 'none';
+            if ($date->isFuture()) {
+                $status = 'future';
+            } elseif ($monthAttendances->has($dateStr)) {
+                $att = $monthAttendances->get($dateStr);
+                if ($att->morning_status === 'late' || $att->afternoon_status === 'late') {
+                    $status = 'late';
+                } else {
+                    $status = 'present';
+                }
+            } elseif ($monthHolidays->has($dateStr)) {
+                $status = 'holiday';
+            } elseif ($date->isWeekend()) {
+                $status = 'weekend';
+            } else {
+                if ($date->isPast() && !$date->isToday()) {
+                    $status = 'absent';
+                }
+            }
+            
+            $calendar[] = (object)[
+                'day' => $i,
+                'date' => $dateStr,
+                'status' => $status,
+                'is_today' => $date->isToday()
+            ];
+        }
+
+        // Get Corrections History
+        $corrections = AttendanceCorrection::where('teacher_id', $teacher->id)
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
 
         $departments = \App\Models\Department::all();
         return view('portal.index', compact(
@@ -181,6 +177,70 @@ class PortalController extends Controller
             'todayRecord', 'upcomingHolidays', 'calendarMonth', 'calendarYear', 'calendarLabel',
             'presentToday', 'totalTeachers', 'isOnline'
         ));
+    }
+
+    public function login(Request $request)
+    {
+        $request->validate([
+            'employee_id' => 'required|string',
+            'pin' => 'required|string|size:6',
+        ]);
+
+        $key = 'portal_login:' . request()->ip();
+
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, 5)) {
+            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($key);
+            return redirect()->back()->with('error', "Too many login attempts. Please try again in {$seconds} seconds.");
+        }
+
+        $teacher = Teacher::where('employee_id', $request->employee_id)->where('status', 'active')->first();
+
+        if (!$teacher || !\Illuminate\Support\Facades\Hash::check($request->pin, $teacher->portal_pin)) {
+            \Illuminate\Support\Facades\RateLimiter::hit($key);
+            return redirect()->back()->withInput($request->only('employee_id'))->with('error', 'Invalid employee ID or PIN.');
+        }
+
+        \Illuminate\Support\Facades\RateLimiter::clear($key);
+        session(['portal_teacher_id' => $teacher->id]);
+        session()->regenerate();
+
+        return redirect()->route('portal.index');
+    }
+
+    public function logout(Request $request)
+    {
+        session()->forget('portal_teacher_id');
+        session()->regenerateToken();
+        return redirect()->route('portal.index');
+    }
+
+    public function changePassword(Request $request)
+    {
+        $teacherId = session('portal_teacher_id');
+        if (!$teacherId) {
+            return redirect()->route('portal.index')->with('error', 'Unauthorized.');
+        }
+
+        $request->validate([
+            'current_pin' => 'required|string|size:6',
+            'new_pin' => 'required|string|size:6|confirmed',
+        ]);
+
+        $teacher = Teacher::find($teacherId);
+
+        if (!\Illuminate\Support\Facades\Hash::check($request->current_pin, $teacher->portal_pin)) {
+            return redirect()->back()->with('error', 'Current PIN is incorrect.');
+        }
+
+        $teacher->update([
+            'portal_pin' => \Illuminate\Support\Facades\Hash::make($request->new_pin)
+        ]);
+
+        // Invalidate session requiring login again
+        session()->forget('portal_teacher_id');
+        session()->regenerateToken();
+
+        return redirect()->route('portal.index')->with('success', 'PIN changed successfully. Please log in with your new PIN.');
     }
 
     public function export(Request $request)

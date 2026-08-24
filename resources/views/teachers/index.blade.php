@@ -669,6 +669,9 @@
             <button class="btn btn-sm btn-card btn-edit-premium" onclick="editTeacher({{ $teacher->id }})">
                 <i class="ph ph-pencil-simple"></i> {{ __('Edit') }}
             </button>
+            <button class="btn btn-sm btn-card" style="flex: 0 0 45px; padding: 0; background: rgba(16, 185, 129, 0.1); border: 2.5px solid #10b981; color: #10b981; font-weight: 800;" onclick="openResetPinModal({{ $teacher->id }}, '{{ addslashes($teacher->name) }}')" title="{{ __('Reset Portal PIN') }}">
+                <i class="ph ph-key"></i>
+            </button>
             <button class="btn btn-sm btn-card" style="flex: 0 0 45px; padding: 0; background: rgba(59, 130, 246, 0.1); border: 2.5px solid #3b82f6; color: #3b82f6; font-weight: 800;" onclick="printTeacherCard({{ $teacher->id }})" title="{{ __('Print Card') }}">
                 <i class="ph ph-printer"></i>
             </button>
@@ -745,6 +748,31 @@
             <div class="d-flex justify-between align-center mt-4">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('addTeacherModal')">{{ __('Cancel') }}</button>
                 <button type="submit" class="btn btn-primary" style="width: auto;">{{ __('Save Teacher') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- Reset PIN Modal -->
+<div class="modal-overlay" id="resetPinModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3>{{ __('Reset Portal PIN') }}</h3>
+            <button class="modal-close" onclick="closeModal('resetPinModal')">&times;</button>
+        </div>
+        <form id="resetPinForm" onsubmit="submitResetPin(event)">
+            <input type="hidden" id="reset_pin_teacher_id">
+            <p style="margin-top: 0; margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);">
+                {{ __('Set a new 6-digit Portal PIN for:') }} <strong id="reset_pin_teacher_name" style="color: var(--text-primary);"></strong>
+            </p>
+            <div class="form-group">
+                <label>{{ __('New PIN (6 digits)') }}</label>
+                <input type="password" id="reset_pin_input" class="form-control" required pattern="\d{6}" maxlength="6" inputmode="numeric" placeholder="123456">
+            </div>
+            <div class="d-flex justify-between align-center mt-4">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('resetPinModal')">{{ __('Cancel') }}</button>
+                <button type="submit" class="btn btn-primary" style="width: auto; background: var(--success); border-color: var(--success);">{{ __('Save PIN') }}</button>
             </div>
         </form>
     </div>

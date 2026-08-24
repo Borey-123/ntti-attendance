@@ -18,7 +18,7 @@ String serverUrl = "";
 String heartbeatUrl = "";
 Preferences preferences;
 
-const char *deviceId = "SCANNER_01";
+const char *deviceId = "SCANNER_02";
 
 unsigned long lastHeartbeat = 0;
 const unsigned long heartbeatInterval =
