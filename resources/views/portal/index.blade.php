@@ -1361,15 +1361,9 @@
                 portalCropper = new Cropper(document.getElementById('portalCropImage'), {
                     aspectRatio: 1,
                     viewMode: 1,
-                    dragMode: 'move',
-                    autoCropArea: 1,
-                    restore: false,
-                    guides: false,
-                    center: false,
-                    highlight: false,
+                    autoCropArea: 0.8,
                     cropBoxMovable: true,
                     cropBoxResizable: true,
-                    toggleDragModeOnDblclick: false,
                 });
             }
             reader.readAsDataURL(fileInput.files[0]);
@@ -1406,11 +1400,24 @@
             fetch("{{ route('portal.change-photo') }}", {
                 method: 'POST',
                 headers: {
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: formData
             })
-            .then(res => res.json())
+            .then(async res => {
+                if (!res.ok) {
+                    const text = await res.text();
+                    console.error("Server error response:", text);
+                    let errMsg = "An error occurred.";
+                    try {
+                        const json = JSON.parse(text);
+                        errMsg = json.message || errMsg;
+                    } catch(e) {}
+                    throw new Error(errMsg);
+                }
+                return res.json();
+            })
             .then(data => {
                 if (data.status === 'success') {
                     // Update image on page
@@ -1428,7 +1435,7 @@
             })
             .catch(err => {
                 console.error(err);
-                alert('An error occurred while uploading the photo.');
+                alert(err.message || 'An error occurred while uploading the photo.');
             })
             .finally(() => {
                 btn.innerHTML = originalText;
@@ -1459,10 +1466,6 @@
 <style>
 .circle-cropper .cropper-view-box,
 .circle-cropper .cropper-face {
-  border-radius: 50%;
-}
-#portalCropModal .cropper-view-box,
-#portalCropModal .cropper-face {
   border-radius: 50%;
 }
 </style>
