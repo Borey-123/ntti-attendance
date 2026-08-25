@@ -1221,7 +1221,7 @@
             }
         } catch (err) {
             console.error(err);
-            alert('A system error occurred.');
+            alert('{{ __('A system error occurred.') }}');
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalText;
@@ -1275,9 +1275,9 @@
                                 <span style="color:var(--text-sub);">({{ $req->shift }})</span>
                             </div>
                             <div>
-                                @if($req->status === 'pending') <span style="color:var(--warning); font-weight:bold;">Pending</span>
-                                @elseif($req->status === 'approved') <span style="color:var(--success); font-weight:bold;">Approved</span>
-                                @else <span style="color:var(--danger); font-weight:bold;">Rejected</span>
+                                @if($req->status === 'pending') <span style="color:var(--warning); font-weight:bold;">{{ __('Pending') }}</span>
+                                @elseif($req->status === 'approved') <span style="color:var(--success); font-weight:bold;">{{ __('Approved') }}</span>
+                                @else <span style="color:var(--danger); font-weight:bold;">{{ __('Rejected') }}</span>
                                 @endif
                             </div>
                         </div>
@@ -1456,7 +1456,7 @@
     <div class="modal-content" style="max-width: 500px; padding: 2rem;">
         <h3 style="margin-top:0; display:flex; align-items:center; gap:0.5rem; color:var(--text-main);">
             <i class="ph ph-crop" style="color:var(--primary);"></i> 
-            {{ __('Adjust Profile Picture') }}
+            {{ __('Crop Profile Photo') }}
         </h3>
         
         <div style="width: 100%; max-height: 400px; background: #000; display: flex; justify-content: center; align-items: center; border-radius: 0.5rem; overflow: hidden; margin-bottom: 1.5rem;">
@@ -1465,7 +1465,7 @@
 
         <div style="display:flex; gap:1rem;">
             <button type="button" class="btn-secondary" style="flex:1; margin:0;" onclick="closePortalCropper()">{{ __('Cancel') }}</button>
-            <button type="button" class="btn-check" id="portalCropSaveBtn" style="flex:2; margin:0;" onclick="submitPortalCroppedImage()">{{ __('Save Picture') }}</button>
+            <button type="button" class="btn-check" id="portalCropSaveBtn" style="flex:2; margin:0;" onclick="submitPortalCroppedImage()">{{ __('Save Photo') }}</button>
         </div>
     </div>
 </div>
