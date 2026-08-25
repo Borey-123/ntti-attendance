@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') - NTTI Attendance</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Kantumruy+Pro:wght@300;400;500;600;700&family=Suwannaphum:wght@300;400;700;900&family=Roboto:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@100;300;400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Kantumruy+Pro:wght@300;400;500;600;700&family=Suwannaphum:wght@300;400;700;900&family=Roboto:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/style.css') }}?v={{ filemtime(public_path('css/style.css')) }}">
 
     <!-- Phosphor Icons for modern slick icons -->
@@ -19,7 +19,7 @@
         $defaultTheme = \App\Models\Setting::getValue('default_theme', 'dark');
         $fontSize     = \App\Models\Setting::getValue('font_size', '14');
         $iconSize     = \App\Models\Setting::getValue('global_icon_size', '1.1');
-        $fontFamily   = \App\Models\Setting::getValue('font_family', 'Inter');
+        $fontFamily   = \App\Models\Setting::getValue('font_family', 'Battambang');
         $borderRadius = \App\Models\Setting::getValue('border_radius', '0.5rem');
         $glassEnabled = \App\Models\Setting::getValue('enable_glassmorphism', 'on');
     @endphp

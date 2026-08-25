@@ -734,7 +734,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                             <label>{{ __('Typography / Font Family') }}</label>
                             <select name="font_family" class="form-control">
                                 <option value="Inter" {{ (isset($fontFamily) && $fontFamily === 'Inter') ? 'selected' : '' }}>Inter (Global Standard)</option>
-                                <option value="Kantumruy Pro" {{ (isset($fontFamily) && $fontFamily === 'Kantumruy Pro') ? 'selected' : '' }}>Kantumruy Pro (Khmer)</option>
+                                <option value="Battambang" {{ (isset($fontFamily) && $fontFamily === 'Battambang') ? 'selected' : '' }}>Battambang (Khmer)</option>
                                 <option value="Suwannaphum" {{ (isset($fontFamily) && $fontFamily === 'Suwannaphum') ? 'selected' : '' }}>Suwannaphum (Khmer)</option>
                                 <option value="Roboto" {{ (isset($fontFamily) && $fontFamily === 'Roboto') ? 'selected' : '' }}>Roboto</option>
                                 <option value="Poppins" {{ (isset($fontFamily) && $fontFamily === 'Poppins') ? 'selected' : '' }}>Poppins</option>
@@ -1392,3 +1392,4 @@ function selectLiveStyle(style) {
 })();
 </script>
 @endpush
+

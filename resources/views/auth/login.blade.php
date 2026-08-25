@@ -17,7 +17,7 @@
     <title>Sign In — {{ $uName }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Kantumruy+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@100;300;400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Kantumruy+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
@@ -235,21 +235,21 @@
             letter-spacing: 0 !important;
             font-size: 1rem !important;
             font-weight: 600 !important;
-            font-family: 'Kantumruy Pro', sans-serif !important;
+            font-family: 'Battambang', sans-serif !important;
             text-transform: none;
         }
         
         html[lang="km"] .form-group label {
             letter-spacing: 0 !important;
             font-size: 0.85rem !important;
-            font-family: 'Kantumruy Pro', sans-serif !important;
+            font-family: 'Battambang', sans-serif !important;
             text-transform: none;
         }
 
         html[lang="km"] .auth-branding h1 {
             line-height: 1.4;
             letter-spacing: 0;
-            font-family: 'Kantumruy Pro', sans-serif !important;
+            font-family: 'Battambang', sans-serif !important;
         }
 
         .btn-primary::after {

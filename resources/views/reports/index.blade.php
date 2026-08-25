@@ -304,7 +304,7 @@
 
 @media print {
     @page { margin: 20mm; size: A4 landscape; }
-    html, body { height: auto !important; overflow: visible !important; font-family: 'Kantumruy Pro', 'Inter', sans-serif !important; background: white !important; color: black !important; }
+    html, body { height: auto !important; overflow: visible !important; font-family: 'Battambang', 'Inter', sans-serif !important; background: white !important; color: black !important; }
     
     /* Hide ALL UI Elements */
     .sidebar, .topbar, .main-footer, .no-print, .pill-tabs, .chart-glass-card, button, select, input, .ph, .page-title, .no-print *, .skeleton, .summary-search-wrap { display: none !important; }
@@ -1741,3 +1741,4 @@ async function viewHistory(id) {
 }
 </script>
 @endpush
+

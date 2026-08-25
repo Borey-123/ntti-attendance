@@ -55,7 +55,7 @@ html {
 }
 
 body {
-    font-family: 'Kantumruy Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Battambang', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background-color: var(--bg-dark);
     background-image: 
         radial-gradient(circle at 10% 20%, rgba(0, 212, 160, 0.07) 0%, transparent 40%),
@@ -76,13 +76,13 @@ body {
         radial-gradient(circle at 90% 80%, rgba(88, 166, 255, 0.04) 0%, transparent 50%);
 }
 
-/* Ensure Khmer text is always beautiful by prioritizing Kantumruy Pro when language is Khmer */
+/* Ensure Khmer text is always beautiful by prioritizing Battambang when language is Khmer */
 html[lang="km"] body,
 html[lang="km"] button,
 html[lang="km"] input,
 html[lang="km"] select,
 html[lang="km"] textarea {
-    font-family: 'Kantumruy Pro', 'Inter', sans-serif !important;
+    font-family: 'Battambang', 'Inter', sans-serif !important;
 }
 
 a {

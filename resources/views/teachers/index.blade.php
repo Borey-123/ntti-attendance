@@ -315,7 +315,7 @@
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between !important;
-            font-family: 'Kantumruy Pro', 'Inter', system-ui, sans-serif !important;
+            font-family: 'Battambang', 'Inter', system-ui, sans-serif !important;
             -webkit-print-color-adjust: exact !important;
             color-adjust: exact !important;
             print-color-adjust: exact !important;
@@ -357,7 +357,7 @@
             font-weight: 900 !important;
             color: #0f2942 !important;
             line-height: 1.25 !important;
-            font-family: 'Kantumruy Pro', sans-serif !important;
+            font-family: 'Battambang', sans-serif !important;
             margin-bottom: 0.6mm !important;
             white-space: nowrap !important;
             overflow: hidden !important;
@@ -382,7 +382,7 @@
             border-radius: 1mm !important;
             letter-spacing: 0.4px !important;
             text-transform: uppercase !important;
-            font-family: 'Kantumruy Pro', 'Inter', sans-serif !important;
+            font-family: 'Battambang', 'Inter', sans-serif !important;
             flex-shrink: 0 !important;
         }
         .id-card-body {
@@ -429,7 +429,7 @@
             font-weight: 900 !important;
             color: #0f2942 !important;
             line-height: 1.15 !important;
-            font-family: 'Kantumruy Pro', sans-serif !important;
+            font-family: 'Battambang', sans-serif !important;
         }
         .id-card-name-en {
             font-size: 6.8pt !important;
@@ -438,7 +438,7 @@
             color: #334155 !important;
             line-height: 1.15 !important;
             letter-spacing: 0.3px !important;
-            font-family: 'Kantumruy Pro', 'Inter', sans-serif !important;
+            font-family: 'Battambang', 'Inter', sans-serif !important;
         }
         .id-card-id-badge {
             background: linear-gradient(135deg, #0f2942, #1e3a8a) !important;
@@ -449,7 +449,7 @@
             border-radius: 1mm !important;
             letter-spacing: 0.4px !important;
             box-shadow: 0 1px 3px rgba(15, 41, 66, 0.3) !important;
-            font-family: 'Kantumruy Pro', 'Inter', sans-serif !important;
+            font-family: 'Battambang', 'Inter', sans-serif !important;
         }
         .id-card-details-grid {
             display: flex !important;
@@ -496,7 +496,7 @@
             line-height: 1 !important;
             margin-bottom: 0.2px !important;
             letter-spacing: 0.4px !important;
-            font-family: 'Kantumruy Pro', 'Inter', sans-serif !important;
+            font-family: 'Battambang', 'Inter', sans-serif !important;
         }
         .id-card-grid-value {
             font-size: 5.4pt !important;
@@ -505,7 +505,7 @@
             line-height: 1.15 !important;
             word-break: break-word !important;
             white-space: normal !important;
-            font-family: 'Kantumruy Pro', 'Inter', sans-serif !important;
+            font-family: 'Battambang', 'Inter', sans-serif !important;
         }
     }
 </style>
@@ -1359,3 +1359,4 @@
 }
 </style>
 @endpush
+
