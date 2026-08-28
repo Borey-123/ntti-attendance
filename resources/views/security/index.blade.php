@@ -127,6 +127,7 @@
 /* ── Scrollable table wrapper ── */
 .log-table-wrap {
     flex: 1;
+    min-height: 0;
     overflow-x: auto;
     overflow-y: auto;
     position: relative;
