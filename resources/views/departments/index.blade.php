@@ -19,87 +19,6 @@
         box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.4);
     }
 
-    /* ── Anime HUD Widget ── */
-    .hud-widget {
-        position: relative;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        background: var(--bg-dark);
-        border: 1px solid rgba(var(--primary-rgb), 0.25);
-        border-radius: 1rem;
-        padding: 0.6rem 1rem;
-        overflow: hidden;
-        box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.08), inset 0 0 20px rgba(var(--primary-rgb), 0.03);
-    }
-    .hud-widget::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(90deg, transparent 0%, rgba(var(--primary-rgb), 0.06) 50%, transparent 100%);
-        animation: hud-scan 3s linear infinite;
-    }
-    .hud-radar {
-        position: relative;
-        width: 48px;
-        height: 48px;
-        flex-shrink: 0;
-    }
-    .hud-radar svg { width: 100%; height: 100%; }
-    .hud-radar-sweep {
-        transform-origin: 24px 24px;
-        animation: radar-spin 3s linear infinite;
-    }
-    .hud-blip {
-        animation: blip-pulse 3s ease-in-out infinite;
-    }
-    .hud-blip:nth-child(2) { animation-delay: 1s; }
-    .hud-blip:nth-child(3) { animation-delay: 2s; }
-    .hud-stat-label {
-        font-size: 0.6rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: rgba(var(--primary-rgb), 0.7);
-        line-height: 1;
-    }
-    .hud-stat-value {
-        font-size: 1.05rem;
-        font-weight: 900;
-        color: var(--primary);
-        text-shadow: 0 0 10px rgba(var(--primary-rgb), 0.6);
-        line-height: 1;
-        font-variant-numeric: tabular-nums;
-    }
-    .hud-divider {
-        width: 1px;
-        height: 28px;
-        background: rgba(var(--primary-rgb), 0.2);
-        flex-shrink: 0;
-    }
-    .hud-status-dot {
-        width: 6px; height: 6px; border-radius: 50%;
-        background: var(--primary);
-        box-shadow: 0 0 8px var(--primary);
-        animation: hud-blink 1.5s ease-in-out infinite;
-        flex-shrink: 0;
-    }
-    @keyframes hud-scan {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(200%); }
-    }
-    @keyframes radar-spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-    @keyframes blip-pulse {
-        0%, 80%, 100% { opacity: 0; transform: scale(0.5); }
-        10%, 30% { opacity: 1; transform: scale(1); }
-    }
-    @keyframes hud-blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.3; }
-    }
 </style>
 @endpush
 <div class="d-flex justify-between align-center" style="margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
@@ -161,82 +80,7 @@
             <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">({{ $departments->count() }})</span>
         </h3>
         
-        @php
-            $totalStaff = $departments->sum('teachers_count');
-            $totalDepts = $departments->count();
-            $hodCount   = $departments->whereNotNull('head_id')->count();
-        @endphp
-        <div style="flex: 1; display: flex; justify-content: center; align-items: center; min-width: 320px;">
-            <div class="hud-widget">
-                <!-- Radar icon -->
-                <div class="hud-radar">
-                    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Circles -->
-                        <circle cx="24" cy="24" r="22" stroke="rgba(var(--primary-rgb),0.2)" stroke-width="1"/>
-                        <circle cx="24" cy="24" r="15" stroke="rgba(var(--primary-rgb),0.15)" stroke-width="1"/>
-                        <circle cx="24" cy="24" r="8" stroke="rgba(var(--primary-rgb),0.15)" stroke-width="1"/>
-                        <!-- Crosshairs -->
-                        <line x1="24" y1="2" x2="24" y2="46" stroke="rgba(var(--primary-rgb),0.1)" stroke-width="0.5"/>
-                        <line x1="2" y1="24" x2="46" y2="24" stroke="rgba(var(--primary-rgb),0.1)" stroke-width="0.5"/>
-                        <!-- Sweep -->
-                        <g class="hud-radar-sweep">
-                            <path d="M24 24 L24 2 A22 22 0 0 1 46 24 Z" fill="url(#radarGrad)" opacity="0.5"/>
-                            <line x1="24" y1="24" x2="24" y2="2" stroke="rgba(var(--primary-rgb),0.8)" stroke-width="1.5"/>
-                        </g>
-                        <!-- Blips -->
-                        <circle class="hud-blip" cx="30" cy="14" r="2" fill="var(--primary)" filter="url(#glow)"/>
-                        <circle class="hud-blip" cx="18" cy="32" r="1.5" fill="var(--primary)" filter="url(#glow)"/>
-                        <circle class="hud-blip" cx="36" cy="28" r="1.5" fill="var(--primary)" filter="url(#glow)"/>
-                        <!-- Defs -->
-                        <defs>
-                            <radialGradient id="radarGrad" cx="24" cy="24" r="22" gradientUnits="userSpaceOnUse">
-                                <stop offset="0%" stop-color="rgba(var(--primary-rgb),0)" />
-                                <stop offset="100%" stop-color="rgba(var(--primary-rgb),0.35)" />
-                            </radialGradient>
-                            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                                <feGaussianBlur stdDeviation="1.5" result="blur"/>
-                                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                            </filter>
-                        </defs>
-                    </svg>
-                </div>
-
-                {{-- Stats: System Status --}}
-                <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                    <div class="hud-stat-label">{{ app()->getLocale() == 'km' ? 'ស្ថានភាពប្រព័ន្ធ' : __('System Status') }}</div>
-                    <div style="display: flex; align-items: center; gap: 0.4rem;">
-                        <div class="hud-status-dot"></div>
-                        <span style="font-size: 0.62rem; color: var(--primary); font-weight: 700; letter-spacing: 0.5px;">
-                            {{ app()->getLocale() == 'km' ? 'អនឡាញ' : 'ONLINE' }}
-                        </span>
-                    </div>
-                </div>
-
-                <div class="hud-divider"></div>
-
-                {{-- Staff --}}
-                <div style="display: flex; flex-direction: column; gap: 0.1rem; align-items: center;">
-                    <div class="hud-stat-label">{{ app()->getLocale() == 'km' ? 'បុគ្គលិក' : __('Total Staff') }}</div>
-                    <div class="hud-stat-value" id="hud-staff-val" data-target="{{ $totalStaff }}">0</div>
-                </div>
-
-                <div class="hud-divider"></div>
-
-                {{-- HODs --}}
-                <div style="display: flex; flex-direction: column; gap: 0.1rem; align-items: center;">
-                    <div class="hud-stat-label">{{ app()->getLocale() == 'km' ? 'ប្រធានផ្នែក' : __('Active HODs') }}</div>
-                    <div class="hud-stat-value" id="hud-hod-val" data-target="{{ $hodCount }}">0</div>
-                </div>
-
-                <div class="hud-divider"></div>
-
-                {{-- Departments --}}
-                <div style="display: flex; flex-direction: column; gap: 0.1rem; align-items: center;">
-                    <div class="hud-stat-label">{{ app()->getLocale() == 'km' ? 'នាយកដ្ឋាន' : __('Departments') }}</div>
-                    <div class="hud-stat-value" id="hud-dept-val" data-target="{{ $totalDepts }}">0</div>
-                </div>
-            </div>
-        </div>
+        <div style="flex: 1;"></div>
 
         <div style="position: relative; width: 250px; display: flex; justify-content: flex-end;">
             <div style="position: relative; width: 100%;">
@@ -403,27 +247,7 @@
         @endforeach
     };
 
-    // HUD animated counter
-    (function() {
-        function animateCount(el) {
-            const target = parseInt(el.dataset.target) || 0;
-            const duration = 1200;
-            const start = performance.now();
-            function step(now) {
-                const p = Math.min((now - start) / duration, 1);
-                const ease = 1 - Math.pow(1 - p, 3);
-                el.textContent = Math.round(ease * target);
-                if (p < 1) requestAnimationFrame(step);
-            }
-            requestAnimationFrame(step);
-        }
-        window.addEventListener('DOMContentLoaded', () => {
-            ['hud-staff-val','hud-hod-val','hud-dept-val'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) animateCount(el);
-            });
-        });
-    })();
+
     window.transDept = function(d) { 
         if (!d) return d;
         const entry = Object.entries(deptMap).find(([k]) => k.toLowerCase() === d.trim().toLowerCase());
