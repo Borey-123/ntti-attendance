@@ -212,8 +212,8 @@ class AttendanceController extends Controller
             
             if ($lastHeartbeat) {
                 $lastSeen = Carbon::parse($lastHeartbeat);
-                $diff = $lastSeen->diffInMinutes(now());
-                $online = $diff <= 3; // Within 3 minutes is considered online
+                $diff = $lastSeen->diffInSeconds(now());
+                $online = $diff <= 15; // Within 15 seconds is considered online
                 $ago = $lastSeen->diffForHumans();
             }
 
@@ -294,7 +294,7 @@ class AttendanceController extends Controller
                 'message' => 'Teacher account is inactive.',
                 'teacher_name' => $teacher->name,
                 'teacher_name_kh' => $teacher->name_kh,
-                'photo'   => $teacher->photo ? url($teacher->photo) : null,
+                'photo'   => $teacher->photo ? to_asset_url($teacher->photo) : null,
                 'action'  => null,
             ], 403);
         }
@@ -313,7 +313,7 @@ class AttendanceController extends Controller
                 'message' => 'System is under Maintenance.',
                 'teacher_name' => $teacher->name,
                 'teacher_name_kh' => $teacher->name_kh,
-                'photo'   => $teacher->photo ? url($teacher->photo) : null,
+                'photo'   => $teacher->photo ? to_asset_url($teacher->photo) : null,
                 'action'  => null,
             ], 503);
         }
@@ -333,7 +333,7 @@ class AttendanceController extends Controller
                 'message' => 'Unauthorized Scanner Device (IP: ' . $request->ip() . ')',
                 'teacher_name' => $teacher->name,
                 'teacher_name_kh' => $teacher->name_kh,
-                'photo'   => $teacher->photo ? url($teacher->photo) : null,
+                'photo'   => $teacher->photo ? to_asset_url($teacher->photo) : null,
                 'action'  => null,
             ], 403);
         }
@@ -357,7 +357,7 @@ class AttendanceController extends Controller
                 'message' => 'System is currently Closed. (Open: ' . $openTime . '-' . $closeTime . ')',
                 'teacher_name' => $teacher->name,
                 'teacher_name_kh' => $teacher->name_kh,
-                'photo'   => $teacher->photo ? url($teacher->photo) : null,
+                'photo'   => $teacher->photo ? to_asset_url($teacher->photo) : null,
                 'action'  => null,
             ], 403);
         }
@@ -381,7 +381,7 @@ class AttendanceController extends Controller
                 'message'        => 'Today (' . $now->format('l') . ') is not a working day.',
                 'teacher_name'   => $teacher->name,
                 'teacher_name_kh'=> $teacher->name_kh,
-                'photo'          => $teacher->photo ? url($teacher->photo) : null,
+                'photo'          => $teacher->photo ? to_asset_url($teacher->photo) : null,
                 'action'         => null,
             ], 403);
         }
@@ -406,20 +406,21 @@ class AttendanceController extends Controller
                 $workHrs  = floor($workMins / 60);
                 $workRem  = $workMins % 60;
 
-                $this->sendTelegramNotification($teacher, 'check-out', 'Morning', $now->format('h:i:s A'));
+                $tgSent = $this->sendTelegramNotification($teacher, 'check-out', 'Morning', $now->format('h:i:s A'));
 
                 return response()->json([
                     'status'        => 'success',
                     'action'        => 'check-out',
                     'teacher_name'  => $teacher->name,
                     'teacher_name_kh'=> $teacher->name_kh,
-                    'photo'         => $teacher->photo ? url($teacher->photo) : null,
+                    'photo'         => $teacher->photo ? to_asset_url($teacher->photo) : null,
                     'employee_id'   => $teacher->employee_id,
                     'department'    => $teacher->department,
                     'shift'         => 'Morning',
                     'time'          => $now->format('h:i:s A'),
                     'working_hours' => "{$workHrs}h {$workRem}m",
                     'message'       => 'Morning Check-out recorded',
+                    'telegram_sent' => $tgSent,
                 ]);
             } catch (\Throwable $e) {
                 \Log::error('Checkout Error (morning/scan): ' . $e->getMessage());
@@ -436,20 +437,21 @@ class AttendanceController extends Controller
                 $workHrs  = floor($workMins / 60);
                 $workRem  = $workMins % 60;
 
-                $this->sendTelegramNotification($teacher, 'check-out', 'Afternoon', $now->format('h:i:s A'));
+                $tgSent = $this->sendTelegramNotification($teacher, 'check-out', 'Afternoon', $now->format('h:i:s A'));
 
                 return response()->json([
                     'status'        => 'success',
                     'action'        => 'check-out',
                     'teacher_name'  => $teacher->name,
                     'teacher_name_kh'=> $teacher->name_kh,
-                    'photo'         => $teacher->photo ? url($teacher->photo) : null,
+                    'photo'         => $teacher->photo ? to_asset_url($teacher->photo) : null,
                     'employee_id'   => $teacher->employee_id,
                     'department'    => $teacher->department,
                     'shift'         => 'Afternoon',
                     'time'          => $now->format('h:i:s A'),
                     'working_hours' => "{$workHrs}h {$workRem}m",
                     'message'       => 'Afternoon Check-out recorded',
+                    'telegram_sent' => $tgSent,
                 ]);
             } catch (\Throwable $e) {
                 \Log::error('Checkout Error (afternoon/scan): ' . $e->getMessage());
@@ -507,7 +509,7 @@ class AttendanceController extends Controller
                     'message' => 'You have already checked out for today. No active shift right now.',
                     'teacher_name' => $teacher->name,
                     'teacher_name_kh' => $teacher->name_kh,
-                    'photo'   => $teacher->photo ? url($teacher->photo) : null,
+                    'photo'   => $teacher->photo ? to_asset_url($teacher->photo) : null,
                     'action'  => 'already-scanned',
                 ]);
             }
@@ -525,7 +527,7 @@ class AttendanceController extends Controller
                 'message' => 'No active shift for scanning at this time.',
                 'teacher_name' => $teacher->name,
                 'teacher_name_kh' => $teacher->name_kh,
-                'photo'   => $teacher->photo ? url($teacher->photo) : null,
+                'photo'   => $teacher->photo ? to_asset_url($teacher->photo) : null,
                 'action'  => null,
             ], 400);
         }
@@ -537,7 +539,7 @@ class AttendanceController extends Controller
                 'message' => 'You have already completed the ' . $shiftType . ' shift.',
                 'teacher_name' => $teacher->name,
                 'teacher_name_kh' => $teacher->name_kh,
-                'photo'   => $teacher->photo ? url($teacher->photo) : null,
+                'photo'   => $teacher->photo ? to_asset_url($teacher->photo) : null,
                 'action'  => 'already-scanned',
             ]);
         }
@@ -549,20 +551,21 @@ class AttendanceController extends Controller
             $statusCol => $status,
         ]);
 
-        $this->sendTelegramNotification($teacher, 'check-in', $shiftType, $now->format('h:i:s A'), $status);
+        $tgSent = $this->sendTelegramNotification($teacher, 'check-in', $shiftType, $now->format('h:i:s A'), $status);
 
         return response()->json([
             'status'           => 'success',
             'action'           => 'check-in',
             'teacher_name'     => $teacher->name,
             'teacher_name_kh'  => $teacher->name_kh,
-            'photo'            => $teacher->photo ? url($teacher->photo) : null,
+            'photo'            => $teacher->photo ? to_asset_url($teacher->photo) : null,
             'employee_id'      => $teacher->employee_id,
             'department'       => $teacher->department,
             'shift'            => $shiftType,
             'time'             => $now->format('h:i:s A'),
             'attendance_status'=> $status,
             'message'          => $shiftType . ' Check-in recorded',
+            'telegram_sent'    => $tgSent,
         ]);
     }
 
@@ -609,20 +612,21 @@ class AttendanceController extends Controller
                 $workHrs  = floor($workMins / 60);
                 $workRem  = $workMins % 60;
 
-                $this->sendTelegramNotification($teacher, 'check-out', 'Morning', $now->format('h:i:s A'));
+                $tgSent = $this->sendTelegramNotification($teacher, 'check-out', 'Morning', $now->format('h:i:s A'));
 
                 return response()->json([
                     'status'        => 'success',
                     'action'        => 'check-out',
                     'teacher_name'  => $teacher->name,
                     'teacher_name_kh'=> $teacher->name_kh,
-                    'photo'         => $teacher->photo ? url($teacher->photo) : null,
+                    'photo'         => $teacher->photo ? to_asset_url($teacher->photo) : null,
                     'employee_id'   => $teacher->employee_id,
                     'department'    => $teacher->department,
                     'shift'         => 'Morning',
                     'time'          => $now->format('h:i:s A'),
                     'working_hours' => "{$workHrs}h {$workRem}m",
                     'message'       => "Morning Check-out recorded for {$teacher->name}",
+                    'telegram_sent' => $tgSent,
                 ]);
             } catch (\Throwable $e) {
                 \Log::error('Checkout Error (morning/adminScan): ' . $e->getMessage());
@@ -639,20 +643,21 @@ class AttendanceController extends Controller
                 $workHrs  = floor($workMins / 60);
                 $workRem  = $workMins % 60;
 
-                $this->sendTelegramNotification($teacher, 'check-out', 'Afternoon', $now->format('h:i:s A'));
+                $tgSent = $this->sendTelegramNotification($teacher, 'check-out', 'Afternoon', $now->format('h:i:s A'));
 
                 return response()->json([
                     'status'        => 'success',
                     'action'        => 'check-out',
                     'teacher_name'  => $teacher->name,
                     'teacher_name_kh'=> $teacher->name_kh,
-                    'photo'         => $teacher->photo ? url($teacher->photo) : null,
+                    'photo'         => $teacher->photo ? to_asset_url($teacher->photo) : null,
                     'employee_id'   => $teacher->employee_id,
                     'department'    => $teacher->department,
                     'shift'         => 'Afternoon',
                     'time'          => $now->format('h:i:s A'),
                     'working_hours' => "{$workHrs}h {$workRem}m",
                     'message'       => "Afternoon Check-out recorded for {$teacher->name}",
+                    'telegram_sent' => $tgSent,
                 ]);
             } catch (\Throwable $e) {
                 \Log::error('Checkout Error (afternoon/adminScan): ' . $e->getMessage());
@@ -740,20 +745,21 @@ class AttendanceController extends Controller
             $statusCol => $status,
         ]);
 
-        $this->sendTelegramNotification($teacher, 'check-in', $shiftType, $now->format('h:i:s A'), $status);
+        $tgSent = $this->sendTelegramNotification($teacher, 'check-in', $shiftType, $now->format('h:i:s A'), $status);
 
         return response()->json([
             'status'           => 'success',
             'action'           => 'check-in',
             'teacher_name'     => $teacher->name,
             'teacher_name_kh'  => $teacher->name_kh,
-            'photo'            => $teacher->photo ? url($teacher->photo) : null,
+            'photo'            => $teacher->photo ? to_asset_url($teacher->photo) : null,
             'employee_id'      => $teacher->employee_id,
             'department'       => $teacher->department,
             'shift'            => $shiftType,
             'time'             => $now->format('h:i:s A'),
             'attendance_status'=> $status,
             'message'          => "{$shiftType} Check-in recorded for {$teacher->name}",
+            'telegram_sent'    => $tgSent,
         ]);
     }
 
@@ -896,7 +902,7 @@ class AttendanceController extends Controller
                 'teacher_name' => $a->teacher->name ?? 'Unknown',
                 'teacher_name_kh' => $a->teacher->name_kh ?? '',
                 'department' => $a->teacher->department ?? '',
-                'photo' => $a->teacher->photo ? url($a->teacher->photo) : null,
+                'photo' => $a->teacher->photo ? to_asset_url($a->teacher->photo) : null,
                 'type' => $latestScan['is_in'] ? 'check-in' : 'check-out',
                 'shift_label' => $latestScan['type'],
                 'time' => $latestScan['val'],
@@ -933,7 +939,7 @@ class AttendanceController extends Controller
                 'teacher_name'    => $teacher->name,
                 'teacher_name_kh' => $teacher->name_kh,
                 'department'      => $teacher->department ?: $uid, // fallback
-                'photo'           => $teacher->photo ? url($teacher->photo) : null,
+                'photo'           => $teacher->photo ? to_asset_url($teacher->photo) : null,
                 'type'            => 'error',
                 'shift_label'     => 'ERROR',
                 'time'            => Carbon::parse($log->timestamp)->format('h:i:s A'),
@@ -1079,25 +1085,48 @@ class AttendanceController extends Controller
 
         return response()->json(['status' => 'success', 'message' => 'Attendance record adjusted manually.']);
     }
-    private function sendTelegramNotification($teacher, $action, $shift, $time, $status = 'present')
+    private function sendTelegramNotification($teacher, $action, $shift, $time, $status = 'present'): bool
     {
-        if (empty($teacher->telegram_chat_id)) return;
+        if (empty($teacher->telegram_chat_id)) return false;
         
         $token = Setting::getValue('telegram_bot_token');
-        if (empty($token)) return;
+        if (empty($token)) return false;
 
         $icon = $action === 'check-in' ? '✅' : '👋';
         $lateIcon = $status === 'late' ? ' (⚠️ Late)' : '';
         $message = "{$icon} *{$teacher->name}*\n{$shift} {$action} recorded at {$time}{$lateIcon}";
 
         try {
-            \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
-                'chat_id' => $teacher->telegram_chat_id,
-                'text' => $message,
+            $response = \Illuminate\Support\Facades\Http::timeout(5)->post("https://api.telegram.org/bot{$token}/sendMessage", [
+                'chat_id'    => $teacher->telegram_chat_id,
+                'text'       => $message,
                 'parse_mode' => 'Markdown'
             ]);
+
+            $sent = $response->successful();
+
+            // Log the telegram send result to security_logs so admin can audit
+            \Illuminate\Support\Facades\DB::table('security_logs')->insert([
+                'action'    => $sent ? 'telegram_sent' : 'telegram_failed',
+                'target'    => $teacher->name,
+                'details'   => ($sent ? 'Telegram notification sent' : 'Telegram notification FAILED') .
+                               " [{$shift} {$action} at {$time}]" .
+                               (!$sent ? ' HTTP ' . $response->status() : ''),
+                'ip_address' => '127.0.0.1',
+                'timestamp'  => now(),
+            ]);
+
+            return $sent;
         } catch (\Exception $e) {
             \Log::error('Telegram Notification Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\DB::table('security_logs')->insert([
+                'action'    => 'telegram_failed',
+                'target'    => $teacher->name,
+                'details'   => 'Telegram notification EXCEPTION: ' . $e->getMessage() . " [{$shift} {$action} at {$time}]",
+                'ip_address' => '127.0.0.1',
+                'timestamp'  => now(),
+            ]);
+            return false;
         }
     }
 }

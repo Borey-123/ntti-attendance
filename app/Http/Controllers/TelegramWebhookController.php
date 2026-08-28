@@ -57,6 +57,11 @@ class TelegramWebhookController extends Controller
                 }
                 
                 if ($potentialTeacher) {
+                    if (!empty($potentialTeacher->telegram_chat_id)) {
+                        $this->sendReply($chatId, "⚠️ This Teacher ID / Phone Number is already linked to another Telegram account. Please contact an admin if you need to reset it.");
+                        return response()->json(['status' => 'success']);
+                    }
+                    
                     $potentialTeacher->update(['telegram_chat_id' => (string)$chatId]);
                     $teacher = $potentialTeacher;
                     $justLinked = true;

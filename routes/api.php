@@ -5,9 +5,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\AttendanceController;
 
-// ESP32 scan endpoint — no auth required
-Route::post('/attendance/scan', [AttendanceController::class, 'scan']);
-Route::post('/hardware/heartbeat', [AttendanceController::class, 'heartbeat']);
+// ESP32 endpoints protected by API key middleware
+Route::middleware('rfid.auth')->group(function () {
+    Route::post('/attendance/scan', [AttendanceController::class, 'scan']);
+    Route::post('/hardware/heartbeat', [AttendanceController::class, 'heartbeat']);
+});
 
 // Telegram Webhook
 Route::post('/telegram/webhook', [\App\Http\Controllers\TelegramWebhookController::class, 'handle']);

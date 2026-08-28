@@ -22,8 +22,14 @@ class SecurityLogController extends Controller
             })
             ->orderBy('updated_at', 'desc')
             ->get();
+
+        // Recent Telegram notification delivery logs
+        $telegramLogs = SecurityLog::whereIn('action', ['telegram_sent', 'telegram_failed'])
+            ->orderBy('timestamp', 'desc')
+            ->limit(20)
+            ->get();
             
-        return view('security.index', compact('logs', 'todayCheckIns'));
+        return view('security.index', compact('logs', 'todayCheckIns', 'telegramLogs'));
     }
 
     public function clearCache()

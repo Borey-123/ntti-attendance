@@ -292,10 +292,10 @@
         </header>
 
         <div class="search-card">
-            @if(session('error'))
+            @if(session('error') || $errors->any())
                 <div class="error-msg">
                     <i class="ph ph-warning-circle" style="font-size:1.2rem; vertical-align:middle; margin-right:0.3rem;"></i>
-                    {{ session('error') }}
+                    {{ session('error') ?? $errors->first() }}
                 </div>
             @endif
 
@@ -363,6 +363,38 @@
             const icon = document.getElementById('portalThemeIcon');
             if (icon) icon.className = isDark ? 'ph ph-sun' : 'ph ph-moon';
         })();
+
+        // ── Live Lockout Countdown ──
+        document.addEventListener("DOMContentLoaded", function() {
+            const errorBoxes = document.querySelectorAll('.error-msg');
+            errorBoxes.forEach(box => {
+                let match = box.innerHTML.match(/in\s+(\d+)\s+seconds/i);
+                if (match) {
+                    let seconds = parseInt(match[1]);
+                    const btn = document.querySelector('button[type="submit"]');
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.style.opacity = '0.5';
+                        btn.style.cursor = 'not-allowed';
+                    }
+                    
+                    let interval = setInterval(() => {
+                        seconds--;
+                        if (seconds <= 0) {
+                            clearInterval(interval);
+                            box.innerHTML = box.innerHTML.replace(/in\s+\d+\s+seconds/i, "now. You can try again.");
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.style.opacity = '1';
+                                btn.style.cursor = 'pointer';
+                            }
+                        } else {
+                            box.innerHTML = box.innerHTML.replace(/in\s+\d+\s+seconds/i, `in ${seconds} seconds`);
+                        }
+                    }, 1000);
+                }
+            });
+        });
     </script>
 </body>
 </html>

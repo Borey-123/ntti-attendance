@@ -16,23 +16,6 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Web Migration Helper for Free Hosting (Render without interactive Shell)
-Route::get('/migrate-db', function () {
-    try {
-        $dbPath = database_path('database.sqlite');
-        if (!file_exists($dbPath)) {
-            @touch($dbPath);
-        }
-
-        \Illuminate\Support\Facades\Artisan::call('migrate:fresh', [
-            '--seed' => true,
-            '--force' => true,
-        ]);
-        return response('<h1>✅ Success!</h1><p>Database migrated and seeded successfully on Neon PostgreSQL!</p><pre>' . \Illuminate\Support\Facades\Artisan::output() . '</pre><a href="/login">Go to Login</a>');
-    } catch (\Throwable $e) {
-        return response('<h1>❌ Error migrating database</h1><p><b>Message:</b> ' . htmlspecialchars($e->getMessage()) . '</p><pre>' . htmlspecialchars($e->getTraceAsString()) . '</pre>', 500);
-    }
-});
 
 // Language Switcher (public, no auth needed)
 Route::get('/lang/{locale}', function (string $locale) {
@@ -151,10 +134,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
     Route::get('/settings/backup', [SettingController::class, 'downloadBackup'])->name('settings.backup');
     Route::get('/settings/database/export', [SettingController::class, 'downloadDatabaseSqlite'])->name('settings.database.export');
-    Route::post('/settings/database/import', [SettingController::class, 'importDatabaseSqlite'])->name('settings.database.import');
     Route::post('/settings/system-cleanup', [SettingController::class, 'runSystemCleanup'])->name('settings.cleanup');
     Route::get('/settings/telegram-chats', [SettingController::class, 'fetchTelegramChats'])->name('settings.telegram.chats');
     Route::post('/settings/appearance', [SettingController::class, 'updateAppearance'])->name('settings.appearance.update');
     Route::post('/settings/admin', [SettingController::class, 'storeAdmin'])->name('settings.admin.store');
     Route::post('/settings/admin/{user}/reset-password', [SettingController::class, 'resetAdminPassword'])->name('settings.admin.reset-password');
+    Route::delete('/settings/admin/{user}', [SettingController::class, 'destroyAdmin'])->name('settings.admin.destroy');
 });

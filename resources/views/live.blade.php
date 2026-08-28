@@ -452,12 +452,20 @@
         .history-item.check-out { border-left: 3px solid var(--warning); }
 
         .h-avatar {
-            width: 38px; height: 38px;
+            width: 40px; height: 40px;
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 0.85rem;
+            font-weight: 700; font-size: 0.9rem;
             flex-shrink: 0;
             color: #fff;
+            overflow: hidden;
+            object-fit: cover;
+        }
+        .h-avatar img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block;
         }
         .check-in .h-avatar  { background: linear-gradient(135deg, #10b981, #059669); }
         .check-out .h-avatar { background: linear-gradient(135deg, #f59e0b, #d97706); }
@@ -1254,6 +1262,7 @@
                         {{ __('Check In Time') }}
                     </div>
                     <div class="scan-time check-in" id="scanTime">00:00:00</div>
+                    <div id="telegramStatusBadge" style="display:none; margin-top: 1rem; font-size: 0.85rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 999px; display: inline-flex; align-items: center; gap: 0.4rem;"></div>
                 </div>
             </div>
 
@@ -1447,12 +1456,17 @@
                 const initial = scan.teacher_name ? scan.teacher_name.charAt(0).toUpperCase() : '?';
                 const badgeText = isCheckIn ? '{{ __("IN") }}' : '{{ __("OUT") }}';
                 const icon = isCheckIn ? '<i class="ph ph-sign-in"></i>' : '<i class="ph ph-sign-out"></i>';
+
+                // Build avatar: use photo if available, else colored initial
+                const avatarContent = scan.photo
+                    ? `<img src="${scan.photo}" alt="" onerror="this.parentElement.innerHTML='${initial}'; this.parentElement.style.alignItems='center'; this.parentElement.style.justifyContent='center';">`
+                    : initial;
                 
                 const item = document.createElement('div');
                 item.className = `history-item ${scan.type}`;
                 item.style.animationDelay = `${idx * 0.05}s`;
                 item.innerHTML = `
-                    <div class="h-avatar">${initial}</div>
+                    <div class="h-avatar">${avatarContent}</div>
                     <div class="h-info">
                         <div class="h-name-kh notranslate" translate="no" style="color:var(--primary); font-size:0.95rem; font-weight:700;">${scan.teacher_name_kh || ''}</div>
                         <div class="h-name notranslate" translate="no" style="font-size:0.8rem; opacity:0.8;">${scan.teacher_name}</div>
@@ -1514,6 +1528,24 @@
                 label.textContent = isCheckIn 
                     ? '{{ __("Checked In") }}' 
                     : '{{ __("Checked Out") }}';
+            }
+
+            // Show/hide Telegram status badge
+            const tgBadge = document.getElementById('telegramStatusBadge');
+            if (scan.telegram_sent === true) {
+                tgBadge.style.display = 'inline-flex';
+                tgBadge.style.background = 'rgba(0, 136, 204, 0.12)';
+                tgBadge.style.color = '#0088cc';
+                tgBadge.style.border = '1px solid rgba(0, 136, 204, 0.3)';
+                tgBadge.innerHTML = '<i class="ph ph-telegram-logo"></i> {{ __("Telegram Sent") }}';
+            } else if (scan.telegram_sent === false) {
+                tgBadge.style.display = 'inline-flex';
+                tgBadge.style.background = 'rgba(239, 68, 68, 0.1)';
+                tgBadge.style.color = 'var(--danger)';
+                tgBadge.style.border = '1px solid rgba(239, 68, 68, 0.2)';
+                tgBadge.innerHTML = '<i class="ph ph-telegram-logo"></i> {{ __("Telegram Failed") }}';
+            } else {
+                tgBadge.style.display = 'none';
             }
 
             // Show card, hide standby

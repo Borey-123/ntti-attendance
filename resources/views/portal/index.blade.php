@@ -681,7 +681,7 @@
             @endif
 
             {{-- Live Clock Hero --}}
-            <div id="liveClock" style="font-size: 3rem; font-weight: 800; color: var(--primary); font-variant-numeric: tabular-nums; letter-spacing: -2px; line-height: 1; margin-bottom: 0.4rem;">--:--:--</div>
+            <div id="liveClock" style="font-size: 3rem; font-weight: 800; color: var(--primary); font-variant-numeric: tabular-nums; letter-spacing: 2px; word-spacing: 4px; line-height: 1; margin-bottom: 0.4rem;">--:--:--</div>
             <h1 id="greetingText" style="font-size: 1.4rem; margin: 0 0 0.5rem; font-weight: 700;">{{ __('Teacher Portal') }}</h1>
             <p class="subtitle" style="margin-top: 0;">{{ __('Check your attendance records instantly.') }}</p>
         </header>

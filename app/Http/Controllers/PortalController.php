@@ -292,11 +292,16 @@ class PortalController extends Controller
 
     public function export(Request $request)
     {
+        $teacherId = session('portal_teacher_id');
+        if (!$teacherId) return redirect()->route('portal.index')->with('error', 'Unauthorized. Please login first.');
+
         $id = trim($request->employee_id);
         if (!$id) return redirect()->back()->with('error', 'Employee ID is required.');
         
-        $teacher = Teacher::where('employee_id', $id)->first();
-        if (!$teacher) return redirect()->back()->with('error', 'Teacher not found.');
+        $teacher = Teacher::find($teacherId);
+        if (!$teacher || $teacher->employee_id !== $id) {
+            return redirect()->back()->with('error', 'Unauthorized. You can only export your own attendance.');
+        }
 
         $attendances = Attendance::where('teacher_id', $teacher->id)
             ->where('date', '>=', now()->subDays(31)->startOfDay())
@@ -412,6 +417,10 @@ class PortalController extends Controller
 
     public function storeCorrection(Request $request)
     {
+        $teacherId = session('portal_teacher_id');
+        if (!$teacherId) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized. Please login first.'], 401);
+        }
         $validator = Validator::make($request->all(), [
             'employee_id' => 'required|string',
             'date' => 'required|date',
@@ -424,8 +433,8 @@ class PortalController extends Controller
         }
 
         $teacher = Teacher::where('employee_id', $request->employee_id)->first();
-        if (!$teacher) {
-            return response()->json(['status' => 'error', 'message' => 'Teacher not found.'], 404);
+        if (!$teacher || $teacher->id !== $teacherId) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized or teacher not found.'], 404);
         }
 
         AttendanceCorrection::create([
@@ -513,10 +522,10 @@ class PortalController extends Controller
     {
         if (!$in) return '—';
         
-        $inTime = substr($in, 0, 5);
+        $inTime = htmlspecialchars(substr($in, 0, 5));
         
         if ($out) {
-            return $inTime . ' - ' . substr($out, 0, 5);
+            return $inTime . ' - ' . htmlspecialchars(substr($out, 0, 5));
         }
         
         // No check-out

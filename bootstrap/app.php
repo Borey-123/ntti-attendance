@@ -16,16 +16,21 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\RestrictSchoolIp::class,
         ]);
+        $middleware->alias([
+            'rfid.auth' => \App\Http\Middleware\ValidateRfidApiKey::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->renderable(function (\Illuminate\Contracts\Encryption\DecryptException $e, $request) {
             return redirect('/login');
         });
         $exceptions->renderable(function (\Illuminate\Session\TokenMismatchException $e, $request) {
-            return redirect('/login')->with('error', 'Your session expired. Please try logging in again.');
+            $redirectUrl = $request->is('portal*') ? '/portal' : '/login';
+            return redirect($redirectUrl)->with('error', 'Your session expired. Please try logging in again.');
         });
         $exceptions->renderable(function (\Illuminate\Foundation\Http\Exceptions\TokenMismatchException $e, $request) {
-            return redirect('/login')->with('error', 'Your session expired. Please try logging in again.');
+            $redirectUrl = $request->is('portal*') ? '/portal' : '/login';
+            return redirect($redirectUrl)->with('error', 'Your session expired. Please try logging in again.');
         });
         $exceptions->renderable(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, $request) {
             return response('The uploaded file is too large for the server limits. Please upload a smaller file or increase post_max_size in php.ini. <br><br><a href="javascript:history.back()">Click here to go back</a>', 413);

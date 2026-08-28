@@ -575,25 +575,6 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                     @csrf
                     <input type="hidden" name="university_name" value="{{ $universityName }}">
                     
-                    <div class="form-group">
-                        <label>{{ __('Authorized Terminal IP') }}</label>
-                        <input type="text" name="authorized_ip" class="form-control" value="{{ $authorizedIp }}" placeholder="e.g. 192.168.1.50">
-                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">{{ __('Leave blank to allow any IP address.') }}</p>
-                    </div>
-
-                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(239, 68, 68, 0.05); padding: 1.5rem; border-radius: 1rem; border: 1px solid rgba(239, 68, 68, 0.1);">
-                        <div>
-                            <h4 style="margin: 0; font-size: 1rem;">{{ __('Maintenance Mode') }}</h4>
-                            <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Temporarily disable all RFID scanner inputs.') }}</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="hidden" name="maintenance_mode" value="off">
-                            <input type="checkbox" name="maintenance_mode" value="on" {{ $maintenanceMode === 'on' ? 'checked' : '' }}>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-
-                    <hr style="border: 0; border-top: 1px solid var(--border); margin: 2.5rem 0;">
 
                     <h3 style="font-size: 0.9rem; font-weight: 800; color: #0088cc; margin-bottom: 1.5rem;"><i class="ph ph-telegram-logo"></i> {{ __('Telegram Bot Integration') }}</h3>
                     <div class="form-group">
@@ -643,9 +624,6 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                             <a href="{{ route('settings.database.export') }}" class="btn-secondary" style="color: #3b82f6; border-color: rgba(59, 130, 246, 0.5); background: rgba(59, 130, 246, 0.08);">
                                 <i class="ph ph-download"></i> {{ __('Export DB File') }}
                             </a>
-                            <button type="button" onclick="document.getElementById('importDbFileInput').click();" class="btn-premium" style="padding: 0.5rem 1rem;">
-                                <i class="ph ph-upload-simple"></i> {{ __('Import DB File') }}
-                            </button>
                         </div>
                     </div>
 
@@ -667,11 +645,6 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                     </div>
                 </form>
                 
-                {{-- Hidden Form for Database Import --}}
-                <form id="dbImportForm" action="{{ route('settings.database.import') }}" method="POST" enctype="multipart/form-data" style="display: none;">
-                    @csrf
-                    <input type="file" id="importDbFileInput" name="db_file" accept=".sql,.sqlite,.db,.sqlite3" onchange="if(confirm('Importing a database backup will replace all current data. Are you sure you want to proceed?')) document.getElementById('dbImportForm').submit();">
-                </form>
 
                 {{-- Hidden Form for System Cleanup --}}
                 <form id="systemCleanupForm" action="{{ route('settings.cleanup') }}" method="POST" style="display: none;">
@@ -887,13 +860,25 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                                     </td>
                                     <td>
                                         <span style="background: rgba(var(--primary-rgb), 0.1); color: var(--primary); padding: 0.4rem 0.8rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 800;">
-                                            {{ $admin->id === auth()->id() ? __('ROOT ADMIN') : __('SYSTEM ADMIN') }}
+                                            {{ $admin->id === 1 ? __('ROOT ADMIN') : __('SYSTEM ADMIN') }}
                                         </span>
                                     </td>
                                     <td style="text-align: right;">
-                                        <button class="btn-secondary" onclick="toggleReset('reset-{{ $admin->id }}')">
-                                            <i class="ph ph-key"></i> {{ __('Reset') }}
-                                        </button>
+                                        @if(auth()->id() === 1)
+                                        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                            <button class="btn-secondary" onclick="toggleReset('reset-{{ $admin->id }}')">
+                                                <i class="ph ph-key"></i> {{ __('Reset') }}
+                                            </button>
+                                            @if($admin->id !== 1)
+                                            <form action="{{ route('settings.admin.destroy', $admin->id) }}" method="POST" onsubmit="return confirm('{{ __('Are you sure you want to delete this administrator? This action cannot be undone.') }}');" style="margin:0;">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn-secondary" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05);">
+                                                    <i class="ph ph-trash"></i> {{ __('Delete') }}
+                                                </button>
+                                            </form>
+                                            @endif
+                                        </div>
                                         
                                         <div id="reset-{{ $admin->id }}" style="display:none; margin-top: 1.5rem; text-align: left; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--primary);">
                                             <form action="{{ route('settings.admin.reset-password', $admin->id) }}" method="POST">
@@ -914,6 +899,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                                                 </div>
                                             </form>
                                         </div>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach

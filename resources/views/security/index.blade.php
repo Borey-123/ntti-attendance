@@ -72,7 +72,7 @@
     display: grid;
     grid-template-columns: 1fr 320px;
     gap: 1.5rem;
-    align-items: start;
+    align-items: stretch;
 }
 @media (max-width: 1024px) { .security-layout { grid-template-columns: 1fr; } }
 
@@ -126,10 +126,11 @@
 
 /* ── Scrollable table wrapper ── */
 .log-table-wrap {
+    flex: 1;
     overflow-x: auto;
-    max-height: 600px;
     overflow-y: auto;
     position: relative;
+    max-height: none;
 }
 /* ── Modal Details ── */
 .log-detail-card {
@@ -328,7 +329,7 @@ nav[role="navigation"] span, nav[role="navigation"] a {
 <div class="security-layout">
 
     {{-- ── Audit Log Table ── --}}
-    <div class="card" style="border-radius: 1.75rem; overflow: hidden;">
+    <div class="card" style="border-radius: 1.75rem; overflow: hidden; display: flex; flex-direction: column; height: 100%;">
         <div class="card-header" style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border);">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
                 <h3 style="margin: 0; font-weight: 800; display: flex; align-items: center; gap: 0.6rem;">
@@ -358,7 +359,11 @@ nav[role="navigation"] span, nav[role="navigation"] a {
                         $action = strtolower($log->action ?? '');
                         $badgeClass = 'secondary';
                         $badgeIcon  = 'ph-circle';
-                        if (str_contains($action, 'delete') || str_contains($action, 'remove')) {
+                        if ($action === 'telegram_sent') {
+                            $badgeClass = 'info'; $badgeIcon = 'ph-telegram-logo';
+                        } elseif ($action === 'telegram_failed') {
+                            $badgeClass = 'danger'; $badgeIcon = 'ph-telegram-logo';
+                        } elseif (str_contains($action, 'delete') || str_contains($action, 'remove')) {
                             $badgeClass = 'danger'; $badgeIcon = 'ph-trash';
                         } elseif (str_contains($action, 'login') || str_contains($action, 'logout')) {
                             $badgeClass = 'success'; $badgeIcon = 'ph-sign-in';
@@ -537,6 +542,42 @@ nav[role="navigation"] span, nav[role="navigation"] a {
                 @empty
                     <div style="font-size: 0.78rem; color: var(--text-muted); text-align: center; padding: 1rem;">
                         {{ __('No teacher check-ins logged for today yet.') }}
+                    </div>
+                @endforelse
+            </div>
+        </div>
+
+        {{-- Telegram Delivery Status --}}
+        <div class="side-panel-card" style="border-top: 3px solid #0ea5e9;">
+            <h4>
+                <i class="ph ph-telegram-logo" style="color: #0ea5e9;"></i>
+                {{ __('Telegram Notifications') }}
+            </h4>
+            <div style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 0.2rem;">
+                @forelse($telegramLogs ?? [] as $tlog)
+                    @php
+                        $isSuccess = $tlog->action === 'telegram_sent';
+                        $tTime = \Carbon\Carbon::parse($tlog->timestamp)->format('h:i A');
+                    @endphp
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.75rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 0.75rem; font-size: 0.8rem;">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 800; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $tlog->target }}</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
+                                @if($isSuccess)
+                                    <span style="color: #10b981; font-weight: 700;"><i class="ph ph-check-circle" style="vertical-align: middle;"></i> {{ __('Sent') }}</span>
+                                @else
+                                    <span style="color: #ef4444; font-weight: 700;"><i class="ph ph-warning-circle" style="vertical-align: middle;"></i> {{ __('Failed') }}</span>
+                                @endif
+                                &bull; <span title="{{ $tlog->details }}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ Str::limit(str_replace(['Telegram notification sent [', 'Telegram notification FAILED [', ']'], '', $tlog->details), 20) }}</span>
+                            </div>
+                        </div>
+                        <span style="font-family: monospace; font-size: 0.75rem; font-weight: 800; background: rgba(14,165,233,0.15); color: #0ea5e9; padding: 0.25rem 0.55rem; border-radius: 0.4rem; border: 1px solid rgba(14,165,233,0.3);" title="{{ __('Sent time') }}">
+                            <i class="ph ph-clock" style="margin-right: 2px;"></i>{{ $tTime }}
+                        </span>
+                    </div>
+                @empty
+                    <div style="font-size: 0.78rem; color: var(--text-muted); text-align: center; padding: 1rem;">
+                        {{ __('No recent Telegram notifications.') }}
                     </div>
                 @endforelse
             </div>

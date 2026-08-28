@@ -277,6 +277,10 @@ class SettingController extends Controller
 
     public function resetAdminPassword(Request $request, User $user)
     {
+        if (auth()->id() !== 1) {
+            return back()->with('error', 'Only ROOT ADMIN can perform this action.');
+        }
+
         $request->validate([
             'password' => 'required|string|min:6|confirmed',
         ]);
@@ -286,6 +290,22 @@ class SettingController extends Controller
         ]);
 
         return back()->with('success', 'Admin password reset successfully.');
+    }
+
+    public function destroyAdmin(User $user)
+    {
+        if (auth()->id() !== 1) {
+            return back()->with('error', 'Only ROOT ADMIN can perform this action.');
+        }
+
+        if ($user->id === 1) {
+            return back()->with('error', 'Cannot delete the ROOT ADMIN account.');
+        }
+
+        SecurityLog::record('Deleted Admin User', $user->name);
+        $user->delete();
+
+        return back()->with('success', 'Administrator deleted successfully.');
     }
 
     public function downloadBackup()
@@ -569,176 +589,5 @@ class SettingController extends Controller
         return response()->download($dbPath, $filename);
     }
 
-    public function importDatabaseSqlite(Request $request)
-    {
-        @set_time_limit(300);
-        @ini_set('memory_limit', '512M');
 
-        if (!$request->hasFile('db_file') || !$request->file('db_file')->isValid()) {
-            return back()->with('error', 'No file uploaded or the uploaded file exceeds the PHP server upload size limit.');
-        }
-
-        $dbPath = database_path('database.sqlite');
-        $bakPath = database_path('database.sqlite.bak');
-
-        try {
-            $file = $request->file('db_file');
-            $realPath = $file->getRealPath();
-            
-            if (!$realPath || !file_exists($realPath)) {
-                return back()->with('error', 'Unable to read the uploaded file. Please try again.');
-            }
-
-            $ext = strtolower($file->getClientOriginalExtension());
-            if (!in_array($ext, ['sqlite', 'db', 'sqlite3', 'sql'])) {
-                return back()->with('error', 'Invalid file format. Please upload a .sqlite, .db, or .sql database file.');
-            }
-
-            $content = file_get_contents($realPath);
-
-            // 1. Always back up current database first
-            if (file_exists($dbPath)) {
-                @copy($dbPath, $bakPath);
-            }
-
-            // 2. Check if binary SQLite file vs SQL script
-            if (str_starts_with($content, 'SQLite format 3')) {
-                // Direct binary copy
-                copy($realPath, $dbPath);
-                @chmod($dbPath, 0777);
-            } else {
-                // It's a text SQL dump (from phpMyAdmin / MySQL or SQLite dump)
-                $driver = \DB::connection()->getDriverName();
-                $pdo = \DB::connection()->getPdo();
-
-                if ($driver === 'mysql') {
-                    // For MySQL, phpMyAdmin dumps can be executed directly using DB::unprepared
-                    @$pdo->exec('SET FOREIGN_KEY_CHECKS = 0;');
-                    @$pdo->exec('SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";');
-
-                    try {
-                        \DB::unprepared($content);
-                    } catch (\Throwable $unpreparedEx) {
-                        // Fallback statement-by-statement execution
-                        $cleanSql = preg_replace('/^\s*--.*$/m', '', $content) ?? $content;
-                        $statements = array_filter(
-                            array_map('trim', preg_split('/;\s*[\r\n]+/', $cleanSql)),
-                            fn($stmt) => !empty($stmt)
-                        );
-                        foreach ($statements as $statement) {
-                            if (strlen($statement) > 2) {
-                                try {
-                                    $pdo->exec($statement);
-                                } catch (\Throwable $ex) {}
-                            }
-                        }
-                    }
-
-                    @$pdo->exec('SET FOREIGN_KEY_CHECKS = 1;');
-                } else if ($driver === 'pgsql') {
-                    // PostgreSQL execution mode for MySQL/PostgreSQL dumps
-                    $sql = $content;
-                    $sql = preg_replace('/\/\*!\d+.*?\*\//s', '', $sql) ?? $sql;
-                    $sql = preg_replace('/^\s*--.*$/m', '', $sql) ?? $sql;
-                    $sql = preg_replace('/START\s+TRANSACTION;/i', '', $sql) ?? $sql;
-                    $sql = preg_replace('/COMMIT;/i', '', $sql) ?? $sql;
-
-                    // Sanitize MySQL-specific syntax to standard SQL / PostgreSQL
-                    $sql = preg_replace('/ENGINE\s*=\s*\w+/i', '', $sql) ?? $sql;
-                    $sql = preg_replace('/DEFAULT\s+CHARSET\s*=\s*[\w_]+/i', '', $sql) ?? $sql;
-                    $sql = preg_replace('/COLLATE\s*=\s*[\w_]+/i', '', $sql) ?? $sql;
-                    $sql = preg_replace('/AUTO_INCREMENT\s*=\s*\d+/i', '', $sql) ?? $sql;
-                    $sql = preg_replace('/LOCK\s+TABLES.*?;/is', '', $sql) ?? $sql;
-                    $sql = preg_replace('/UNLOCK\s+TABLES;/i', '', $sql) ?? $sql;
-                    $sql = preg_replace('/SET\s+[\w_@]+\s*=\s*.*?;/i', '', $sql) ?? $sql;
-                    $sql = str_replace('`', '"', $sql);
-                    $sql = str_replace("\\'", "''", $sql);
-
-                    $statements = array_filter(
-                        array_map('trim', explode(";\n", str_replace("\r\n", "\n", $sql))),
-                        fn($stmt) => !empty($stmt) && strlen($stmt) > 2
-                    );
-
-                    foreach ($statements as $statement) {
-                        try {
-                            $pdo->exec($statement);
-                        } catch (\Throwable $ex) {}
-                    }
-
-                    // Reconnect DB to clear any failed transaction state in PostgreSQL
-                    \DB::reconnect();
-                    $pdo = \DB::connection()->getPdo();
-
-                    // Sync PostgreSQL auto-increment sequences after data insertion
-                    $tables = ['users', 'teachers', 'attendances', 'departments', 'rfid_cards', 'security_logs', 'attendance_corrections', 'holidays', 'settings'];
-                    foreach ($tables as $tbl) {
-                        try {
-                            @$pdo->exec("SELECT setval(pg_get_serial_sequence('{$tbl}', 'id'), coalesce(max(id), 1)) FROM \"{$tbl}\";");
-                        } catch (\Throwable $seqEx) {}
-                    }
-                } else {
-                    // SQLite compatibility mode
-                    $sql = $content;
-
-                    // Remove MySQL conditional comments and comments
-                    $sql = preg_replace('/\/\*!\d+.*?\*\//s', '', $sql) ?? $sql;
-                    $sql = preg_replace('/^\s*--.*$/m', '', $sql) ?? $sql;
-                    $sql = preg_replace('/START\s+TRANSACTION;/i', '', $sql) ?? $sql;
-                    $sql = preg_replace('/COMMIT;/i', '', $sql) ?? $sql;
-
-                    // Sanitize MySQL-specific table/column options
-                    $sql = preg_replace('/ENGINE\s*=\s*\w+/i', '', $sql) ?? $sql;
-                    $sql = preg_replace('/DEFAULT\s+CHARSET\s*=\s*\w+/i', '', $sql) ?? $sql;
-                    $sql = preg_replace('/COLLATE\s*=\s*[\w_]+/i', '', $sql) ?? $sql;
-                    $sql = preg_replace('/AUTO_INCREMENT\s*=\s*\d+/i', '', $sql) ?? $sql;
-                    $sql = preg_replace('/LOCK\s+TABLES.*?;/is', '', $sql) ?? $sql;
-                    $sql = preg_replace('/UNLOCK\s+TABLES;/i', '', $sql) ?? $sql;
-                    $sql = preg_replace('/SET\s+[\w_@]+\s*=\s*.*?;/i', '', $sql) ?? $sql;
-
-                    @$pdo->exec('PRAGMA foreign_keys = OFF;');
-                    @$pdo->exec('PRAGMA synchronous = OFF;');
-
-                    $statements = array_filter(
-                        array_map('trim', preg_split('/;\s*[\r\n]+/', $sql)),
-                        fn($stmt) => !empty($stmt)
-                    );
-
-                    try {
-                        @$pdo->beginTransaction();
-                        foreach ($statements as $statement) {
-                            if (strlen($statement) > 2) {
-                                try {
-                                    $pdo->exec($statement);
-                                } catch (\Throwable $ex) {}
-                            }
-                        }
-                        if ($pdo->inTransaction()) {
-                            $pdo->commit();
-                        }
-                    } catch (\Throwable $txEx) {
-                        if ($pdo->inTransaction()) {
-                            $pdo->rollBack();
-                        }
-                    }
-
-                    @$pdo->exec('PRAGMA foreign_keys = ON;');
-                    @$pdo->exec('PRAGMA synchronous = NORMAL;');
-                }
-            }
-
-            try {
-                \Illuminate\Support\Facades\Artisan::call('cache:clear');
-            } catch (\Throwable $cEx) {}
-
-            try {
-                SecurityLog::record('Imported Database', 'Database');
-            } catch (\Throwable $sEx) {}
-
-            return back()->with('success', 'Database imported successfully! System records and settings have been restored.');
-        } catch (\Throwable $e) {
-            \Log::error('Database import failed: ' . $e->getMessage());
-            try { \DB::reconnect(); } catch (\Throwable $recEx) {}
-            return back()->with('error', 'Failed to import database: ' . $e->getMessage());
-        }
-    }
 }

@@ -559,9 +559,10 @@
         <p class="auth-subtitle">{{ __('Sign in to your administrator account') }}</p>
 
         {{-- Error / flash --}}
-        @if(session('error'))
+        @if(session('error') || $errors->any())
             <div class="alert alert-danger" style="margin-bottom:1.5rem; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.15); color:#f87171; border-radius:0.75rem; padding:0.9rem 1.2rem; font-size:0.88rem; display:flex; align-items:center; gap:0.6rem;">
-                <i class="ph ph-warning-circle" style="font-size:1.2rem;"></i> {{ session('error') }}
+                <i class="ph ph-warning-circle" style="font-size:1.2rem;"></i> 
+                {{ session('error') ?? $errors->first() }}
             </div>
         @endif
 
@@ -684,7 +685,40 @@
     };
 
     @if(session('error')) window.showToast("{{ session('error') }}", 'error'); @endif
+    @if($errors->any()) window.showToast("{{ $errors->first() }}", 'error'); @endif
     @if(session('success')) window.showToast("{{ session('success') }}", 'success'); @endif
+
+    // ── Live Lockout Countdown ──
+    document.addEventListener("DOMContentLoaded", function() {
+        const errorBoxes = document.querySelectorAll('.alert-danger');
+        errorBoxes.forEach(box => {
+            let match = box.innerHTML.match(/in\s+(\d+)\s+seconds/i);
+            if (match) {
+                let seconds = parseInt(match[1]);
+                const btn = document.querySelector('button[type="submit"]');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
+                }
+                
+                let interval = setInterval(() => {
+                    seconds--;
+                    if (seconds <= 0) {
+                        clearInterval(interval);
+                        box.innerHTML = box.innerHTML.replace(/in\s+\d+\s+seconds/i, "now. You can try again.");
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.style.opacity = '1';
+                            btn.style.cursor = 'pointer';
+                        }
+                    } else {
+                        box.innerHTML = box.innerHTML.replace(/in\s+\d+\s+seconds/i, `in ${seconds} seconds`);
+                    }
+                }, 1000);
+            }
+        });
+    });
 
     // ── Instant Language Switcher ──
     const langDict = {

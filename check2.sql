@@ -1,1 +1,0 @@
-SELECT id, manual_note FROM attendance WHERE manual_note IS NOT NULL AND manual_note != '';
