@@ -213,7 +213,7 @@ class AttendanceController extends Controller
             if ($lastHeartbeat) {
                 $lastSeen = Carbon::parse($lastHeartbeat);
                 $diff = $lastSeen->diffInSeconds(now());
-                $online = $diff <= 75; // 75 seconds (hardware heartbeat is 60s)
+                $online = $diff <= 15; // Within 15 seconds is considered online
                 $ago = $lastSeen->diffForHumans();
             }
 

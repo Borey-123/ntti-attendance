@@ -54,7 +54,7 @@ const char *deviceId = "SCANNER_01";
 
 unsigned long lastHeartbeat = 0;
 
-const unsigned long heartbeatInterval = 60000;
+const unsigned long heartbeatInterval = 5000;
 
 // =====================================================
 // LCD HELPERS
