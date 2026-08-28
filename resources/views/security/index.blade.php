@@ -129,7 +129,7 @@
     overflow-x: auto;
     overflow-y: auto;
     position: relative;
-    max-height: 380px;
+    max-height: 550px;
 }
 /* ── Modal Details ── */
 .log-detail-card {
