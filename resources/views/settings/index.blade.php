@@ -907,6 +907,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                     </table>
                 </div>
 
+                @if(auth()->id() === 1)
                 <div style="margin-top: 3rem; background: rgba(var(--primary-rgb), 0.05); padding: 2.5rem; border-radius: 1.5rem; border: 1px solid rgba(var(--primary-rgb), 0.1);">
                     <h3 style="margin: 0 0 2rem; font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 0.75rem;">
                         <i class="ph ph-user-plus" style="color: var(--primary);"></i> {{ __('Enroll New Administrator') }}
@@ -932,6 +933,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                         </div>
                     </form>
                 </div>
+                @endif
             </div>
         </div>
 

@@ -258,10 +258,14 @@ class SettingController extends Controller
 
     public function storeAdmin(Request $request)
     {
+        if (auth()->id() !== 1) {
+            return back()->with('error', 'Only ROOT ADMIN can perform this action.');
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:6',
         ]);
 
         $user = User::create([
