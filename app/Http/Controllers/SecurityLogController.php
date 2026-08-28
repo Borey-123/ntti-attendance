@@ -13,7 +13,7 @@ class SecurityLogController extends Controller
     {
         $logs = SecurityLog::with('admin')
             ->orderBy('timestamp', 'desc')
-            ->paginate(50);
+            ->paginate(15);
             
         $todayCheckIns = \App\Models\Attendance::with('teacher')
             ->whereDate('date', \Carbon\Carbon::today())

@@ -72,7 +72,7 @@
     display: grid;
     grid-template-columns: 1fr 320px;
     gap: 1.5rem;
-    align-items: stretch;
+    align-items: start;
 }
 @media (max-width: 1024px) { .security-layout { grid-template-columns: 1fr; } }
 
@@ -126,12 +126,10 @@
 
 /* ── Scrollable table wrapper ── */
 .log-table-wrap {
-    flex: 1;
-    min-height: 0;
     overflow-x: auto;
     overflow-y: auto;
     position: relative;
-    max-height: none;
+    max-height: 380px;
 }
 /* ── Modal Details ── */
 .log-detail-card {
@@ -330,7 +328,7 @@ nav[role="navigation"] span, nav[role="navigation"] a {
 <div class="security-layout">
 
     {{-- ── Audit Log Table ── --}}
-    <div class="card" style="border-radius: 1.75rem; overflow: hidden; display: flex; flex-direction: column; height: 100%;">
+    <div class="card" style="border-radius: 1.75rem; overflow: hidden;">
         <div class="card-header" style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border);">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
                 <h3 style="margin: 0; font-weight: 800; display: flex; align-items: center; gap: 0.6rem;">
