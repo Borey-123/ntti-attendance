@@ -72,7 +72,7 @@
     display: grid;
     grid-template-columns: 1fr 320px;
     gap: 1.5rem;
-    align-items: start;
+    align-items: stretch;
 }
 @media (max-width: 1024px) { .security-layout { grid-template-columns: 1fr; } }
 
@@ -126,10 +126,12 @@
 
 /* ── Scrollable table wrapper ── */
 .log-table-wrap {
+    flex: 1;
+    min-height: 0;
     overflow-x: auto;
     overflow-y: auto;
     position: relative;
-    max-height: 550px;
+    max-height: none;
 }
 /* ── Modal Details ── */
 .log-detail-card {
@@ -328,7 +330,7 @@ nav[role="navigation"] span, nav[role="navigation"] a {
 <div class="security-layout">
 
     {{-- ── Audit Log Table ── --}}
-    <div class="card" style="border-radius: 1.75rem; overflow: hidden;">
+    <div class="card" style="border-radius: 1.75rem; overflow: hidden; display: flex; flex-direction: column; height: 100%;">
         <div class="card-header" style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border);">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
                 <h3 style="margin: 0; font-weight: 800; display: flex; align-items: center; gap: 0.6rem;">
@@ -582,20 +584,7 @@ nav[role="navigation"] span, nav[role="navigation"] a {
             </div>
         </div>
 
-        {{-- Security Note --}}
-        <div class="side-panel-card">
-            <h4>
-                <i class="ph ph-lock-key" style="color: #f59e0b;"></i>
-                {{ __('Security Policy') }}
-            </h4>
-            <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.7; margin: 0;">
-                {{ __('All administrative actions are recorded with timestamps, admin identity, and originating IP to ensure full institutional accountability.') }}
-            </p>
-            <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 0.75rem; font-size: 0.75rem; color: #f59e0b; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="ph ph-warning"></i>
-                {{ __('Logs cannot be edited or deleted by administrators.') }}
-            </div>
-        </div>
+
 
 
 
