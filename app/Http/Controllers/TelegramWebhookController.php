@@ -108,13 +108,23 @@ class TelegramWebhookController extends Controller
 
     private function sendMessage($chatId, $text)
     {
-        $botToken = env('TELEGRAM_BOT_TOKEN');
-        if (!$botToken) return;
+        $botToken = \App\Models\Setting::getValue('telegram_bot_token') ?: env('TELEGRAM_BOT_TOKEN');
+        if (!$botToken) {
+            Log::error('Telegram Webhook: Bot Token not found in settings or env.');
+            return;
+        }
 
-        Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+        $res = Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
             'chat_id' => $chatId,
             'text' => $text,
             'parse_mode' => 'Markdown'
+        ]);
+
+        Log::info('Telegram Webhook Send Message Result:', [
+            'chat_id' => $chatId,
+            'text' => $text,
+            'status' => $res->status(),
+            'response' => $res->json()
         ]);
     }
 }
