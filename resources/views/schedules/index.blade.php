@@ -53,15 +53,15 @@
 <div class="animate-fade-up">
 
     {{-- ── Header ── --}}
-    <div class="d-flex justify-between align-center" style="margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
         <div>
-            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                <h1 class="page-title" style="margin-bottom: 0;">{{ __('Teaching Timetables') }}</h1>
-                <button class="btn btn-primary" onclick="openModal('addScheduleModal')" style="display: inline-flex; align-items: center; gap: 0.4rem; border-radius: 0.85rem; padding: 0.45rem 1.1rem; font-size: 0.88rem; font-weight: 800; box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.25); transition: all 0.2s ease;">
-                    <i class="ph ph-plus-circle" style="font-size: 1.1rem;"></i> <span>{{ __('Add Slot') }}</span>
-                </button>
-            </div>
-            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.35rem; margin-bottom: 0;">{{ __('Manage weekly class schedules, room allocations, and instructor slots.') }}</p>
+            <h1 class="page-title" style="margin-bottom: 0.25rem; font-weight: 800;">{{ __('Teaching Timetables') }}</h1>
+            <p style="color: var(--text-secondary); font-size: 0.875rem; margin: 0;">{{ __('Manage weekly class schedules, room allocations, and instructor slots.') }}</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="openModal('addScheduleModal')" style="width: auto !important; padding: 0.55rem 1.25rem; font-size: 0.85rem; font-weight: 800; border-radius: 0.75rem; display: inline-flex; align-items: center; gap: 0.45rem; flex-shrink: 0; white-space: nowrap;">
+                <i class="ph ph-plus-circle" style="font-size: 1.15rem;"></i> <span>{{ __('Add Slot') }}</span>
+            </button>
         </div>
     </div>
 
