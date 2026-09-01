@@ -225,17 +225,17 @@
     {{-- ── FILTER CHIPS ── --}}
     <div class="filter-bar">
         <span class="small fw-bold text-secondary me-1"><i class="ph ph-funnel"></i> {{ __('Filter:') }}</span>
-        <a href="{{ route('leave.index') }}" class="filter-chip {{ $activeStatus == 'all' ? 'active' : '' }}">
+        <a href="{{ route('leave-requests.index') }}" class="filter-chip {{ $activeStatus == 'all' ? 'active' : '' }}">
             <i class="ph ph-list"></i> {{ __('All') }}
         </a>
-        <a href="{{ route('leave.index', ['status' => 'pending']) }}" class="filter-chip {{ $activeStatus == 'pending' ? 'active' : '' }}">
+        <a href="{{ route('leave-requests.index', ['status' => 'pending']) }}" class="filter-chip {{ $activeStatus == 'pending' ? 'active' : '' }}">
             <i class="ph ph-clock"></i> {{ __('Pending') }}
             @if($pendingCount > 0)<span style="background:var(--warning);color:#000;border-radius:2rem;padding:0 .45rem;font-size:.65rem;margin-left:.25rem;">{{ $pendingCount }}</span>@endif
         </a>
-        <a href="{{ route('leave.index', ['status' => 'approved']) }}" class="filter-chip {{ $activeStatus == 'approved' ? 'active' : '' }}">
+        <a href="{{ route('leave-requests.index', ['status' => 'approved']) }}" class="filter-chip {{ $activeStatus == 'approved' ? 'active' : '' }}">
             <i class="ph ph-check"></i> {{ __('Approved') }}
         </a>
-        <a href="{{ route('leave.index', ['status' => 'rejected']) }}" class="filter-chip {{ $activeStatus == 'rejected' ? 'active' : '' }}">
+        <a href="{{ route('leave-requests.index', ['status' => 'rejected']) }}" class="filter-chip {{ $activeStatus == 'rejected' ? 'active' : '' }}">
             <i class="ph ph-x"></i> {{ __('Rejected') }}
         </a>
     </div>
