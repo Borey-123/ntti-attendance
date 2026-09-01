@@ -242,13 +242,26 @@
         </div>
         <form action="{{ route('schedules.store') }}" method="POST">
             @csrf
-            <div class="form-group" style="margin-bottom: 1.25rem;">
-                <label style="font-size: 0.75rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem; display: block;">{{ __('Teacher') }}</label>
-                <select name="teacher_id" class="form-control" style="border-radius: 1rem;" required>
-                    @foreach($teachers as $t)
-                        <option value="{{ $t->id }}">{{ app()->getLocale() == 'km' ? ($t->name_kh ?: $t->name) : $t->name }} ({{ $t->department }})</option>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label style="font-size: 0.75rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem; display: block;">
+                    <i class="ph ph-funnel" style="margin-right:3px;"></i> {{ __('Filter by Department') }}
+                </label>
+                <select id="slotDeptFilter" class="form-control" style="border-radius: 1rem;" onchange="filterSlotTeachers()">
+                    <option value="">{{ __('All Departments') }}</option>
+                    @foreach($teachers->pluck('department')->filter()->unique()->sort() as $dept)
+                        <option value="{{ $dept }}">{{ $dept }}</option>
                     @endforeach
                 </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label style="font-size: 0.75rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem; display: block;">{{ __('Teacher') }}</label>
+                <select name="teacher_id" id="slotTeacherSelect" class="form-control" style="border-radius: 1rem;" required>
+                    @foreach($teachers as $t)
+                        <option value="{{ $t->id }}" data-dept="{{ $t->department }}">{{ app()->getLocale() == 'km' ? ($t->name_kh ?: $t->name) : $t->name }} ({{ $t->department }})</option>
+                    @endforeach
+                </select>
+                <div id="slotTeacherCount" style="font-size:0.78rem; color:var(--text-muted); margin-top:0.35rem;"></div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
@@ -309,9 +322,45 @@ function switchDay(day, btn) {
 }
 function openModal(id) {
     document.getElementById(id).classList.add('active');
+    // Reset dept filter each time modal opens
+    if (id === 'addScheduleModal') {
+        const deptFilter = document.getElementById('slotDeptFilter');
+        if (deptFilter) { deptFilter.value = ''; filterSlotTeachers(); }
+    }
 }
 function closeModal(id) {
     document.getElementById(id).classList.remove('active');
+}
+
+// Filter Teacher dropdown by department inside Add Slot modal
+function filterSlotTeachers() {
+    const dept = document.getElementById('slotDeptFilter').value;
+    const select = document.getElementById('slotTeacherSelect');
+    const countEl = document.getElementById('slotTeacherCount');
+    const options = select.querySelectorAll('option');
+
+    let visibleCount = 0;
+    let firstVisible = null;
+
+    options.forEach(opt => {
+        const match = !dept || opt.dataset.dept === dept;
+        opt.hidden = !match;
+        opt.disabled = !match;
+        if (match) {
+            visibleCount++;
+            if (!firstVisible) firstVisible = opt;
+        }
+    });
+
+    // Auto-select the first visible teacher after filtering
+    if (firstVisible) select.value = firstVisible.value;
+
+    // Show count
+    if (countEl) {
+        countEl.textContent = dept
+            ? visibleCount + ' teacher' + (visibleCount !== 1 ? 's' : '') + ' in this department'
+            : '';
+    }
 }
 </script>
 @endsection
