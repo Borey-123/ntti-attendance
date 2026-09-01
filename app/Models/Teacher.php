@@ -20,6 +20,7 @@ class Teacher extends Model
         'status',
         'telegram_chat_id',
         'portal_pin',
+        'face_descriptor',
     ];
 
     protected $hidden = [

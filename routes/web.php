@@ -10,6 +10,9 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\SecurityLogController;
 use App\Http\Controllers\PortalController;
+use App\Http\Controllers\LeaveRequestController;
+use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\AnalyticsController;
 
 // Auth
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -56,6 +59,7 @@ Route::post('/portal/login', [PortalController::class, 'login'])->name('portal.l
 Route::post('/portal/logout', [PortalController::class, 'logout'])->name('portal.logout');
 Route::post('/portal/change-password', [PortalController::class, 'changePassword'])->name('portal.change-password');
 Route::post('/portal/change-photo', [PortalController::class, 'changePhoto'])->name('portal.change-photo');
+Route::post('/portal/change-face', [PortalController::class, 'changeFace'])->name('portal.change-face');
 Route::get('/api-web/portal/search', [PortalController::class, 'search'])->name('api.portal.search');
 
 // Architecture Diagram (public, no auth needed)
@@ -75,6 +79,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/rfid', [RfidCardController::class, 'index'])->name('rfid.index');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index');
+    Route::get('/leave-requests', [LeaveRequestController::class, 'index'])->name('leave-requests.index');
+    Route::put('/leave-requests/{id}/status', [LeaveRequestController::class, 'updateStatus'])->name('leave-requests.status.update');
+    Route::post('/portal/leave', [LeaveRequestController::class, 'store'])->name('portal.leave.store');
+    Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules.index');
+    Route::post('/schedules', [ScheduleController::class, 'store'])->name('schedules.store');
+    Route::delete('/schedules/{id}', [ScheduleController::class, 'destroy'])->name('schedules.destroy');
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
 
     // AJAX / JSON endpoints for Blade pages
     Route::get('/api-web/teachers', [TeacherController::class, 'index'])->name('api.teachers.list');
@@ -93,6 +104,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/api-web/attendance', [AttendanceController::class, 'index'])->name('api.attendance.index');
     Route::post('/api-web/attendance/manual', [AttendanceController::class, 'manual'])->name('api.attendance.manual');
     Route::post('/api-web/attendance/admin-scan', [AttendanceController::class, 'adminScan'])->name('api.attendance.admin-scan');
+    Route::post('/api-web/attendance/qr-scan', [AttendanceController::class, 'qrScan'])->name('api.attendance.qr-scan');
+    Route::post('/api-web/attendance/face-scan', [AttendanceController::class, 'faceScan'])->name('api.attendance.face-scan');
+    Route::get('/api-web/teachers/faces', [TeacherController::class, 'getFaceDescriptors'])->name('api.teachers.faces');
+    Route::post('/api-web/teachers/{teacher}/face-register', [TeacherController::class, 'registerFace'])->name('api.teachers.face-register');
+    Route::delete('/api-web/teachers/{teacher}/face-delete', [TeacherController::class, 'deleteFace'])->name('api.teachers.face-delete');
     Route::get('/api-web/attendance/list', [AttendanceController::class, 'list'])->name('api.attendance.list');
     
     Route::get('/api-web/reports', [ReportController::class, 'getData'])->name('api.reports');

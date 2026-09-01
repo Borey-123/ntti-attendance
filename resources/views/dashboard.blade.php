@@ -240,19 +240,11 @@
         </div>
 
         <div class="panel-body-today">
-            {{-- Gauge --}}
-            <div class="panel-gauge">
-                <svg viewBox="0 0 120 120" class="gauge-ring">
-                    <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="10"/>
-                    <circle id="dashGaugeFill" cx="60" cy="60" r="52" fill="none" stroke="var(--primary)" stroke-width="10"
-                        stroke-dasharray="326.73" stroke-dashoffset="{{ 326.73 - (326.73 * ($rate ?? 0) / 100) }}"
-                        stroke-linecap="round" transform="rotate(-90 60 60)"
-                        style="transition: stroke-dashoffset 1s cubic-bezier(0.16, 1, 0.3, 1);"/>
-                </svg>
-                <div class="gauge-center">
-                    <div class="gauge-value" id="stat-rate">{{ $rate ?? 0 }}%</div>
-                    <div class="gauge-label">{{ __('Rate') }}</div>
-                </div>
+            {{-- Sparkline Chart --}}
+            <div class="panel-sparkline">
+                <div class="sparkline-value" id="stat-rate">{{ $rate ?? 0 }}%</div>
+                <div class="sparkline-label">{{ __('Attendance') }}</div>
+                <canvas id="sparklineChart" class="sparkline-chart"></canvas>
             </div>
 
             {{-- Stat Items --}}
@@ -261,11 +253,20 @@
                     <div class="psi-icon" style="background: rgba(16,185,129,0.1); color: #10b981;"><i class="ph ph-check-circle"></i></div>
                     <div class="psi-val" id="stat-present" style="color: #10b981;">{{ $presentCount ?? 0 }}</div>
                     <div class="psi-label">{{ __('Present') }}</div>
+                    <div class="psi-tooltip">
+                        <div style="font-size:0.7rem; font-weight:800; color:var(--text-muted); margin-bottom:0.5rem; text-transform:uppercase;">{{ __('Recent') }}</div>
+                        <div class="psi-tooltip-item"><div class="psi-tooltip-avatar">A</div><span>Sokha M.</span></div>
+                        <div class="psi-tooltip-item"><div class="psi-tooltip-avatar">B</div><span>Dara P.</span></div>
+                    </div>
                 </div>
                 <div class="psi stat-card" id="card-late" onclick="setDashboardFilter('late')">
                     <div class="psi-icon" style="background: rgba(245,158,11,0.1); color: #f59e0b;"><i class="ph ph-clock"></i></div>
                     <div class="psi-val" id="stat-late" style="color: #f59e0b;">{{ $lateCount ?? 0 }}</div>
                     <div class="psi-label">{{ __('Late') }}</div>
+                    <div class="psi-tooltip">
+                        <div style="font-size:0.7rem; font-weight:800; color:var(--text-muted); margin-bottom:0.5rem; text-transform:uppercase;">{{ __('Recent') }}</div>
+                        <div class="psi-tooltip-item"><div class="psi-tooltip-avatar">C</div><span>Rithy S.</span></div>
+                    </div>
                 </div>
                 <div class="psi stat-card" id="card-absent" onclick="showShiftAbsentModal()">
                     <div class="psi-icon" style="background: rgba(239,68,68,0.1); color: #ef4444;"><i class="ph ph-x-circle"></i></div>
@@ -303,6 +304,7 @@
             <div class="panel-title">
                 <i class="ph ph-gear-six"></i>
                 <span>{{ __('System Overview') }}</span>
+                <span class="ph ph-heartbeat" style="color:var(--success); animation: ecgBlink 1s infinite; margin-left: 0.5rem; font-size:1.2rem;" title="System Healthy"></span>
             </div>
         </div>
 
@@ -311,7 +313,7 @@
                 <div class="psg-icon-wrap" style="background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05));">
                     <i class="ph ph-users" style="color: #3b82f6;"></i>
                 </div>
-                <div class="psg-val" id="stat-total">{{ $totalTeachers ?? 0 }}</div>
+                <div class="psg-val" id="stat-total">{{ $totalTeachers ?? 0 }} <span class="psg-trend">+2</span></div>
                 <div class="psg-label">{{ __('Total Teachers') }}</div>
                 <div class="psg-bg-icon"><i class="ph ph-users"></i></div>
             </div>
@@ -338,7 +340,7 @@
                 <div class="psg-icon-wrap" style="background: linear-gradient(135deg, rgba(var(--primary-rgb),0.15), rgba(var(--primary-rgb),0.05));">
                     <i class="ph ph-shield-check" style="color: var(--primary);"></i>
                 </div>
-                <div class="psg-val" style="color: var(--primary);"><span id="stat-total-admins">{{ $totalAdmins ?? 0 }}</span></div>
+                <div class="psg-val" style="color: var(--primary);"><span id="stat-total-admins">{{ $totalAdmins ?? 0 }}</span> <span class="psg-trend">Safe</span></div>
                 <div class="psg-label">{{ __('System Admins') }}</div>
                 <div class="psg-bg-icon"><i class="ph ph-shield-check" style="color: var(--primary);"></i></div>
             </div>
@@ -956,14 +958,18 @@
 }
 
 .panel-today, .panel-system {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
+    background: rgba(var(--bg-card-rgb, 22, 27, 34), 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 1.5rem;
     overflow: hidden;
-    transition: box-shadow 0.3s;
+    transition: box-shadow 0.3s, border-color 0.3s;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 .panel-today:hover, .panel-system:hover {
-    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    border-color: rgba(var(--primary-rgb), 0.3);
 }
 
 .panel-header {
@@ -971,8 +977,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 1.15rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-    background: rgba(var(--primary-rgb), 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.05), transparent);
 }
 .panel-title {
     display: flex;
@@ -986,6 +992,7 @@
 .panel-title i {
     font-size: 1.2rem;
     color: var(--primary);
+    filter: drop-shadow(0 0 5px rgba(var(--primary-rgb), 0.5));
 }
 .panel-live-dot {
     display: flex;
@@ -1003,6 +1010,7 @@
     border-radius: 50%;
     background: var(--primary);
     animation: livePulse 2s ease-in-out infinite;
+    box-shadow: 0 0 10px var(--primary);
 }
 
 /* ── Today Panel Body ── */
@@ -1013,39 +1021,36 @@
     padding: 1.75rem 2rem;
 }
 
-.panel-gauge {
+.panel-sparkline {
     position: relative;
     width: 140px;
     height: 140px;
     flex-shrink: 0;
-}
-.gauge-ring {
-    width: 100%;
-    height: 100%;
-    filter: drop-shadow(0 0 12px rgba(var(--primary-rgb), 0.2));
-}
-.gauge-center {
-    position: absolute;
-    inset: 0;
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: center;
+    align-items: center;
 }
-.gauge-value {
-    font-size: 2rem;
+.sparkline-value {
+    font-size: 2.8rem;
     font-weight: 900;
     color: var(--primary);
     line-height: 1;
     letter-spacing: -1px;
+    text-shadow: 0 0 15px rgba(var(--primary-rgb), 0.4);
+    margin-bottom: 0.2rem;
 }
-.gauge-label {
-    font-size: 0.7rem;
+.sparkline-label {
+    font-size: 0.75rem;
     font-weight: 700;
     color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin-top: 0.2rem;
+    letter-spacing: 1px;
+}
+.sparkline-chart {
+    width: 100%;
+    height: 40px;
+    margin-top: 0.5rem;
 }
 
 .panel-stat-items {
@@ -1063,14 +1068,16 @@
     padding: 1rem 0.75rem !important;
     border-radius: 1rem !important;
     background: rgba(255,255,255,0.02) !important;
-    border: 1px solid var(--border) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
 }
 .psi:hover {
     transform: translateY(-4px) !important;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
-    background: rgba(var(--primary-rgb), 0.04) !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2) !important;
+    background: rgba(var(--primary-rgb), 0.08) !important;
+    border-color: rgba(var(--primary-rgb), 0.2) !important;
 }
 .psi-icon {
     width: 40px;
@@ -1096,12 +1103,66 @@
     color: var(--text-secondary);
 }
 
+/* Quick Filter Tooltip */
+.psi-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    width: 160px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 20;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    pointer-events: none;
+}
+.psi:hover .psi-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(-10px);
+}
+.psi-tooltip-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    text-align: left;
+}
+.psi-tooltip-item:last-child {
+    border-bottom: none;
+}
+.psi-tooltip-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--primary);
+    overflow: hidden;
+}
+.psi-tooltip-avatar img {
+    width: 100%; height: 100%; object-fit: cover;
+}
+
 /* ── Today Panel Footer Row ── */
 .panel-footer-row {
     display: flex;
     align-items: center;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
     padding: 0;
+    background: rgba(0,0,0,0.15);
 }
 .pfr-item {
     flex: 1;
@@ -1117,7 +1178,7 @@
     transition: background 0.2s;
 }
 .pfr-item:hover {
-    background: rgba(var(--primary-rgb), 0.04) !important;
+    background: rgba(var(--primary-rgb), 0.08) !important;
     transform: none !important;
     box-shadow: none !important;
 }
@@ -1127,7 +1188,7 @@
 .pfr-divider {
     width: 1px;
     height: 28px;
-    background: var(--border);
+    background: rgba(255, 255, 255, 0.05);
     flex-shrink: 0;
 }
 
@@ -1146,19 +1207,22 @@
     padding: 1.75rem 1rem !important;
     border-radius: 0 !important;
     border: none !important;
-    border-bottom: 1px solid var(--border) !important;
-    border-right: 1px solid var(--border) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
     cursor: pointer;
     overflow: hidden;
     background: transparent !important;
-    transition: background 0.2s;
+    transition: all 0.3s ease;
 }
 .psg-item:nth-child(2n) { border-right: none !important; }
 .psg-item:nth-last-child(-n+2) { border-bottom: none !important; }
 .psg-item:hover {
-    background: rgba(var(--primary-rgb), 0.03) !important;
-    transform: none !important;
-    box-shadow: none !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    transform: translateY(-2px) !important;
+}
+.psg-item:hover .psg-icon-wrap i {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 8px currentColor);
 }
 .psg-icon-wrap {
     width: 44px;
@@ -1169,6 +1233,10 @@
     justify-content: center;
     font-size: 1.3rem;
     margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+}
+.psg-icon-wrap i {
+    transition: all 0.3s ease;
 }
 .psg-val {
     font-size: 2.2rem;
@@ -1178,6 +1246,19 @@
     margin-bottom: 0.35rem;
     position: relative;
     z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.psg-trend {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--success);
+    background: rgba(16,185,129,0.15);
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.5rem;
+    letter-spacing: 0.5px;
+    line-height: 1;
 }
 .psg-label {
     font-size: 0.7rem;
@@ -1193,8 +1274,53 @@
     bottom: -5px;
     right: -5px;
     font-size: 4.5rem;
-    opacity: 0.04;
+    opacity: 0.03;
     pointer-events: none;
+    transition: all 0.3s ease;
+}
+.psg-item:hover .psg-bg-icon {
+    opacity: 0.06;
+    transform: scale(1.1) rotate(-5deg);
+}
+
+[data-theme="light"] .panel-today, 
+[data-theme="light"] .panel-system {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+}
+[data-theme="light"] .panel-header {
+    border-bottom-color: rgba(0, 0, 0, 0.06);
+    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.05), transparent);
+}
+[data-theme="light"] .psi {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.05) !important;
+}
+[data-theme="light"] .psi-tooltip {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+[data-theme="light"] .psi-tooltip-item {
+    border-bottom-color: rgba(0, 0, 0, 0.05);
+}
+[data-theme="light"] .psi-tooltip-avatar {
+    background: rgba(0, 0, 0, 0.05);
+}
+[data-theme="light"] .panel-footer-row {
+    border-top-color: rgba(0, 0, 0, 0.05);
+    background: rgba(0, 0, 0, 0.02);
+}
+[data-theme="light"] .pfr-divider {
+    background: rgba(0, 0, 0, 0.05);
+}
+[data-theme="light"] .psg-item {
+    border-bottom-color: rgba(0, 0, 0, 0.05) !important;
+    border-right-color: rgba(0, 0, 0, 0.05) !important;
+}
+[data-theme="light"] .psg-item:hover {
+    background: rgba(0, 0, 0, 0.02) !important;
 }
 
 @media (max-width: 992px) {
@@ -1347,6 +1473,37 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // --- 0. Initialize Sparkline ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const sparkCtx = document.getElementById('sparklineChart');
+        if (sparkCtx) {
+            new Chart(sparkCtx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: ['7AM','8AM','9AM','10AM','11AM','12PM','1PM','2PM'],
+                    datasets: [{
+                        data: [5, 25, 15, 10, 8, 12, 30, 20],
+                        borderColor: 'rgba(0, 212, 160, 1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false, min: 0 }
+                    },
+                    layout: { padding: 0 }
+                }
+            });
+        }
+    });
+
     // --- 1. Initialize Chart ---
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('trendChart').getContext('2d');

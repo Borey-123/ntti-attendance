@@ -12,7 +12,7 @@ Route::middleware('rfid.auth')->group(function () {
 });
 
 // Telegram Webhook
-Route::post('/telegram/webhook', [\App\Http\Controllers\TelegramWebhookController::class, 'handle']);
+Route::post('/telegram/webhook', [\App\Http\Controllers\TelegramWebhookController::class, 'handleWebhook']);
 
 // Public device-status — ESP32 can query this too
 Route::get('/device-status', [AttendanceController::class, 'deviceStatus']);

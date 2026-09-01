@@ -296,4 +296,40 @@ class TeacherController extends Controller
 
         return response()->json(['status' => 'success', 'message' => 'Teacher PIN has been successfully reset.']);
     }
+
+    public function registerFace(Request $request, Teacher $teacher): JsonResponse
+    {
+        $validated = $request->validate([
+            'face_descriptor' => 'required|string'
+        ]);
+
+        $teacher->update([
+            'face_descriptor' => $validated['face_descriptor']
+        ]);
+
+        SecurityLog::record('Registered Face Data', $teacher->name, "ID: {$teacher->employee_id}");
+
+        return response()->json(['status' => 'success', 'message' => 'Face data registered successfully.']);
+    }
+
+    public function getFaceDescriptors(): JsonResponse
+    {
+        $teachers = Teacher::whereNotNull('face_descriptor')
+            ->where('status', 'active')
+            ->select('id', 'employee_id', 'name', 'face_descriptor')
+            ->get();
+            
+        return response()->json($teachers);
+    }
+
+    public function deleteFace(Teacher $teacher): JsonResponse
+    {
+        $teacher->update([
+            'face_descriptor' => null
+        ]);
+
+        SecurityLog::record('Deleted Face Data', $teacher->name, "ID: {$teacher->employee_id}");
+
+        return response()->json(['status' => 'success', 'message' => 'Face data deleted successfully.']);
+    }
 }

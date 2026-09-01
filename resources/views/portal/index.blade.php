@@ -696,7 +696,20 @@
             @endif
 
             {{-- Auth Controls --}}
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem;">
+                <button onclick="downloadQrCode('{{ $teacher->employee_id }}', '{{ addslashes($teacher->name) }}')" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: #a855f7; padding: 0.6rem 1rem; border-radius: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="ph ph-qr-code"></i> {{ __('My QR Code') }}
+                </button>
+                <button onclick="openLeaveModal()" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #3b82f6; padding: 0.6rem 1rem; border-radius: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="ph ph-calendar-plus"></i> {{ __('Apply Leave') }}
+                </button>
+                <button onclick="openPortalFaceRegisterModal()" style="background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.3); color: #ec4899; padding: 0.6rem 1rem; border-radius: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                    @if($teacher->face_descriptor)
+                    <i class="ph-fill ph-bounding-box"></i> {{ __('Update Face ID') }}
+                    @else
+                    <i class="ph ph-bounding-box"></i> {{ __('Register Face ID') }}
+                    @endif
+                </button>
                 <button onclick="openChangePinModal()" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--success); padding: 0.6rem 1rem; border-radius: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
                     <i class="ph ph-key"></i> {{ __('Change PIN') }}
                 </button>
@@ -891,7 +904,10 @@
                             </div>
                         </div>
                         <div class="calendar-grid">
-                            @foreach(['Mo','Tu','We','Th','Fr','Sa','Su'] as $d)
+                            @php
+                                $dayHeaders = app()->getLocale() == 'km' ? ['ច','អ','ព','ព្រ','សុ','ស','អា'] : ['Mo','Tu','We','Th','Fr','Sa','Su'];
+                            @endphp
+                            @foreach($dayHeaders as $d)
                                 <div class="calendar-day-header">{{ $d }}</div>
                             @endforeach
                             
@@ -1449,6 +1465,45 @@
             });
         }, 'image/jpeg', 0.9);
     }
+
+    async function downloadQrCode(employeeId, name) {
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(employeeId)}`;
+        try {
+            const response = await fetch(qrUrl);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `NTTI_QR_${name.replace(/\s+/g, '_')}.png`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        } catch (e) {
+            // Fallback if CORS blocks the fetch
+            const printWindow = window.open('', '', 'height=700,width=600');
+            printWindow.document.write(`
+                <html><head><title>QR Code - ${name}</title>
+                <style>
+                    body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; background: #f0f4f8; }
+                    .card { background: #fff; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
+                    img { width: 300px; height: 300px; }
+                    h2 { margin: 1.5rem 0 0.5rem; color: #0f172a; }
+                    p { color: #64748b; margin-bottom: 1.5rem; }
+                    .btn { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; text-decoration: none; }
+                </style>
+                </head><body>
+                <div class="card">
+                    <img src="${qrUrl}" />
+                    <h2>${name}</h2>
+                    <p>Right-click the image and select "Save Image As..."</p>
+                    <a href="${qrUrl}" download class="btn">Open Image</a>
+                </div>
+                </body></html>
+            `);
+        }
+    }
 </script>
 
 {{-- Crop Photo Modal --}}
@@ -1476,4 +1531,246 @@
 }
 </style>
 
+{{-- Portal Face Register Modal --}}
+<div class="modal-overlay" id="portalFaceRegisterModal">
+    <div class="modal-content" style="max-width: 600px; padding: 2rem;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+            <h2 style="margin: 0; font-size: 1.25rem;"><i class="ph ph-bounding-box" style="margin-right: 0.5rem; color: var(--primary);"></i>{{ __('Register Face ID') }}</h2>
+            <button class="modal-close" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-sub);" onclick="closePortalFaceRegisterModal()">&times;</button>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 1rem;">
+            <div style="position: relative; width: 100%; max-width: 480px; aspect-ratio: 4/3; background: #000; border-radius: 1rem; overflow: hidden; display: flex; justify-content: center; align-items: center;">
+                <video id="portalFaceVideo" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                <canvas id="portalFaceCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
+                <div id="portalFaceLoading" style="position: absolute; color: white; font-weight: bold; background: rgba(0,0,0,0.5); padding: 1rem; border-radius: 0.5rem; display: none;">
+                    <i class="ph ph-circle-notch animate-spin"></i> Loading AI Models...
+                </div>
+            </div>
+            <p id="portalFaceStatus" style="font-weight: bold; color: var(--text-sub); text-align: center;">{{ __('Please position your face in the camera.') }}</p>
+            <div class="form-actions" style="width: 100%; display: flex; justify-content: space-between; margin-top: 1rem;">
+                <button type="button" class="btn-secondary" onclick="closePortalFaceRegisterModal()">{{ __('Cancel') }}</button>
+                <button type="button" class="btn-check" id="btnSavePortalFace" disabled onclick="savePortalFaceDescriptor()">
+                    <i class="ph ph-check-circle"></i> {{ __('Save Face Data') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Leave Application Modal -->
+<div id="leaveModal" class="modal-overlay">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+            <h3 style="margin:0; font-weight:800; color:var(--text-main);"><i class="ph ph-calendar-plus" style="color:var(--primary);"></i> {{ __('Apply for Leave') }}</h3>
+            <button onclick="closeLeaveModal()" style="background:none; border:none; color:var(--text-sub); font-size:1.5rem; cursor:pointer;"><i class="ph ph-x"></i></button>
+        </div>
+        <form id="leaveForm" onsubmit="submitLeaveForm(event)">
+            <input type="hidden" name="teacher_id" value="{{ $teacher->id }}">
+            <div class="form-group">
+                <label>{{ __('Leave Type') }}</label>
+                <select name="leave_type" class="form-control" required>
+                    <option value="sick">{{ __('Sick Leave') }}</option>
+                    <option value="mission">{{ __('Official Mission') }}</option>
+                    <option value="annual">{{ __('Annual Leave') }}</option>
+                    <option value="personal">{{ __('Personal Leave') }}</option>
+                </select>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                <div class="form-group">
+                    <label>{{ __('Start Date') }}</label>
+                    <input type="date" name="start_date" class="form-control" required value="{{ date('Y-m-d') }}">
+                </div>
+                <div class="form-group">
+                    <label>{{ __('End Date') }}</label>
+                    <input type="date" name="end_date" class="form-control" required value="{{ date('Y-m-d') }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>{{ __('Reason / Notes') }}</label>
+                <textarea name="reason" class="form-control" rows="3" placeholder="{{ __('Reason for leave...') }}" required></textarea>
+            </div>
+            <button type="submit" class="btn-check" style="width:100%;">
+                <i class="ph ph-paper-plane-right"></i> {{ __('Submit Leave Request') }}
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function openLeaveModal() {
+    document.getElementById('leaveModal').classList.add('active');
+}
+function closeLeaveModal() {
+    document.getElementById('leaveModal').classList.remove('active');
+}
+async function submitLeaveForm(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    try {
+        const response = await fetch('{{ route("portal.leave.store") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify(data)
+        });
+        const res = await response.json();
+        if (res.success) {
+            closeLeaveModal();
+            alert(res.message);
+            form.reset();
+        } else {
+            alert(res.message || 'Error submitting leave request.');
+        }
+    } catch(err) {
+        alert(err.message);
+    }
+}
+</script>
+
+<script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
+<script>
+    let portalFaceStream = null;
+    let portalFaceInterval = null;
+    let portalFaceModelsLoaded = false;
+    let portalCapturedDescriptor = null;
+
+    async function loadPortalFaceModels() {
+        if (portalFaceModelsLoaded) return true;
+        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+        try {
+            await Promise.all([
+                faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+            ]);
+            portalFaceModelsLoaded = true;
+            document.getElementById('portalFaceLoading').style.display = 'none';
+            return true;
+        } catch (e) {
+            console.error(e);
+            alert('Failed to load AI models. Please check internet connection.');
+            return false;
+        }
+    }
+
+    async function openPortalFaceRegisterModal() {
+        document.getElementById('portalFaceStatus').innerText = 'Please position your face in the camera.';
+        document.getElementById('portalFaceStatus').style.color = 'var(--text-sub)';
+        document.getElementById('btnSavePortalFace').disabled = true;
+        portalCapturedDescriptor = null;
+        
+        document.getElementById('portalFaceRegisterModal').classList.add('active');
+        document.getElementById('portalFaceLoading').style.display = 'block';
+        
+        const loaded = await loadPortalFaceModels();
+        if (!loaded) return;
+        
+        startPortalFaceVideo();
+    }
+
+    function closePortalFaceRegisterModal() {
+        document.getElementById('portalFaceRegisterModal').classList.remove('active');
+        if (portalFaceStream) {
+            portalFaceStream.getTracks().forEach(track => track.stop());
+            portalFaceStream = null;
+        }
+        if (portalFaceInterval) {
+            clearInterval(portalFaceInterval);
+            portalFaceInterval = null;
+        }
+        const canvas = document.getElementById('portalFaceCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    async function startPortalFaceVideo() {
+        const video = document.getElementById('portalFaceVideo');
+        try {
+            portalFaceStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            video.srcObject = portalFaceStream;
+        } catch (err) {
+            console.error(err);
+            alert("Camera access denied or unavailable.");
+            return;
+        }
+
+        video.onloadedmetadata = () => {
+            const canvas = document.getElementById('portalFaceCanvas');
+            const displaySize = { width: video.videoWidth || 480, height: video.videoHeight || 360 };
+            faceapi.matchDimensions(canvas, displaySize);
+            
+            portalFaceInterval = setInterval(async () => {
+                if (!portalFaceStream) return;
+                const detections = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                if (detections) {
+                    const resizedDetections = faceapi.resizeResults(detections, displaySize);
+                    faceapi.draw.drawDetections(canvas, resizedDetections);
+                    
+                    if (detections.detection.score > 0.8) {
+                        document.getElementById('portalFaceStatus').innerText = 'Face detected securely! You can save now.';
+                        document.getElementById('portalFaceStatus').style.color = 'var(--success)';
+                        document.getElementById('btnSavePortalFace').disabled = false;
+                        portalCapturedDescriptor = Array.from(detections.descriptor);
+                    }
+                } else {
+                    document.getElementById('portalFaceStatus').innerText = 'No face detected. Please look at the camera.';
+                    document.getElementById('portalFaceStatus').style.color = 'var(--warning)';
+                    document.getElementById('btnSavePortalFace').disabled = true;
+                }
+            }, 500);
+        };
+    }
+
+    async function savePortalFaceDescriptor() {
+        if (!portalCapturedDescriptor) return;
+        
+        const btn = document.getElementById('btnSavePortalFace');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> {{ __("Saving...") }}';
+        btn.disabled = true;
+        
+        try {
+            const response = await fetch('{{ route("portal.change-face") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ face_descriptor: JSON.stringify(portalCapturedDescriptor) })
+            });
+            
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                console.error("Server Error:", errData);
+                alert(errData.message || "Server returned error: " + response.status);
+                return;
+            }
+            
+            const res = await response.json();
+            if (res.status === 'success') {
+                closePortalFaceRegisterModal();
+                alert('{{ __("Face registered successfully!") }}');
+                setTimeout(() => window.location.reload(), 500);
+            } else {
+                alert(res.message);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('An error occurred while saving face data: ' + e.message);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+</script>
 </html>

@@ -290,6 +290,31 @@ class PortalController extends Controller
         return redirect()->back()->with('error', 'No photo provided.');
     }
 
+    public function changeFace(Request $request)
+    {
+        $teacherId = session('portal_teacher_id');
+        if (!$teacherId) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 401);
+        }
+
+        $request->validate([
+            'face_descriptor' => 'required|string'
+        ]);
+
+        $teacher = Teacher::find($teacherId);
+        if (!$teacher) {
+            return response()->json(['status' => 'error', 'message' => 'Teacher not found.'], 404);
+        }
+
+        $teacher->update([
+            'face_descriptor' => $request->face_descriptor
+        ]);
+        
+        \App\Models\SecurityLog::recordPortal('Portal Face Update', 'Teacher ID: ' . $teacher->employee_id, 'Teacher manually registered face ID.');
+
+        return response()->json(['status' => 'success', 'message' => 'Face registered successfully!']);
+    }
+
     public function export(Request $request)
     {
         $teacherId = session('portal_teacher_id');

@@ -169,8 +169,9 @@
 
     .t-card-actions {
         display: flex;
-        gap: 0.75rem;
+        gap: 0.6rem;
         width: 100%;
+        position: relative;
     }
     .btn-card {
         flex: 1;
@@ -191,6 +192,7 @@
         color: var(--primary);
         box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.2);
         font-weight: 800;
+        flex: 1;
     }
     .btn.btn-edit-premium:hover {
         background: var(--primary);
@@ -198,6 +200,86 @@
         border-color: var(--primary);
         box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.4);
     }
+    .btn-more {
+        flex-shrink: 0;
+        width: 44px;
+        height: 44px;
+        border-radius: 1rem;
+        border: 2px solid rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.04);
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1.2rem;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    [data-theme="light"] .btn-more {
+        border-color: rgba(0,0,0,0.1);
+        background: rgba(0,0,0,0.03);
+    }
+    .btn-more:hover {
+        border-color: rgba(var(--primary-rgb), 0.4);
+        background: rgba(var(--primary-rgb), 0.08);
+        color: var(--primary);
+        transform: translateY(-2px);
+    }
+    .action-dropdown {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        right: 0;
+        background: var(--bg-elevated, #1e242d);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 1rem;
+        padding: 0.4rem;
+        min-width: 200px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+        z-index: 50;
+        display: none;
+        animation: dropIn 0.2s cubic-bezier(0.16,1,0.3,1);
+    }
+    [data-theme="light"] .action-dropdown {
+        background: #ffffff;
+        border-color: rgba(0,0,0,0.1);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+    }
+    @keyframes dropIn {
+        from { opacity:0; transform: translateY(8px) scale(0.97); }
+        to   { opacity:1; transform: translateY(0) scale(1); }
+    }
+    .action-dropdown.open { display: block; }
+    .action-dropdown-divider {
+        height: 1px;
+        background: rgba(255,255,255,0.06);
+        margin: 0.3rem 0.5rem;
+    }
+    [data-theme="light"] .action-dropdown-divider { background: rgba(0,0,0,0.06); }
+    .action-dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        padding: 0.65rem 0.9rem;
+        border-radius: 0.7rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+    }
+    .action-dropdown-item:hover {
+        background: rgba(255,255,255,0.06);
+        color: var(--primary);
+    }
+    [data-theme="light"] .action-dropdown-item:hover { background: rgba(0,0,0,0.04); }
+    .action-dropdown-item i { font-size: 1.05rem; flex-shrink: 0; }
+    .action-dropdown-item.danger { color: #ef4444; }
+    .action-dropdown-item.danger:hover { background: rgba(239,68,68,0.08); color: #ef4444; }
     
     .status-badge-float {
         position: absolute;
@@ -667,17 +749,35 @@
 
         <div class="t-card-actions">
             <button class="btn btn-sm btn-card btn-edit-premium" onclick="editTeacher({{ $teacher->id }})">
-                <i class="ph ph-pencil-simple"></i> {{ __('Edit') }}
+                <i class="ph ph-pencil-simple"></i> {{ __('Edit Profile') }}
             </button>
-            <button class="btn btn-sm btn-card" style="flex: 0 0 45px; padding: 0; background: rgba(16, 185, 129, 0.1); border: 2.5px solid #10b981; color: #10b981; font-weight: 800;" onclick="openResetPinModal({{ $teacher->id }}, '{{ addslashes($teacher->name) }}')" title="{{ __('Reset Portal PIN') }}">
-                <i class="ph ph-key"></i>
-            </button>
-            <button class="btn btn-sm btn-card" style="flex: 0 0 45px; padding: 0; background: rgba(59, 130, 246, 0.1); border: 2.5px solid #3b82f6; color: #3b82f6; font-weight: 800;" onclick="printTeacherCard({{ $teacher->id }})" title="{{ __('Print Card') }}">
-                <i class="ph ph-printer"></i>
-            </button>
-            <button class="btn btn-sm btn-danger btn-card" style="flex: 0 0 45px; padding: 0;" onclick="removeTeacher({{ $teacher->id }})">
-                <i class="ph ph-trash"></i>
-            </button>
+            <div class="btn-more" onclick="toggleActionDropdown(this)" title="{{ __('More Actions') }}">
+                <i class="ph ph-dots-three-vertical"></i>
+                <div class="action-dropdown">
+                    <button class="action-dropdown-item" onclick="openResetPinModal({{ $teacher->id }}, '{{ addslashes($teacher->name) }}')">
+                        <i class="ph ph-key" style="color:#10b981;"></i> {{ __('Reset Portal PIN') }}
+                    </button>
+                    <button class="action-dropdown-item" onclick="printTeacherCard({{ $teacher->id }})">
+                        <i class="ph ph-printer" style="color:#3b82f6;"></i> {{ __('Print ID Card') }}
+                    </button>
+                    <button class="action-dropdown-item" onclick="printQrCode('{{ $teacher->employee_id }}', '{{ addslashes($teacher->name) }}')">
+                        <i class="ph ph-qr-code" style="color:#a855f7;"></i> {{ __('Print QR Code') }}
+                    </button>
+                    @if($teacher->face_descriptor)
+                    <button class="action-dropdown-item" onclick="openFaceRegisterModal({{ $teacher->id }}, '{{ addslashes($teacher->name) }}', true)">
+                        <i class="ph-fill ph-bounding-box" style="color:#10b981;"></i> {{ __('Update Face Data') }}
+                    </button>
+                    @else
+                    <button class="action-dropdown-item" onclick="openFaceRegisterModal({{ $teacher->id }}, '{{ addslashes($teacher->name) }}', false)">
+                        <i class="ph ph-bounding-box" style="color:#ec4899;"></i> {{ __('Register Face') }}
+                    </button>
+                    @endif
+                    <div class="action-dropdown-divider"></div>
+                    <button class="action-dropdown-item danger" onclick="removeTeacher({{ $teacher->id }})">
+                        <i class="ph ph-trash"></i> {{ __('Delete Teacher') }}
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
     @endforeach
@@ -883,7 +983,38 @@
 <div id="print-cards-container" style="display: none;"></div>
 @endsection
 
+<div class="modal-overlay" id="faceRegisterModal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2 style="margin: 0; font-size: 1.25rem;"><i class="ph ph-bounding-box" style="margin-right: 0.5rem; color: var(--primary);"></i>{{ __('Register Face') }} - <span id="faceRegisterName" style="color: var(--primary);"></span></h2>
+            <button class="modal-close" onclick="closeFaceRegisterModal()">&times;</button>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 1rem;">
+            <div style="position: relative; width: 100%; max-width: 480px; aspect-ratio: 4/3; background: #000; border-radius: 1rem; overflow: hidden; display: flex; justify-content: center; align-items: center;">
+                <video id="faceRegisterVideo" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                <canvas id="faceRegisterCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
+                <div id="faceRegisterLoading" style="position: absolute; color: white; font-weight: bold; background: rgba(0,0,0,0.5); padding: 1rem; border-radius: 0.5rem; z-index: 10;">
+                    <i class="ph ph-circle-notch animate-spin"></i> {{ __('Loading AI Models...') }}
+                </div>
+            </div>
+            <p id="faceRegisterStatus" style="font-weight: bold; color: var(--text-sub); text-align: center;">{{ __('Please position your face in the camera.') }}</p>
+            <div class="form-actions" style="width: 100%; display: flex; justify-content: space-between; margin-top: 1rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeFaceRegisterModal()">{{ __('Cancel') }}</button>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" class="btn btn-danger" id="btnDeleteFace" onclick="deleteFaceDescriptor()" style="display: none; width: auto;">
+                        <i class="ph ph-trash"></i> {{ __('Delete Face') }}
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btnSaveFace" disabled onclick="saveFaceDescriptor()" style="width: auto;">
+                        <i class="ph ph-check-circle"></i> {{ __('Save Face Data') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
+<script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 <script>
     let currentCropper = null;
@@ -1104,6 +1235,23 @@
             await alert(e.message);
         }
     }
+
+    // ── Action Dropdown Toggle ──────────────────
+    function toggleActionDropdown(btn) {
+        const dropdown = btn.querySelector('.action-dropdown');
+        const isOpen = dropdown.classList.contains('open');
+        // Close all other open dropdowns
+        document.querySelectorAll('.action-dropdown.open').forEach(d => d.classList.remove('open'));
+        if (!isOpen) {
+            dropdown.classList.add('open');
+        }
+    }
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.btn-more')) {
+            document.querySelectorAll('.action-dropdown.open').forEach(d => d.classList.remove('open'));
+        }
+    });
 
     // Global teacher list and university details for card printing
     const teachersData = @json($teachers->load('rfidCard')->map(function($t) {
@@ -1351,6 +1499,206 @@
             openModal('addTeacherModal');
         }
     });
+
+    function printQrCode(employeeId, name) {
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(employeeId)}`;
+        const printWindow = window.open('', '', 'height=600,width=800');
+        printWindow.document.write('<html><head><title>QR Code - ' + name + '</title>');
+        printWindow.document.write('<style>body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; } img { width: 300px; height: 300px; border: 2px solid #000; padding: 10px; border-radius: 10px; } h2 { margin-top: 20px; }</style>');
+        printWindow.document.write('</head><body onload="window.print();window.close()">');
+        printWindow.document.write('<img src="' + qrUrl + '" />');
+        printWindow.document.write('<h2>' + name + '</h2>');
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+    }
+    
+    let faceModelsLoaded = false;
+    let faceStream = null;
+    let currentTeacherFaceId = null;
+    let faceInterval = null;
+    let capturedDescriptor = null;
+
+    async function loadFaceModels() {
+        if (faceModelsLoaded) return true;
+        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+        try {
+            await Promise.all([
+                faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+            ]);
+            faceModelsLoaded = true;
+            document.getElementById('faceRegisterLoading').style.display = 'none';
+            return true;
+        } catch (e) {
+            console.error('Error loading face models:', e);
+            alert('Failed to load AI models. Please check internet connection.');
+            return false;
+        }
+    }
+
+    async function openFaceRegisterModal(id, name, hasFaceData = false) {
+        currentTeacherFaceId = id;
+        document.getElementById('faceRegisterName').innerText = name;
+        document.getElementById('faceRegisterStatus').innerText = 'Please position your face in the camera.';
+        document.getElementById('btnSaveFace').disabled = true;
+        
+        if (hasFaceData) {
+            document.getElementById('btnDeleteFace').style.display = 'block';
+            document.getElementById('faceRegisterStatus').innerText = 'Face Data Exists. You can scan a new face to overwrite or click Delete.';
+        } else {
+            document.getElementById('btnDeleteFace').style.display = 'none';
+        }
+        
+        capturedDescriptor = null;
+        
+        openModal('faceRegisterModal');
+        document.getElementById('faceRegisterLoading').style.display = 'block';
+        
+        const loaded = await loadFaceModels();
+        if (!loaded) return;
+        
+        startFaceVideo();
+    }
+
+    async function deleteFaceDescriptor() {
+        if (!currentTeacherFaceId) return;
+        if (!confirm('{{ __("Are you sure you want to delete this face data?") }}')) return;
+        
+        const btn = document.getElementById('btnDeleteFace');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> {{ __("Deleting...") }}';
+        btn.disabled = true;
+        
+        try {
+            const response = await fetch(`/api-web/teachers/${currentTeacherFaceId}/face-delete`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+            
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                console.error("Server Error:", errData);
+                alert(errData.message || "Server returned error: " + response.status);
+                return;
+            }
+            
+            const res = await response.json();
+            if (res.status === 'success') {
+                closeFaceRegisterModal();
+                window.showToast('{{ __("Face data deleted successfully!") }}', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                alert(res.message);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('An error occurred while deleting face data: ' + e.message);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    async function startFaceVideo() {
+        const video = document.getElementById('faceRegisterVideo');
+        try {
+            faceStream = await navigator.mediaDevices.getUserMedia({ video: {} });
+            video.srcObject = faceStream;
+        } catch (err) {
+            console.error(err);
+            alert("Camera access denied or unavailable.");
+            return;
+        }
+
+        video.onloadedmetadata = () => {
+            const canvas = document.getElementById('faceRegisterCanvas');
+            const displaySize = { width: video.videoWidth || 480, height: video.videoHeight || 360 };
+            faceapi.matchDimensions(canvas, displaySize);
+            
+            faceInterval = setInterval(async () => {
+                if(!faceStream) return;
+                const detections = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+                
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                if (detections) {
+                    const resizedDetections = faceapi.resizeResults(detections, displaySize);
+                    faceapi.draw.drawDetections(canvas, resizedDetections);
+                    
+                    if (detections.detection.score > 0.8) {
+                        document.getElementById('faceRegisterStatus').innerText = 'Face detected securely! You can save now.';
+                        document.getElementById('faceRegisterStatus').style.color = 'var(--success)';
+                        document.getElementById('btnSaveFace').disabled = false;
+                        capturedDescriptor = Array.from(detections.descriptor);
+                    }
+                } else {
+                    document.getElementById('faceRegisterStatus').innerText = 'No face detected. Please look at the camera.';
+                    document.getElementById('faceRegisterStatus').style.color = 'var(--warning)';
+                    document.getElementById('btnSaveFace').disabled = true;
+                }
+            }, 500);
+        };
+    }
+
+    function closeFaceRegisterModal() {
+        if (faceStream) {
+            faceStream.getTracks().forEach(track => track.stop());
+            faceStream = null;
+        }
+        if (faceInterval) {
+            clearInterval(faceInterval);
+            faceInterval = null;
+        }
+        closeModal('faceRegisterModal');
+    }
+
+    async function saveFaceDescriptor() {
+        if (!capturedDescriptor || !currentTeacherFaceId) return;
+        
+        const btn = document.getElementById('btnSaveFace');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> {{ __("Saving...") }}';
+        btn.disabled = true;
+        
+        try {
+            const response = await fetch(`/api-web/teachers/${currentTeacherFaceId}/face-register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ face_descriptor: JSON.stringify(capturedDescriptor) })
+            });
+            
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                console.error("Server Error:", errData);
+                alert(errData.message || "Server returned error: " + response.status);
+                return;
+            }
+            
+            const res = await response.json();
+            if (res.status === 'success') {
+                closeFaceRegisterModal();
+                window.showToast('{{ __("Face registered successfully!") }}', 'success');
+            } else {
+                alert(res.message);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('An error occurred while saving face data: ' + e.message);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
 </script>
 <style>
 #cropModal .cropper-view-box,

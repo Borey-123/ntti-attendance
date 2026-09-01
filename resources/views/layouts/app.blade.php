@@ -307,6 +307,15 @@
             <a href="{{ route('departments.index') }}" data-title="{{ __('Departments') }}" class="nav-item {{ request()->routeIs('departments.*') ? 'active' : '' }}">
                 <i class="ph ph-buildings nav-icon"></i> <span class="nav-text">{{ __('Departments') }}</span>
             </a>
+            <a href="{{ route('leave-requests.index') }}" data-title="{{ __('Leave Requests') }}" class="nav-item {{ request()->routeIs('leave-requests.*') ? 'active' : '' }}">
+                <i class="ph ph-calendar-plus nav-icon"></i> <span class="nav-text">{{ __('Leave Requests') }}</span>
+            </a>
+            <a href="{{ route('schedules.index') }}" data-title="{{ __('Schedules') }}" class="nav-item {{ request()->routeIs('schedules.*') ? 'active' : '' }}">
+                <i class="ph ph-clock-afternoon nav-icon"></i> <span class="nav-text">{{ __('Schedules') }}</span>
+            </a>
+            <a href="{{ route('analytics.index') }}" data-title="{{ __('Analytics') }}" class="nav-item {{ request()->routeIs('analytics.*') ? 'active' : '' }}">
+                <i class="ph ph-chart-donut nav-icon"></i> <span class="nav-text">{{ __('Analytics') }}</span>
+            </a>
             <a href="{{ route('reports.index') }}" data-title="{{ __('Reports') }}" class="nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                 <i class="ph ph-chart-bar nav-icon"></i> <span class="nav-text">{{ __('Reports') }}</span>
             </a>

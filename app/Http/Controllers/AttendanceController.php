@@ -763,6 +763,46 @@ class AttendanceController extends Controller
         ]);
     }
 
+    public function qrScan(Request $request): JsonResponse
+    {
+        $request->validate([
+            'qr_data' => 'required|string',
+        ]);
+
+        $teacher = Teacher::where('employee_id', $request->qr_data)->first();
+
+        if (!$teacher) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Invalid QR Code or Teacher not found.',
+                'action'  => 'error',
+            ], 404);
+        }
+
+        $request->merge(['teacher_id' => $teacher->id]);
+        return $this->adminScan($request);
+    }
+
+    public function faceScan(Request $request): JsonResponse
+    {
+        $request->validate([
+            'employee_id' => 'required|string',
+        ]);
+
+        $teacher = Teacher::where('employee_id', $request->employee_id)->first();
+
+        if (!$teacher) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Teacher not found.',
+                'action'  => 'error',
+            ], 404);
+        }
+
+        $request->merge(['teacher_id' => $teacher->id]);
+        return $this->adminScan($request);
+    }
+
     public function scanPage()
     {
         $teachers = Teacher::where(function($q) {
