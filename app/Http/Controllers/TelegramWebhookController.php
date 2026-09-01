@@ -31,7 +31,9 @@ class TelegramWebhookController extends Controller
         // Find teacher by Telegram Chat ID
         $teacher = Teacher::where('telegram_chat_id', (string)$chatId)->first();
 
-        if (str_starts_with($text, '/start')) {
+        $cleanText = strtolower(ltrim($text, '/'));
+
+        if (str_starts_with(strtolower($text), '/start') || $cleanText === 'start') {
             $parts = explode(' ', $text);
             if (isset($parts[1]) && is_numeric($parts[1])) {
                 $teacherId = $parts[1];
@@ -44,7 +46,7 @@ class TelegramWebhookController extends Controller
             }
 
             if ($teacher) {
-                $this->sendMessage($chatId, "👋 Welcome back, {$teacher->name}!\nUse /status to check today's attendance or /schedule for your class timetable.");
+                $this->sendMessage($chatId, "👋 Welcome back, {$teacher->name}!\n\nAvailable commands:\n• `/status` - Check today's check-in/out status\n• `/schedule` - View today's class schedule\n• `/help` - Command help");
             } else {
                 $this->sendMessage($chatId, "👋 Welcome to NTTI Attendance Bot!\nTo link your profile, please copy your personal link from your Teacher Portal.");
             }
@@ -57,8 +59,8 @@ class TelegramWebhookController extends Controller
         }
 
         // Handle commands for linked teachers
-        switch (strtolower($text)) {
-            case '/status':
+        switch ($cleanText) {
+            case 'status':
                 $today = date('Y-m-d');
                 $att = Attendance::where('teacher_id', $teacher->id)->where('date', $today)->first();
                 if ($att) {
@@ -73,7 +75,7 @@ class TelegramWebhookController extends Controller
                 $this->sendMessage($chatId, $msg);
                 break;
 
-            case '/schedule':
+            case 'schedule':
                 $dayOfWeek = date('N'); // 1 (Mon) to 7 (Sun)
                 $schedules = TeacherSchedule::where('teacher_id', $teacher->id)
                     ->where('day_of_week', $dayOfWeek)
@@ -91,7 +93,7 @@ class TelegramWebhookController extends Controller
                 $this->sendMessage($chatId, $msg);
                 break;
 
-            case '/help':
+            case 'help':
             default:
                 $msg = "ℹ️ *Available Commands*\n"
                      . "• `/status` - Check today's check-in/out times\n"
