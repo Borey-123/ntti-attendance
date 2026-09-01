@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\LeaveRequest;
 use App\Models\Teacher;
+use App\Models\SecurityLog;
 use Illuminate\Http\Request;
 
 class LeaveRequestController extends Controller
@@ -25,7 +26,7 @@ class LeaveRequestController extends Controller
     }
 
     /**
-     * Store a newly created leave request from teacher portal.
+     * Store a newly created leave request from teacher portal or admin.
      */
     public function store(Request $request)
     {
@@ -45,6 +46,23 @@ class LeaveRequestController extends Controller
             'reason' => $request->reason,
             'status' => 'pending',
         ]);
+
+        $teacher = Teacher::find($request->teacher_id);
+        $teacherName = $teacher ? $teacher->name : "ID #{$request->teacher_id}";
+
+        if (auth()->check()) {
+            SecurityLog::record(
+                'Create Leave Request',
+                $teacherName,
+                "Submitted {$request->leave_type} leave request ({$request->start_date} to {$request->end_date})"
+            );
+        } else {
+            SecurityLog::recordPortal(
+                'Create Leave Request',
+                $teacherName,
+                "Teacher submitted {$request->leave_type} leave request ({$request->start_date} to {$request->end_date})"
+            );
+        }
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -67,11 +85,20 @@ class LeaveRequestController extends Controller
             'admin_note' => 'nullable|string|max:500'
         ]);
 
-        $leave = LeaveRequest::findOrFail($id);
+        $leave = LeaveRequest::with('teacher')->findOrFail($id);
         $leave->update([
             'status' => $request->status,
             'admin_note' => $request->admin_note
         ]);
+
+        $teacherName = $leave->teacher ? $leave->teacher->name : "ID #{$leave->teacher_id}";
+        $actionTitle = ucfirst($request->status) . ' Leave Request';
+
+        SecurityLog::record(
+            $actionTitle,
+            $teacherName,
+            "Leave request #{$id} ({$leave->leave_type}: {$leave->start_date} to {$leave->end_date}) status set to {$request->status}" . ($request->admin_note ? " - Note: {$request->admin_note}" : "")
+        );
 
         return response()->json([
             'success' => true,

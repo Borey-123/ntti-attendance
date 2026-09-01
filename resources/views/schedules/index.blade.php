@@ -55,12 +55,14 @@
     {{-- ── Header ── --}}
     <div class="d-flex justify-between align-center" style="margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
         <div>
-            <h1 class="page-title" style="margin-bottom: 0.25rem;">{{ __('Teaching Timetables') }}</h1>
-            <p style="color: var(--text-secondary); font-size: 0.9rem;">{{ __('Manage weekly class schedules, room allocations, and instructor slots.') }}</p>
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <h1 class="page-title" style="margin-bottom: 0;">{{ __('Teaching Timetables') }}</h1>
+                <button class="btn btn-primary" onclick="openModal('addScheduleModal')" style="display: inline-flex; align-items: center; gap: 0.4rem; border-radius: 0.85rem; padding: 0.45rem 1.1rem; font-size: 0.88rem; font-weight: 800; box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.25); transition: all 0.2s ease;">
+                    <i class="ph ph-plus-circle" style="font-size: 1.1rem;"></i> <span>{{ __('Add Slot') }}</span>
+                </button>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.35rem; margin-bottom: 0;">{{ __('Manage weekly class schedules, room allocations, and instructor slots.') }}</p>
         </div>
-        <button class="btn btn-primary" onclick="openModal('addScheduleModal')" style="display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 1.25rem; padding: 0.8rem 1.5rem; font-weight: 800; box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.25); transition: all 0.2s ease;">
-            <i class="ph ph-plus-circle" style="font-size: 1.2rem;"></i> <span>{{ __('Add Teaching Slot') }}</span>
-        </button>
     </div>
 
     @php
