@@ -329,6 +329,19 @@
     {{-- LEFT: Terminal Scanner --}}
     <div>
         <div class="terminal-card">
+            {{-- Scan Mode Switcher Tabs --}}
+            <div class="scan-mode-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 0.4rem; border-radius: 1.25rem; border: 1px solid var(--border);">
+                <button id="modeRfidBtn" class="mode-tab-btn active" onclick="switchScanMode('rfid')" style="flex: 1; border: none; padding: 0.75rem 0.5rem; border-radius: 0.9rem; font-weight: 800; font-size: 0.85rem; cursor: pointer; background: var(--primary); color: #000; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                    <i class="ph ph-identification-badge" style="font-size: 1.2rem;"></i> <span>RFID Card</span>
+                </button>
+                <button id="modeFaceBtn" class="mode-tab-btn" onclick="switchScanMode('face')" style="flex: 1; border: none; padding: 0.75rem 0.5rem; border-radius: 0.9rem; font-weight: 800; font-size: 0.85rem; cursor: pointer; background: transparent; color: var(--text-secondary); transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                    <i class="ph ph-bounding-box" style="font-size: 1.2rem; color: #ec4899;"></i> <span>Face Scan</span>
+                </button>
+                <button id="modeQrBtn" class="mode-tab-btn" onclick="switchScanMode('qr')" style="flex: 1; border: none; padding: 0.75rem 0.5rem; border-radius: 0.9rem; font-weight: 800; font-size: 0.85rem; cursor: pointer; background: transparent; color: var(--text-secondary); transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                    <i class="ph ph-qr-code" style="font-size: 1.2rem; color: var(--info);"></i> <span>QR Scan</span>
+                </button>
+            </div>
+
             <div class="scanner-hologram" id="scannerRing">
                 <div class="scanner-deck-laser"></div>
                 <div id="scannerIcon" class="lottie-card-wrapper">
@@ -398,6 +411,23 @@
                 <div class="terminal-shift" id="shiftLabel" style="margin-bottom:0.5rem;">{{ __('Detecting Shift...') }}</div>
                 <div class="terminal-clock" id="scanClock">00:00:00</div>
             </div>
+
+            <div id="qr-reader" style="width: 100%; display: none; margin-top: 1.5rem; border-radius: 1rem; overflow: hidden; border: 2px solid var(--primary); background: #fff;"></div>
+            <button id="closeQrBtn" class="btn btn-secondary mt-2" style="width: 100%; border-radius: 1.25rem; display: none;" onclick="switchScanMode('rfid')">
+                {{ __('Close Scanner') }}
+            </button>
+
+            <!-- Face Scanner Container -->
+            <div id="face-scanner-container" style="width: 100%; display: none; margin-top: 1.5rem; border-radius: 1rem; overflow: hidden; border: 2px solid #ec4899; position: relative; aspect-ratio: 4/3; background: #000;">
+                <video id="faceScannerVideo" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                <canvas id="faceScannerCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
+                <div id="faceScannerLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: bold; background: rgba(0,0,0,0.5); padding: 1rem; border-radius: 0.5rem; z-index: 10; text-align: center;">
+                    <i class="ph ph-circle-notch animate-spin"></i><br>{{ __('Loading AI Models...') }}
+                </div>
+            </div>
+            <button id="closeFaceBtn" class="btn btn-secondary mt-2" style="width: 100%; border-radius: 1.25rem; display: none;" onclick="switchScanMode('rfid')">
+                {{ __('Close Scanner') }}
+            </button>
 
             {{-- Selected Teacher Identity Card --}}
             <div class="identity-preview" id="idPreview">
@@ -503,6 +533,8 @@
 
 @push('scripts')
 <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
 <style>
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 </style>
@@ -853,6 +885,232 @@ document.addEventListener('keydown', e => {
         doAdminScan();
     }
 });
+
+// ── Scan Mode Switcher Handler ──────────────────
+function switchScanMode(mode) {
+    document.querySelectorAll('.mode-tab-btn').forEach(btn => {
+        btn.style.background = 'transparent';
+        btn.style.color = 'var(--text-secondary)';
+        btn.classList.remove('active');
+    });
+
+    const rfidBtn = document.getElementById('modeRfidBtn');
+    const faceBtn = document.getElementById('modeFaceBtn');
+    const qrBtn = document.getElementById('modeQrBtn');
+    const ring = document.getElementById('scannerRing');
+
+    closeQrScanner();
+    closeFaceScanner();
+
+    if (mode === 'rfid') {
+        if (rfidBtn) { rfidBtn.style.background = 'var(--primary)'; rfidBtn.style.color = '#000'; rfidBtn.classList.add('active'); }
+        if (ring) ring.style.display = 'flex';
+    } else if (mode === 'face') {
+        if (faceBtn) { faceBtn.style.background = '#ec4899'; faceBtn.style.color = '#fff'; faceBtn.classList.add('active'); }
+        if (ring) ring.style.display = 'none';
+        openFaceScanner();
+    } else if (mode === 'qr') {
+        if (qrBtn) { qrBtn.style.background = 'var(--info)'; qrBtn.style.color = '#fff'; qrBtn.classList.add('active'); }
+        if (ring) ring.style.display = 'none';
+        openQrScanner();
+    }
+}
+
+let html5QrcodeScanner = null;
+
+function openQrScanner() {
+    document.getElementById('qr-reader').style.display = 'block';
+    document.getElementById('closeQrBtn').style.display = 'block';
+    
+    html5QrcodeScanner = new Html5QrcodeScanner(
+        "qr-reader",
+        { fps: 10, qrbox: {width: 250, height: 250} },
+        false);
+    
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+}
+
+function closeQrScanner() {
+    if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear();
+        html5QrcodeScanner = null;
+    }
+    document.getElementById('qr-reader').style.display = 'none';
+    document.getElementById('closeQrBtn').style.display = 'none';
+}
+
+async function onScanSuccess(decodedText, decodedResult) {
+    if (window._isScanningQr) return;
+    window._isScanningQr = true;
+    
+    if (html5QrcodeScanner) {
+        html5QrcodeScanner.pause();
+    }
+    
+    try {
+        const res = await window.fetchApi('/api-web/attendance/qr-scan', {
+            method: 'POST',
+            body: JSON.stringify({ qr_data: decodedText })
+        });
+
+        showResult(res);
+        addLogEntry(res);
+        updateStats(res);
+        playSound(res.status === 'success' ? 'success' : 'error');
+    } catch (e) {
+        showResult({ status: 'error', message: e.message, action: 'error' });
+        addLogEntry({ status: 'error', message: e.message, teacher_name: '—', action: 'error' });
+        playSound('error');
+    } finally {
+        setTimeout(() => {
+            window._isScanningQr = false;
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.resume();
+            }
+        }, 3000);
+    }
+}
+
+function onScanFailure(error) {
+    // ignore
+}
+
+let faceModelsLoaded = false;
+let faceScannerStream = null;
+let faceScannerInterval = null;
+let faceMatcher = null;
+
+async function loadFaceModelsForScan() {
+    if (faceModelsLoaded) return true;
+    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+    try {
+        await Promise.all([
+            faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+            faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+            faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+        ]);
+        
+        // Fetch registered faces
+        const res = await window.fetchApi('/api-web/teachers/faces');
+        
+        const labeledDescriptors = [];
+        res.forEach(t => {
+            const desc = new Float32Array(JSON.parse(t.face_descriptor));
+            labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(t.employee_id, [desc]));
+        });
+        
+        if (labeledDescriptors.length > 0) {
+            faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.5); // 0.5 max distance for strict matching
+        }
+        
+        faceModelsLoaded = true;
+        document.getElementById('faceScannerLoading').style.display = 'none';
+        return true;
+    } catch (e) {
+        console.error('Error loading face models:', e);
+        alert('Failed to load AI models or face data. Please check internet connection.');
+        return false;
+    }
+}
+
+async function openFaceScanner() {
+    if (window._isScanningQr) return; 
+    if (html5QrcodeScanner) closeQrScanner();
+    
+    document.getElementById('face-scanner-container').style.display = 'block';
+    document.getElementById('closeFaceBtn').style.display = 'block';
+    document.getElementById('faceScannerLoading').style.display = 'block';
+    
+    const loaded = await loadFaceModelsForScan();
+    if (!loaded) {
+        closeFaceScanner();
+        return;
+    }
+    
+    if (!faceMatcher) {
+        alert('No registered faces found in the database. Please register faces first.');
+        closeFaceScanner();
+        return;
+    }
+    
+    startFaceScanVideo();
+}
+
+async function startFaceScanVideo() {
+    const video = document.getElementById('faceScannerVideo');
+    try {
+        faceScannerStream = await navigator.mediaDevices.getUserMedia({ video: {} });
+        video.srcObject = faceScannerStream;
+    } catch (err) {
+        console.error(err);
+        alert("Camera access denied or unavailable.");
+        return;
+    }
+
+    video.onloadedmetadata = () => {
+        const canvas = document.getElementById('faceScannerCanvas');
+        const displaySize = { width: video.videoWidth || 480, height: video.videoHeight || 360 };
+        faceapi.matchDimensions(canvas, displaySize);
+        
+        faceScannerInterval = setInterval(async () => {
+            if (!faceScannerStream || window._isScanningQr) return;
+            
+            const detections = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+            
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (detections) {
+                const resizedDetections = faceapi.resizeResults(detections, displaySize);
+                faceapi.draw.drawDetections(canvas, resizedDetections);
+                
+                const bestMatch = faceMatcher.findBestMatch(detections.descriptor);
+                
+                if (bestMatch.label !== 'unknown' && bestMatch.distance < 0.5) {
+                    handleFaceMatch(bestMatch.label);
+                }
+            }
+        }, 500); 
+    };
+}
+
+function closeFaceScanner() {
+    if (faceScannerStream) {
+        faceScannerStream.getTracks().forEach(track => track.stop());
+        faceScannerStream = null;
+    }
+    if (faceScannerInterval) {
+        clearInterval(faceScannerInterval);
+        faceScannerInterval = null;
+    }
+    document.getElementById('face-scanner-container').style.display = 'none';
+    document.getElementById('closeFaceBtn').style.display = 'none';
+}
+
+async function handleFaceMatch(employeeId) {
+    if (window._isScanningQr) return;
+    window._isScanningQr = true;
+    
+    try {
+        const res = await window.fetchApi('/api-web/attendance/face-scan', {
+            method: 'POST',
+            body: JSON.stringify({ employee_id: employeeId })
+        });
+
+        showResult(res);
+        addLogEntry(res);
+        updateStats(res);
+        playSound(res.status === 'success' ? 'success' : 'error');
+    } catch (e) {
+        showResult({ status: 'error', message: e.message, action: 'error' });
+        addLogEntry({ status: 'error', message: e.message, teacher_name: '—', action: 'error' });
+        playSound('error');
+    } finally {
+        setTimeout(() => {
+            window._isScanningQr = false;
+        }, 4000); 
+    }
+}
 </script>
 @endpush
 
