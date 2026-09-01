@@ -16,16 +16,20 @@ class TelegramWebhookController extends Controller
         $data = $request->all();
         Log::info('Telegram Webhook Received:', $data);
 
-        if (!isset($data['message'])) {
-            return response()->json(['status' => 'ok']);
+        if (isset($data['message'])) {
+            $this->processIncomingMessage($data['message']);
         }
 
-        $message = $data['message'];
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function processIncomingMessage(array $message)
+    {
         $chatId = $message['chat']['id'] ?? null;
         $text = trim($message['text'] ?? '');
 
         if (!$chatId || !$text) {
-            return response()->json(['status' => 'ok']);
+            return;
         }
 
         // Find teacher by Telegram Chat ID
@@ -41,7 +45,7 @@ class TelegramWebhookController extends Controller
                 if ($t) {
                     $t->update(['telegram_chat_id' => (string)$chatId]);
                     $this->sendMessage($chatId, "✅ Hello {$t->name}! Your Telegram account has been linked to the NTTI Teacher Attendance System.");
-                    return response()->json(['status' => 'ok']);
+                    return;
                 }
             }
 
@@ -50,12 +54,12 @@ class TelegramWebhookController extends Controller
             } else {
                 $this->sendMessage($chatId, "👋 Welcome to NTTI Attendance Bot!\nTo link your profile, please copy your personal link from your Teacher Portal.");
             }
-            return response()->json(['status' => 'ok']);
+            return;
         }
 
         if (!$teacher) {
             $this->sendMessage($chatId, "⚠️ Account not linked. Please link your Telegram account from the NTTI Teacher Portal.");
-            return response()->json(['status' => 'ok']);
+            return;
         }
 
         // Handle commands for linked teachers
@@ -102,8 +106,6 @@ class TelegramWebhookController extends Controller
                 $this->sendMessage($chatId, $msg);
                 break;
         }
-
-        return response()->json(['status' => 'ok']);
     }
 
     private function sendMessage($chatId, $text)
