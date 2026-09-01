@@ -649,16 +649,20 @@
 
 {{-- ── Search & Filter Bar ── --}}
 <div class="card" style="margin-bottom: 2rem; border-radius: 1.5rem; padding: 1rem;">
-    <form method="GET" action="{{ route('teachers.index') }}" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+    <form method="GET" action="{{ route('teachers.index') }}" id="teacherFilterForm" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
         <div style="position: relative; flex: 1; min-width: 250px;">
-            <i class="ph ph-magnifying-glass" style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size: 1.2rem;"></i>
-            <input type="text" name="search" value="{{ request('search') }}"
-                   class="form-control" style="padding-left: 2.75rem; border-radius: 1rem;"
-                   placeholder="{{ __('Search name, ID or position...') }}">
+            <i class="ph ph-magnifying-glass" style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size: 1.2rem; z-index:1;"></i>
+            <input type="text" name="search" id="teacherLiveSearch" value="{{ request('search') }}"
+                   class="form-control" style="padding-left: 2.75rem; padding-right: 2.75rem; border-radius: 1rem;"
+                   placeholder="{{ __('Search name, ID, position...') }}" autocomplete="off">
+            <button type="button" id="clearLiveSearch" onclick="clearTeacherSearch()"
+                style="position:absolute; right:0.75rem; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem; display:none; padding:0; line-height:1;">
+                <i class="ph ph-x-circle"></i>
+            </button>
             <input type="hidden" name="filter" value="{{ request('filter') }}">
         </div>
 
-        <div style="position: relative; min-width: 250px;">
+        <div style="position: relative; min-width: 220px;">
             <i class="ph ph-funnel" style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
             <select name="department" class="form-control" style="padding-left: 2.5rem; border-radius: 1rem; appearance: auto;" onchange="this.form.submit()">
                 <option value="">{{ __('All Departments') }}</option>
@@ -670,7 +674,7 @@
             </select>
         </div>
 
-        <div style="position: relative; min-width: 180px;">
+        <div style="position: relative; min-width: 160px;">
             <i class="ph ph-activity" style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
             <select name="status" class="form-control" style="padding-left: 2.5rem; border-radius: 1rem; appearance: auto;" onchange="this.form.submit()">
                 <option value="">{{ __('All Statuses') }}</option>
@@ -679,17 +683,29 @@
             </select>
         </div>
 
-        @if(request('search') || request('department') || request('status') || request('filter'))
-        <a href="{{ route('teachers.index') }}" class="btn btn-secondary" style="border-radius: 1rem; padding: 0.75rem 1.25rem;">
-            <i class="ph ph-x"></i> {{ __('Reset') }}
-        </a>
-        @endif
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+            <button type="submit" class="btn btn-primary" style="border-radius: 1rem; padding: 0.75rem 1.25rem;">
+                <i class="ph ph-magnifying-glass"></i>
+            </button>
+            @if(request('search') || request('department') || request('status') || request('filter'))
+            <a href="{{ route('teachers.index') }}" class="btn btn-secondary" style="border-radius: 1rem; padding: 0.75rem 1.25rem;">
+                <i class="ph ph-x"></i>
+            </a>
+            @endif
+        </div>
     </form>
+
+    {{-- Live Search Results Counter --}}
+    <div id="liveSearchInfo" style="display:none; margin-top:0.75rem; padding: 0.5rem 0.75rem; background: rgba(var(--primary-rgb),0.08); border-radius: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">
+        <i class="ph ph-funnel-simple"></i>
+        <span id="liveSearchCount"></span>
+    </div>
 </div>
 
-<div class="teacher-grid">
+<div class="teacher-grid" id="teacherGrid">
     @foreach($teachers as $teacher)
-    <div class="t-profile-card stagger-item" style="animation-delay: {{ $loop->index * 0.04 }}s">
+    <div class="t-profile-card stagger-item live-teacher-card" style="animation-delay: {{ $loop->index * 0.04 }}s"
+         data-search="{{ strtolower($teacher->name . ' ' . ($teacher->name_kh ?? '') . ' ' . $teacher->employee_id . ' ' . ($teacher->position ?? '') . ' ' . $teacher->department) }}">
         <div class="t-card-banner"></div>
         <div class="status-badge-float">
             @if($teacher->telegram_chat_id)
@@ -1699,6 +1715,64 @@
             btn.disabled = false;
         }
     }
+
+    // ── Live Instant Search ──────────────────────────────────────────────────
+    const liveSearchInput = document.getElementById('teacherLiveSearch');
+    const clearBtn = document.getElementById('clearLiveSearch');
+    const liveSearchInfo = document.getElementById('liveSearchInfo');
+    const liveSearchCount = document.getElementById('liveSearchCount');
+    const teacherGrid = document.getElementById('teacherGrid');
+    const emptyState = document.querySelector('.card[style*="dashed"]');
+    let searchDebounce;
+
+    if (liveSearchInput) {
+        liveSearchInput.addEventListener('input', function () {
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(runLiveSearch, 120);
+        });
+    }
+
+    function runLiveSearch() {
+        const query = liveSearchInput ? liveSearchInput.value.trim().toLowerCase() : '';
+        const cards = document.querySelectorAll('.live-teacher-card');
+
+        // Show/hide clear button
+        if (clearBtn) clearBtn.style.display = query ? 'block' : 'none';
+
+        if (!query) {
+            cards.forEach(c => { c.style.display = ''; });
+            if (liveSearchInfo) liveSearchInfo.style.display = 'none';
+            return;
+        }
+
+        let visible = 0;
+        cards.forEach(card => {
+            const haystack = card.dataset.search || '';
+            const match = query.split(' ').every(word => haystack.includes(word));
+            card.style.display = match ? '' : 'none';
+            if (match) visible++;
+        });
+
+        // Update counter
+        if (liveSearchInfo && liveSearchCount) {
+            liveSearchInfo.style.display = 'block';
+            liveSearchCount.textContent = visible === 0
+                ? 'No teachers match "' + liveSearchInput.value + '"'
+                : visible + ' teacher' + (visible !== 1 ? 's' : '') + ' found for "' + liveSearchInput.value + '"';
+        }
+
+        // Show/hide teacher grid empty state
+        if (teacherGrid) teacherGrid.style.display = visible === 0 ? 'none' : '';
+        if (emptyState) emptyState.style.display = visible === 0 ? '' : 'none';
+    }
+
+    function clearTeacherSearch() {
+        if (liveSearchInput) { liveSearchInput.value = ''; liveSearchInput.focus(); }
+        runLiveSearch();
+    }
+
+    // Run once on page load in case there's a pre-filled value
+    if (liveSearchInput && liveSearchInput.value) runLiveSearch();
 </script>
 <style>
 #cropModal .cropper-view-box,
