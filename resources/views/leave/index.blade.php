@@ -4,328 +4,251 @@
 
 @push('styles')
 <style>
-/* ══════════════════════════════════════════
-   STAT CARDS
-══════════════════════════════════════════ */
-.leave-stat-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-.leave-stat-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 1.5rem;
-    padding: 1.4rem 1.6rem;
-    display: flex;
-    align-items: center;
-    gap: 1.1rem;
-    transition: transform .25s, border-color .25s, box-shadow .25s;
-    cursor: default;
-}
-.leave-stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 14px 36px rgba(0,0,0,0.14);
-    border-color: var(--ls-color, var(--primary));
-}
-.ls-icon {
-    width: 50px; height: 50px; border-radius: 1.1rem;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem; flex-shrink: 0;
-}
-.ls-info .ls-val { font-size: 2rem; font-weight: 900; line-height: 1; }
-.ls-info .ls-label { font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; opacity: .55; margin-top: .25rem; }
-
-/* ══════════════════════════════════════════
-   FILTER BAR
-══════════════════════════════════════════ */
-.filter-bar {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 1.25rem;
-    padding: .75rem 1.25rem;
-    display: flex;
-    align-items: center;
-    gap: .75rem;
-    flex-wrap: wrap;
-    margin-bottom: 1.5rem;
-}
-.filter-chip {
-    padding: .4rem 1rem;
-    border-radius: 2rem;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: .78rem;
-    font-weight: 800;
-    cursor: pointer;
-    transition: all .2s;
-    text-decoration: none;
-    display: inline-flex; align-items: center; gap: .35rem;
-}
-.filter-chip:hover { border-color: var(--primary); color: var(--primary); }
-.filter-chip.active { background: var(--primary); border-color: var(--primary); color: #000; }
-
-/* ══════════════════════════════════════════
-   REQUEST CARDS
-══════════════════════════════════════════ */
-.leave-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 1.5rem;
-    padding: 1.25rem 1.5rem;
-    transition: transform .2s, border-color .2s, box-shadow .2s;
-    margin-bottom: .9rem;
-    position: relative;
-    overflow: hidden;
-}
-.leave-card::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 4px;
-    border-radius: 4px 0 0 4px;
-}
-.leave-card.pending::before   { background: var(--warning); }
-.leave-card.approved::before  { background: var(--success); }
-.leave-card.rejected::before  { background: var(--danger); }
-
-.leave-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
-    border-color: rgba(var(--primary-rgb), .3);
-}
-
-/* Teacher avatar */
-.teacher-avatar {
-    width: 48px; height: 48px;
-    border-radius: 50%;
-    overflow: hidden;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.25rem; font-weight: 900;
-    background: var(--primary); color: #000;
-    flex-shrink: 0;
-}
-
-/* type pills */
-.type-pill {
-    display: inline-flex; align-items: center; gap: .35rem;
-    padding: .3rem .75rem;
-    border-radius: .5rem;
-    font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .5px;
-}
-.pill-sick     { background: rgba(248,81,73,.1);  color: var(--danger);  border: 1px solid rgba(248,81,73,.2); }
-.pill-mission  { background: rgba(88,166,255,.1); color: var(--info);    border: 1px solid rgba(88,166,255,.2); }
-.pill-annual   { background: rgba(63,185,80,.1);  color: var(--success); border: 1px solid rgba(63,185,80,.2); }
-.pill-personal { background: rgba(210,153,34,.1); color: var(--warning); border: 1px solid rgba(210,153,34,.2); }
-
-/* status pills */
-.status-pill {
-    display: inline-flex; align-items: center; gap: .3rem;
-    padding: .3rem .8rem;
-    border-radius: 2rem;
-    font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .5px;
-}
-.s-pending  { background: rgba(210,153,34,.15); color: var(--warning); border: 1px solid rgba(210,153,34,.3); }
-.s-approved { background: rgba(63,185,80,.15);  color: var(--success); border: 1px solid rgba(63,185,80,.3); }
-.s-rejected { background: rgba(248,81,73,.15);  color: var(--danger);  border: 1px solid rgba(248,81,73,.3); }
-
-/* action icon buttons */
-.btn-approve, .btn-reject {
-    width: 40px; height: 40px;
-    border-radius: .9rem;
-    border: none;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: all .2s;
-}
-.btn-approve { background: rgba(63,185,80,.1); color: var(--success); border: 1px solid rgba(63,185,80,.25); }
-.btn-approve:hover { background: var(--success); color: #fff; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(63,185,80,.35); }
-.btn-reject  { background: rgba(248,81,73,.1);  color: var(--danger);  border: 1px solid rgba(248,81,73,.25); }
-.btn-reject:hover  { background: var(--danger);  color: #fff; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(248,81,73,.35); }
-
-.date-pill {
-    display: inline-flex; align-items: center; gap: .3rem;
-    background: rgba(255,255,255,.04);
-    border: 1px solid var(--border);
-    border-radius: .5rem;
-    padding: .3rem .65rem;
-    font-size: .78rem; font-weight: 700; font-family: monospace;
-}
-[data-theme="light"] .date-pill { background: rgba(0,0,0,.04); }
-
-/* Empty state */
-.empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: var(--text-secondary);
-    border: 2px dashed var(--border);
-    border-radius: 1.5rem;
-}
+    .btn.btn-edit-premium {
+        background: rgba(var(--primary-rgb), 0.1);
+        border: 2px solid var(--primary);
+        color: var(--primary);
+        box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.2);
+        font-weight: 800;
+    }
+    .btn.btn-edit-premium:hover {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+        box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.4);
+    }
+    .pill-tabs {
+        display: inline-flex;
+        background: rgba(255,255,255,0.03);
+        padding: 0.4rem;
+        border-radius: 1rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border);
+        gap: 0.25rem;
+    }
+    .pill-btn {
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        border: none;
+        background: none;
+        color: var(--text-secondary);
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        text-decoration: none;
+    }
+    .pill-btn:hover { color: var(--text-primary); }
+    .pill-btn.active {
+        background: var(--primary);
+        color: #000;
+        box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.2);
+    }
 </style>
 @endpush
 
 @section('content')
-<div class="container-fluid px-3 px-md-4 py-4">
+<div class="animate-fade-up">
 
-    {{-- ── PAGE HEADER ── --}}
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    {{-- ── Header ── --}}
+    <div class="d-flex justify-between align-center" style="margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
         <div>
-            <h2 class="fw-bold text-primary mb-1 d-flex align-items-center gap-2" style="font-size:1.8rem;">
-                <i class="ph ph-files"></i>
-                <span>{{ __('Leave & Absence Requests') }}</span>
-            </h2>
-            <p class="text-secondary small fw-bold text-uppercase mb-0" style="letter-spacing:.5px;">
-                {{ __('Review and manage teacher leave applications') }}
-            </p>
+            <h1 class="page-title" style="margin-bottom: 0.25rem;">{{ __('Leave & Absence Requests') }}</h1>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">{{ __('Review, approve, and track teacher leave applications.') }}</p>
         </div>
     </div>
 
-    {{-- ── STAT CARDS ── --}}
+    {{-- ── Summary Metrics Grid ── --}}
     @php
-        $totalReqs    = $leaveRequests->total();
-        $pendingCount = \App\Models\LeaveRequest::where('status','pending')->count();
-        $approvedCount= \App\Models\LeaveRequest::where('status','approved')->count();
-        $rejectedCount= \App\Models\LeaveRequest::where('status','rejected')->count();
-        $activeStatus = request('status', 'all');
+        $pendingCount  = \App\Models\LeaveRequest::where('status','pending')->count();
+        $approvedCount = \App\Models\LeaveRequest::where('status','approved')->count();
+        $rejectedCount = \App\Models\LeaveRequest::where('status','rejected')->count();
+        $totalCount    = \App\Models\LeaveRequest::count();
+        $activeStatus  = request('status', 'all');
     @endphp
-    <div class="leave-stat-grid">
-        <div class="leave-stat-card" style="--ls-color:var(--primary);">
-            <div class="ls-icon" style="background:rgba(var(--primary-rgb),.1);color:var(--primary);"><i class="ph ph-files"></i></div>
-            <div class="ls-info">
-                <div class="ls-val" style="color:var(--primary);">{{ \App\Models\LeaveRequest::count() }}</div>
-                <div class="ls-label">{{ __('Total') }}</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+        <div class="card" style="padding: 1.5rem; display: flex; align-items: center; gap: 1.25rem; border-radius: 1.5rem;">
+            <div style="width: 54px; height: 54px; border-radius: 1.25rem; background: rgba(var(--primary-rgb), 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0;">
+                <i class="ph ph-files"></i>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">{{ __('Total Applications') }}</div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: var(--text-primary); line-height: 1; margin-top: 2px;">{{ $totalCount }}</div>
             </div>
         </div>
-        <div class="leave-stat-card" style="--ls-color:var(--warning);">
-            <div class="ls-icon" style="background:rgba(var(--warning-rgb),.1);color:var(--warning);"><i class="ph ph-clock-countdown"></i></div>
-            <div class="ls-info">
-                <div class="ls-val" style="color:var(--warning);">{{ $pendingCount }}</div>
-                <div class="ls-label">{{ __('Pending') }}</div>
+
+        <div class="card" style="padding: 1.5rem; display: flex; align-items: center; gap: 1.25rem; border-radius: 1.5rem;">
+            <div style="width: 54px; height: 54px; border-radius: 1.25rem; background: rgba(245, 158, 11, 0.1); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0;">
+                <i class="ph ph-clock"></i>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">{{ __('Pending Review') }}</div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: var(--text-primary); line-height: 1; margin-top: 2px;">{{ $pendingCount }}</div>
             </div>
         </div>
-        <div class="leave-stat-card" style="--ls-color:var(--success);">
-            <div class="ls-icon" style="background:rgba(var(--success-rgb),.1);color:var(--success);"><i class="ph ph-check-circle"></i></div>
-            <div class="ls-info">
-                <div class="ls-val" style="color:var(--success);">{{ $approvedCount }}</div>
-                <div class="ls-label">{{ __('Approved') }}</div>
+
+        <div class="card" style="padding: 1.5rem; display: flex; align-items: center; gap: 1.25rem; border-radius: 1.5rem;">
+            <div style="width: 54px; height: 54px; border-radius: 1.25rem; background: rgba(16, 185, 129, 0.1); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0;">
+                <i class="ph ph-check-circle"></i>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">{{ __('Approved') }}</div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: var(--text-primary); line-height: 1; margin-top: 2px;">{{ $approvedCount }}</div>
             </div>
         </div>
-        <div class="leave-stat-card" style="--ls-color:var(--danger);">
-            <div class="ls-icon" style="background:rgba(var(--danger-rgb),.1);color:var(--danger);"><i class="ph ph-x-circle"></i></div>
-            <div class="ls-info">
-                <div class="ls-val" style="color:var(--danger);">{{ $rejectedCount }}</div>
-                <div class="ls-label">{{ __('Rejected') }}</div>
+
+        <div class="card" style="padding: 1.5rem; display: flex; align-items: center; gap: 1.25rem; border-radius: 1.5rem;">
+            <div style="width: 54px; height: 54px; border-radius: 1.25rem; background: rgba(239, 68, 68, 0.1); color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0;">
+                <i class="ph ph-x-circle"></i>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">{{ __('Rejected') }}</div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: var(--text-primary); line-height: 1; margin-top: 2px;">{{ $rejectedCount }}</div>
             </div>
         </div>
     </div>
 
-    {{-- ── FILTER CHIPS ── --}}
-    <div class="filter-bar">
-        <span class="small fw-bold text-secondary me-1"><i class="ph ph-funnel"></i> {{ __('Filter:') }}</span>
-        <a href="{{ route('leave-requests.index') }}" class="filter-chip {{ $activeStatus == 'all' ? 'active' : '' }}">
-            <i class="ph ph-list"></i> {{ __('All') }}
+    {{-- ── Sliding Filter Tabs ── --}}
+    <div class="pill-tabs">
+        <a href="{{ route('leave-requests.index') }}" class="pill-btn {{ $activeStatus == 'all' ? 'active' : '' }}">
+            <i class="ph ph-list"></i> {{ __('All Requests') }}
         </a>
-        <a href="{{ route('leave-requests.index', ['status' => 'pending']) }}" class="filter-chip {{ $activeStatus == 'pending' ? 'active' : '' }}">
+        <a href="{{ route('leave-requests.index', ['status' => 'pending']) }}" class="pill-btn {{ $activeStatus == 'pending' ? 'active' : '' }}">
             <i class="ph ph-clock"></i> {{ __('Pending') }}
-            @if($pendingCount > 0)<span style="background:var(--warning);color:#000;border-radius:2rem;padding:0 .45rem;font-size:.65rem;margin-left:.25rem;">{{ $pendingCount }}</span>@endif
+            @if($pendingCount > 0)<span style="background:#f59e0b; color:#000; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 900;">{{ $pendingCount }}</span>@endif
         </a>
-        <a href="{{ route('leave-requests.index', ['status' => 'approved']) }}" class="filter-chip {{ $activeStatus == 'approved' ? 'active' : '' }}">
+        <a href="{{ route('leave-requests.index', ['status' => 'approved']) }}" class="pill-btn {{ $activeStatus == 'approved' ? 'active' : '' }}">
             <i class="ph ph-check"></i> {{ __('Approved') }}
         </a>
-        <a href="{{ route('leave-requests.index', ['status' => 'rejected']) }}" class="filter-chip {{ $activeStatus == 'rejected' ? 'active' : '' }}">
+        <a href="{{ route('leave-requests.index', ['status' => 'rejected']) }}" class="pill-btn {{ $activeStatus == 'rejected' ? 'active' : '' }}">
             <i class="ph ph-x"></i> {{ __('Rejected') }}
         </a>
     </div>
 
-    {{-- ── REQUEST CARDS ── --}}
-    @forelse($leaveRequests as $req)
-    @php
-        $typeMap = ['sick'=>'pill-sick','mission'=>'pill-mission','annual'=>'pill-annual','personal'=>'pill-personal'];
-        $typeNames = ['sick'=>__('Sick Leave'),'mission'=>__('Official Mission'),'annual'=>__('Annual Leave'),'personal'=>__('Personal Leave')];
-        $tClass = $typeMap[$req->leave_type] ?? 'pill-personal';
-        $tName  = $typeNames[$req->leave_type] ?? ucfirst($req->leave_type);
-        $sClass = ['pending'=>'s-pending','approved'=>'s-approved','rejected'=>'s-rejected'][$req->status] ?? 's-pending';
-        $sIcon  = ['pending'=>'ph-clock','approved'=>'ph-check-circle','rejected'=>'ph-x-circle'][$req->status] ?? 'ph-clock';
-        $teacherName = app()->getLocale()=='km' ? ($req->teacher->name_kh ?: $req->teacher->name) : $req->teacher->name;
+    {{-- ── Requests Table Container ── --}}
+    <div class="card" style="border-radius: 2rem; overflow: hidden;">
+        <div class="card-header" style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <h3 style="margin: 0; font-weight: 800; display: flex; align-items: center; gap: 0.75rem;">
+                <i class="ph ph-files"></i>
+                {{ __('Leave Request Registry') }}
+                <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">({{ $leaveRequests->total() }})</span>
+            </h3>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="table" style="min-width: 900px;">
+                <thead>
+                    <tr>
+                        <th style="width: 60px; text-align: center;">#</th>
+                        <th>{{ __('Teacher') }}</th>
+                        <th>{{ __('Leave Type') }}</th>
+                        <th>{{ __('Period / Duration') }}</th>
+                        <th>{{ __('Reason') }}</th>
+                        <th style="text-align: center; width: 120px;">{{ __('Status') }}</th>
+                        <th style="width: 140px; text-align: center;">{{ __('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($leaveRequests as $index => $req)
+                    @php
+                        $teacherName = app()->getLocale() == 'km' ? ($req->teacher->name_kh ?: $req->teacher->name) : $req->teacher->name;
+                        $start = \Carbon\Carbon::parse($req->start_date);
+                        $end   = \Carbon\Carbon::parse($req->end_date);
+                        $days  = $start->diffInDays($end) + 1;
 
-        $start = \Carbon\Carbon::parse($req->start_date);
-        $end   = \Carbon\Carbon::parse($req->end_date);
-        $days  = $start->diffInDays($end) + 1;
-    @endphp
-    <div class="leave-card {{ $req->status }}">
-        <div class="d-flex align-items-start gap-3 flex-wrap">
-            {{-- Avatar --}}
-            <div class="teacher-avatar">
-                @if($req->teacher && $req->teacher->photo)
-                    <img src="{{ to_asset_url($req->teacher->photo) }}" style="width:100%;height:100%;object-fit:cover;">
-                @else
-                    {{ strtoupper(substr($req->teacher->name ?? 'T', 0, 1)) }}
-                @endif
-            </div>
-
-            {{-- Content --}}
-            <div class="flex-grow-1 min-w-0">
-                <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                    <span class="fw-bold" style="font-size:1rem;">{{ $teacherName }}</span>
-                    <span class="text-secondary small fw-bold">{{ $req->teacher->department ?? '' }}</span>
-                </div>
-                <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
-                    <span class="type-pill {{ $tClass }}">{{ $tName }}</span>
-                    <span class="status-pill {{ $sClass }}"><i class="ph {{ $sIcon }}"></i> {{ ucfirst($req->status) }}</span>
-                    <span class="small fw-bold text-secondary">
-                        <i class="ph ph-timer"></i> {{ $days }} {{ $days == 1 ? __('day') : __('days') }}
-                    </span>
-                </div>
-                <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
-                    <span class="date-pill"><i class="ph ph-calendar-blank" style="color:var(--primary);"></i> {{ $req->start_date }}</span>
-                    <i class="ph ph-arrow-right text-secondary"></i>
-                    <span class="date-pill"><i class="ph ph-calendar-check" style="color:var(--primary);"></i> {{ $req->end_date }}</span>
-                </div>
-                @if($req->reason)
-                <div style="font-size:.82rem;color:var(--text-secondary);font-weight:600;background:rgba(var(--primary-rgb),.04);border:1px solid var(--border);border-radius:.75rem;padding:.5rem .85rem;max-width:600px;">
-                    <i class="ph ph-note text-primary" style="font-size:.9rem;"></i>
-                    {{ Str::limit($req->reason, 120) }}
-                </div>
-                @endif
-                @if($req->admin_note)
-                <div style="font-size:.78rem;color:var(--text-secondary);margin-top:.5rem;font-style:italic;">
-                    <i class="ph ph-shield-check text-primary"></i> <strong>{{ __('Admin note:') }}</strong> {{ $req->admin_note }}
-                </div>
-                @endif
-            </div>
-
-            {{-- Actions --}}
-            <div class="d-flex flex-column align-items-end gap-2 flex-shrink-0">
-                <span class="text-secondary small fw-bold" style="font-size:.7rem;opacity:.6;">
-                    {{ \Carbon\Carbon::parse($req->created_at)->diffForHumans() }}
-                </span>
-                @if($req->status === 'pending')
-                <div class="d-flex gap-2">
-                    <button class="btn-approve" onclick="updateLeaveStatus({{ $req->id }}, 'approved')" title="{{ __('Approve') }}">
-                        <i class="ph ph-check-bold"></i>
-                    </button>
-                    <button class="btn-reject" onclick="updateLeaveStatus({{ $req->id }}, 'rejected')" title="{{ __('Reject') }}">
-                        <i class="ph ph-x-bold"></i>
-                    </button>
-                </div>
-                @endif
-            </div>
+                        $typeNames = [
+                            'sick'     => __('Sick Leave'),
+                            'mission'  => __('Official Mission'),
+                            'annual'   => __('Annual Leave'),
+                            'personal' => __('Personal Leave')
+                        ];
+                        $typeLabel = $typeNames[$req->leave_type] ?? ucfirst($req->leave_type);
+                    @endphp
+                    <tr>
+                        <td style="text-align: center;">
+                            <div style="width: 32px; height: 32px; border-radius: 0.6rem; background: rgba(var(--primary-rgb), 0.08); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;">
+                                {{ $index + 1 + ($leaveRequests->currentPage() - 1) * $leaveRequests->perPage() }}
+                            </div>
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: #000; font-weight: 800; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+                                    @if($req->teacher && $req->teacher->photo)
+                                        <img src="{{ to_asset_url($req->teacher->photo) }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    @else
+                                        {{ strtoupper(substr($req->teacher->name ?? 'T', 0, 1)) }}
+                                    @endif
+                                </div>
+                                <div>
+                                    <div style="font-weight: 800; color: var(--text-primary); font-size: 0.95rem; line-height: 1.2;">{{ $teacherName }}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">{{ $req->teacher->department ?? '—' }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-info" style="font-size: 0.8rem; font-weight: 800;">
+                                {{ $typeLabel }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-primary);">
+                                {{ $req->start_date }} <i class="ph ph-arrow-right" style="font-size: 0.75rem; color: var(--text-secondary);"></i> {{ $req->end_date }}
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--primary); font-weight: 800; margin-top: 2px;">
+                                <i class="ph ph-timer"></i> {{ $days }} {{ $days == 1 ? __('day') : __('days') }}
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $req->reason }}">
+                                {{ $req->reason }}
+                            </div>
+                            @if($req->admin_note)
+                            <div style="font-size: 0.75rem; color: var(--primary); font-style: italic; margin-top: 2px;">
+                                {{ __('Note:') }} {{ $req->admin_note }}
+                            </div>
+                            @endif
+                        </td>
+                        <td style="text-align: center;">
+                            @if($req->status === 'approved')
+                                <span class="badge badge-success"><i class="ph ph-check-circle me-1"></i>{{ __('Approved') }}</span>
+                            @elseif($req->status === 'rejected')
+                                <span class="badge badge-danger"><i class="ph ph-x-circle me-1"></i>{{ __('Rejected') }}</span>
+                            @else
+                                <span class="badge badge-warning" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);"><i class="ph ph-clock me-1"></i>{{ __('Pending') }}</span>
+                            @endif
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 0.4rem; justify-content: center;">
+                                @if($req->status === 'pending')
+                                    <button class="btn btn-sm btn-success" onclick="updateLeaveStatus({{ $req->id }}, 'approved')" title="{{ __('Approve') }}" style="border-radius: 0.6rem; padding: 0.4rem 0.8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                        <i class="ph ph-check-bold"></i> {{ __('Approve') }}
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="updateLeaveStatus({{ $req->id }}, 'rejected')" title="{{ __('Reject') }}" style="border-radius: 0.6rem; padding: 0.4rem 0.8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                        <i class="ph ph-x-bold"></i> {{ __('Reject') }}
+                                    </button>
+                                @else
+                                    <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">{{ __('Completed') }}</span>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 4rem 2rem; color: var(--text-muted);">
+                            <i class="ph ph-folder-open" style="font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 1rem;"></i>
+                            <div style="font-weight: 800; font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 0.3rem;">{{ __('No leave requests found.') }}</div>
+                            <div style="font-size: 0.85rem;">{{ __('Submitted leave applications will appear here.') }}</div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
-    @empty
-    <div class="empty-state">
-        <i class="ph ph-folder-open" style="font-size:3rem;opacity:.3;display:block;margin-bottom:1rem;"></i>
-        <div class="fw-bold" style="font-size:1.1rem;margin-bottom:.5rem;">{{ __('No leave requests found') }}</div>
-        <div class="small">{{ __('Requests submitted by teachers from the portal will appear here.') }}</div>
-    </div>
-    @endforelse
 
-    {{-- ── PAGINATION ── --}}
+    {{-- Pagination --}}
     @if($leaveRequests->hasPages())
-    <div class="d-flex justify-content-center mt-4">
+    <div style="display: flex; justify-content: center; margin-top: 1.5rem;">
         {{ $leaveRequests->appends(request()->query())->links() }}
     </div>
     @endif
