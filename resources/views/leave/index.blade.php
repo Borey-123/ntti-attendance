@@ -220,10 +220,16 @@
                         <td>
                             <div style="display: flex; gap: 0.4rem; justify-content: center;">
                                 @if($req->status === 'pending')
-                                    <button class="btn btn-sm btn-success" onclick="updateLeaveStatus({{ $req->id }}, 'approved')" title="{{ __('Approve') }}" style="border-radius: 0.6rem; padding: 0.4rem 0.8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                    <button class="btn btn-sm btn-success"
+                                        onclick="confirmLeaveAction({{ $req->id }}, 'approved', '{{ addslashes($teacherName) }}')"
+                                        title="{{ __('Approve') }}"
+                                        style="border-radius: 0.6rem; padding: 0.4rem 0.8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
                                         <i class="ph ph-check-bold"></i> {{ __('Approve') }}
                                     </button>
-                                    <button class="btn btn-sm btn-danger" onclick="updateLeaveStatus({{ $req->id }}, 'rejected')" title="{{ __('Reject') }}" style="border-radius: 0.6rem; padding: 0.4rem 0.8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                    <button class="btn btn-sm btn-danger"
+                                        onclick="confirmLeaveAction({{ $req->id }}, 'rejected', '{{ addslashes($teacherName) }}')"
+                                        title="{{ __('Reject') }}"
+                                        style="border-radius: 0.6rem; padding: 0.4rem 0.8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
                                         <i class="ph ph-x-bold"></i> {{ __('Reject') }}
                                     </button>
                                 @else
@@ -255,10 +261,49 @@
 
 </div>
 
+{{-- ── Custom Confirm Modal ── --}}
+<div id="leaveConfirmModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center;">
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:2rem; padding:2.5rem; max-width:440px; width:90%; box-shadow:0 25px 60px rgba(0,0,0,0.4); text-align:center;">
+        <div id="leaveConfirmIcon" style="width:70px;height:70px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:1.25rem;"></div>
+        <h3 id="leaveConfirmTitle" style="font-weight:800;margin-bottom:0.5rem;color:var(--text-primary);"></h3>
+        <p id="leaveConfirmMessage" style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:1.75rem;"></p>
+        <div style="display:flex;gap:0.75rem;justify-content:center;">
+            <button onclick="closeLeaveConfirm()" class="btn btn-secondary" style="border-radius:1rem;padding:0.65rem 1.75rem;font-weight:700;">{{ __('Cancel') }}</button>
+            <button id="leaveConfirmBtn" class="btn" style="border-radius:1rem;padding:0.65rem 1.75rem;font-weight:800;"></button>
+        </div>
+    </div>
+</div>
+
 <script>
-async function updateLeaveStatus(id, status) {
-    const label = status === 'approved' ? '{{ __("Approve") }}' : '{{ __("Reject") }}';
-    if (!confirm(`${label} this leave request?`)) return;
+function closeLeaveConfirm() {
+    document.getElementById('leaveConfirmModal').style.display = 'none';
+}
+document.getElementById('leaveConfirmModal').addEventListener('click', function(e) {
+    if (e.target === this) closeLeaveConfirm();
+});
+
+function confirmLeaveAction(id, status, teacherName) {
+    const isApprove = status === 'approved';
+    const modal = document.getElementById('leaveConfirmModal');
+    const iconEl = document.getElementById('leaveConfirmIcon');
+    iconEl.innerHTML = isApprove ? '<i class="ph ph-check-circle"></i>' : '<i class="ph ph-x-circle"></i>';
+    iconEl.style.background = isApprove ? '#10b981' : '#ef4444';
+    iconEl.style.color = '#fff';
+    document.getElementById('leaveConfirmTitle').textContent = isApprove
+        ? '{{ __("Approve Leave Request?") }}'
+        : '{{ __("Reject Leave Request?") }}';
+    document.getElementById('leaveConfirmMessage').textContent = isApprove
+        ? `{{ __("Approve the leave request for") }} ${teacherName}? {{ __("This action will be recorded in the system.") }}`
+        : `{{ __("Reject the leave request for") }} ${teacherName}? {{ __("The teacher will be notified.") }}`;
+    const btn = document.getElementById('leaveConfirmBtn');
+    btn.textContent = isApprove ? '{{ __("Yes, Approve") }}' : '{{ __("Yes, Reject") }}';
+    btn.className = isApprove ? 'btn btn-success' : 'btn btn-danger';
+    btn.style.cssText = 'border-radius:1rem;padding:0.65rem 1.75rem;font-weight:800;';
+    btn.onclick = () => { closeLeaveConfirm(); doLeaveStatusUpdate(id, status); };
+    modal.style.display = 'flex';
+}
+
+async function doLeaveStatusUpdate(id, status) {
     try {
         await window.fetchApi(`{{ url('/leave-requests') }}/${id}/status`, {
             method: 'PUT',

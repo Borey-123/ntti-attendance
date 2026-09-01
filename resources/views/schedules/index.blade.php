@@ -207,9 +207,9 @@
                             </div>
                         </td>
                         <td style="text-align: center;">
-                            <form action="{{ route('schedules.destroy', $s->id) }}" method="POST" onsubmit="return confirm('{{ __('Delete this schedule slot?') }}');">
+                            <form action="{{ route('schedules.destroy', $s->id) }}" method="POST" class="sched-delete-form">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger" title="{{ __('Delete') }}" style="border-radius: 0.6rem; width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">
+                                <button type="button" class="btn btn-sm btn-danger btn-delete-sched" title="{{ __('Delete') }}" style="border-radius: 0.6rem; width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">
                                     <i class="ph ph-trash" style="font-size: 1.1rem;"></i>
                                 </button>
                             </form>
@@ -309,11 +309,64 @@
     </div>
 </div>
 
+{{-- ── Confirm Modal ── --}}
+<div id="confirmModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center;">
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:2rem; padding:2.5rem; max-width:420px; width:90%; box-shadow:0 25px 60px rgba(0,0,0,0.4); text-align:center; position:relative;">
+        <div id="confirmIcon" style="width:70px;height:70px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:1.25rem;"></div>
+        <h3 id="confirmTitle" style="font-weight:800;margin-bottom:0.5rem;color:var(--text-primary);"></h3>
+        <p id="confirmMessage" style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:1.75rem;"></p>
+        <div style="display:flex;gap:0.75rem;justify-content:center;">
+            <button onclick="closeConfirmModal()" class="btn btn-secondary" style="border-radius:1rem;padding:0.65rem 1.75rem;font-weight:700;">{{ __('Cancel') }}</button>
+            <button id="confirmActionBtn" class="btn" style="border-radius:1rem;padding:0.65rem 1.75rem;font-weight:800;"></button>
+        </div>
+    </div>
+</div>
+
 <script>
+function openConfirmModal({ title, message, actionLabel, actionClass, icon, iconBg, onConfirm }) {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    const iconEl = document.getElementById('confirmIcon');
+    iconEl.innerHTML = `<i class="${icon}"></i>`;
+    iconEl.style.background = iconBg;
+    iconEl.style.color = '#fff';
+    const btn = document.getElementById('confirmActionBtn');
+    btn.textContent = actionLabel;
+    btn.className = `btn ${actionClass}`;
+    btn.style.borderRadius = '1rem';
+    btn.style.padding = '0.65rem 1.75rem';
+    btn.style.fontWeight = '800';
+    btn.onclick = () => { closeConfirmModal(); onConfirm(); };
+    const modal = document.getElementById('confirmModal');
+    modal.style.display = 'flex';
+}
+function closeConfirmModal() {
+    document.getElementById('confirmModal').style.display = 'none';
+}
+// Close on backdrop click
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+    if (e.target === this) closeConfirmModal();
+});
+
+// Hook delete buttons
+document.querySelectorAll('.btn-delete-sched').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const form = this.closest('.sched-delete-form');
+        openConfirmModal({
+            title: '{{ __("Delete Schedule Slot?") }}',
+            message: '{{ __("This teaching slot will be permanently removed. This action cannot be undone.") }}',
+            actionLabel: '{{ __("Yes, Delete") }}',
+            actionClass: 'btn-danger',
+            icon: 'ph ph-trash',
+            iconBg: '#ef4444',
+            onConfirm: () => form.submit()
+        });
+    });
+});
+
 function switchDay(day, btn) {
     document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-
     const rows = document.querySelectorAll('.sched-row');
     rows.forEach(r => {
         const show = day === 'all' || r.dataset.day == day;
@@ -322,7 +375,6 @@ function switchDay(day, btn) {
 }
 function openModal(id) {
     document.getElementById(id).classList.add('active');
-    // Reset dept filter each time modal opens
     if (id === 'addScheduleModal') {
         const deptFilter = document.getElementById('slotDeptFilter');
         if (deptFilter) { deptFilter.value = ''; filterSlotTeachers(); }
@@ -338,24 +390,15 @@ function filterSlotTeachers() {
     const select = document.getElementById('slotTeacherSelect');
     const countEl = document.getElementById('slotTeacherCount');
     const options = select.querySelectorAll('option');
-
     let visibleCount = 0;
     let firstVisible = null;
-
     options.forEach(opt => {
         const match = !dept || opt.dataset.dept === dept;
         opt.hidden = !match;
         opt.disabled = !match;
-        if (match) {
-            visibleCount++;
-            if (!firstVisible) firstVisible = opt;
-        }
+        if (match) { visibleCount++; if (!firstVisible) firstVisible = opt; }
     });
-
-    // Auto-select the first visible teacher after filtering
     if (firstVisible) select.value = firstVisible.value;
-
-    // Show count
     if (countEl) {
         countEl.textContent = dept
             ? visibleCount + ' teacher' + (visibleCount !== 1 ? 's' : '') + ' in this department'
