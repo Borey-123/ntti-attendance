@@ -171,11 +171,70 @@ class PortalController extends Controller
             ->take(10)
             ->get();
 
+        // ── 1. KPI Calculations: Worked Hours, Avg Arrival, On-time Streak ──
+        $totalWorkedMinutes = 0;
+        $morningTimes = [];
+        foreach ($historyRecords as $rec) {
+            if ($rec->morning_in && $rec->morning_out) {
+                $mIn = Carbon::createFromTimeString($rec->morning_in);
+                $mOut = Carbon::createFromTimeString($rec->morning_out);
+                if ($mOut->greaterThanOrEqualTo($mIn)) {
+                    $totalWorkedMinutes += $mOut->diffInMinutes($mIn);
+                }
+            }
+            if ($rec->afternoon_in && $rec->afternoon_out) {
+                $aIn = Carbon::createFromTimeString($rec->afternoon_in);
+                $aOut = Carbon::createFromTimeString($rec->afternoon_out);
+                if ($aOut->greaterThanOrEqualTo($aIn)) {
+                    $totalWorkedMinutes += $aOut->diffInMinutes($aIn);
+                }
+            }
+            if ($rec->morning_in) {
+                $morningTimes[] = Carbon::createFromTimeString($rec->morning_in)->secondsSinceMidnight();
+            }
+        }
+
+        $avgArrivalTime = '—';
+        if (count($morningTimes) > 0) {
+            $avgSecs = array_sum($morningTimes) / count($morningTimes);
+            $avgArrivalTime = Carbon::today()->addSeconds($avgSecs)->format('h:i A');
+        }
+
+        // Streak Calculation
+        $onTimeStreak = 0;
+        $allTeacherHistory = Attendance::where('teacher_id', $teacher->id)
+            ->where('date', '<=', today()->toDateString())
+            ->orderBy('date', 'desc')
+            ->get();
+
+        foreach ($allTeacherHistory as $att) {
+            if ($att->morning_status === 'late' || $att->afternoon_status === 'late') {
+                break;
+            }
+            if ($att->morning_status === 'present' || $att->afternoon_status === 'present') {
+                $onTimeStreak++;
+            }
+        }
+
+        // ── 2. Today's Teaching Schedule ──
+        $todayDayOfWeek = now()->format('l'); // Monday, Tuesday, etc.
+        $todaySchedules = \App\Models\TeacherSchedule::where('teacher_id', $teacher->id)
+            ->where('day_of_week', $todayDayOfWeek)
+            ->orderBy('start_time')
+            ->get();
+
+        // ── 3. Recent Leave Requests History ──
+        $leaveRequestsHistory = \App\Models\LeaveRequest::where('teacher_id', $teacher->id)
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
         $departments = \App\Models\Department::all();
         return view('portal.index', compact(
             'teacher', 'history', 'stats', 'error', 'departments', 'calendar', 'corrections',
             'todayRecord', 'upcomingHolidays', 'calendarMonth', 'calendarYear', 'calendarLabel',
-            'presentToday', 'totalTeachers', 'isOnline'
+            'presentToday', 'totalTeachers', 'isOnline',
+            'totalWorkedMinutes', 'avgArrivalTime', 'onTimeStreak', 'todaySchedules', 'leaveRequestsHistory'
         ));
     }
 

@@ -648,7 +648,7 @@
             @endphp
             
             {{-- Top Controls Row: Weather | Lang + Theme --}}
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                 <div class="campus-widget">
                     <i id="weatherIcon" class="ph ph-sun-horizon" style="color: #f59e0b; transition: all 0.3s;"></i>
                     <span id="weatherText">{{ __('Phnom Penh') }} &nbsp;--°C</span>
@@ -671,6 +671,20 @@
                         <i id="portalThemeIcon" class="ph ph-moon"></i>
                     </button>
                 </div>
+            </div>
+
+            {{-- 1. PWA Install Prompt Banner --}}
+            <div id="pwaInstallBanner" style="display:none; background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.15), rgba(59, 130, 246, 0.15)); border: 1px solid rgba(var(--primary-rgb), 0.3); border-radius: 1.25rem; padding: 0.85rem 1.25rem; margin-bottom: 1.5rem; justify-content: space-between; align-items: center; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="ph ph-device-mobile" style="font-size: 1.6rem; color: var(--primary);"></i>
+                    <div style="text-align: left;">
+                        <div style="font-size: 0.85rem; font-weight: 800; color: var(--text-main);">{{ __('Install Teacher Portal App') }}</div>
+                        <div style="font-size: 0.72rem; color: var(--text-sub);">{{ __('Add to home screen for instant 1-tap access') }}</div>
+                    </div>
+                </div>
+                <button id="pwaInstallBtn" style="background: var(--primary); color: #000; border: none; padding: 0.4rem 0.9rem; border-radius: 0.75rem; font-weight: 800; font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; flex-shrink: 0;">
+                    <i class="ph ph-download-simple"></i> {{ __('Install') }}
+                </button>
             </div>
 
             {{-- Logo --}}
@@ -724,7 +738,7 @@
                     <div class="teacher-header" style="margin-bottom: 1rem;">
                         <div class="teacher-photo-wrapper" style="position: relative; cursor: pointer;" onclick="document.getElementById('portalPhotoInput').click()" title="{{ __('Change Profile Picture') }}">
                             @if($teacher->photo)
-                                <img src="{{ to_asset_url($teacher->photo) }}" class="teacher-photo" alt="{{ $teacher->name }}">
+                                <img src="{{ to_asset_url($teacher->photo) }}" class="teacher-photo" id="portal-profile-img" alt="{{ $teacher->name }}">
                             @else
                                 <div class="teacher-photo" style="display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; background:var(--primary); font-size:2rem;">{{ substr($teacher->name, 0, 1) }}</div>
                             @endif
@@ -823,6 +837,58 @@
                         </div>
                     </div>
 
+                    {{-- 2. KPI Metrics Grid (Worked Hours, Avg Arrival, Punctual Streak) --}}
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 2rem;">
+                        <div style="background: rgba(0,0,0,0.02); border: 1px solid var(--border); padding: 0.85rem 0.5rem; border-radius: 1.25rem; text-align: center;">
+                            @php
+                                $kpiHours = floor(($totalWorkedMinutes ?? 0) / 60);
+                                $kpiMins = ($totalWorkedMinutes ?? 0) % 60;
+                            @endphp
+                            <i class="ph ph-clock" style="font-size: 1.3rem; color: var(--primary); margin-bottom: 0.2rem; display: block;"></i>
+                            <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-main);">{{ $kpiHours }}h {{ $kpiMins }}m</div>
+                            <div style="font-size: 0.65rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; margin-top: 2px;">{{ __('Worked Hours') }}</div>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.02); border: 1px solid var(--border); padding: 0.85rem 0.5rem; border-radius: 1.25rem; text-align: center;">
+                            <i class="ph ph-sun-horizon" style="font-size: 1.3rem; color: #f59e0b; margin-bottom: 0.2rem; display: block;"></i>
+                            <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-main);">{{ $avgArrivalTime ?? '—' }}</div>
+                            <div style="font-size: 0.65rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; margin-top: 2px;">{{ __('Avg Arrival') }}</div>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.02); border: 1px solid var(--border); padding: 0.85rem 0.5rem; border-radius: 1.25rem; text-align: center;">
+                            <i class="ph ph-fire" style="font-size: 1.3rem; color: #ef4444; margin-bottom: 0.2rem; display: block;"></i>
+                            <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-main);">{{ $onTimeStreak ?? 0 }} {{ __('Days') }}</div>
+                            <div style="font-size: 0.65rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; margin-top: 2px;">{{ __('Punctual Streak') }}</div>
+                        </div>
+                    </div>
+
+                    {{-- 3. Today's Teaching Schedule Widget --}}
+                    @if(isset($todaySchedules) && $todaySchedules->count() > 0)
+                        <div style="background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 1.5rem; padding: 1.25rem; margin-bottom: 2rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+                                <h4 style="margin: 0; font-size: 0.9rem; font-weight: 800; color: #8b5cf6; display: flex; align-items: center; gap: 0.4rem;">
+                                    <i class="ph ph-chalkboard-teacher" style="font-size: 1.2rem;"></i> {{ __("Today's Teaching Schedule") }}
+                                </h4>
+                                <span style="font-size: 0.72rem; font-weight: 800; color: #8b5cf6; background: rgba(139, 92, 246, 0.15); padding: 0.2rem 0.6rem; border-radius: 0.5rem;">
+                                    {{ now()->format('l') }}
+                                </span>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                                @foreach($todaySchedules as $sch)
+                                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.02); padding: 0.65rem 0.85rem; border-radius: 0.85rem; border: 1px solid var(--border);">
+                                        <div>
+                                            <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-main);">{{ $sch->subject_name }}</div>
+                                            <div style="font-size: 0.75rem; color: var(--text-sub); display: flex; align-items: center; gap: 0.3rem; margin-top: 2px;">
+                                                <i class="ph ph-door" style="color: var(--primary);"></i> {{ __('Room') }}: <strong>{{ $sch->room_number ?? 'N/A' }}</strong>
+                                            </div>
+                                        </div>
+                                        <div style="font-size: 0.82rem; font-weight: 700; color: #8b5cf6; background: rgba(139, 92, 246, 0.1); padding: 0.3rem 0.6rem; border-radius: 0.6rem;">
+                                            {{ substr($sch->start_time, 0, 5) }} - {{ substr($sch->end_time, 0, 5) }}
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="shift-info-card">
                         <div class="shift-info-item">
                             <h4>{{ __('Morning Shift') }}</h4>
@@ -873,14 +939,19 @@
                         </div>
                     @endif
 
-                    <div class="action-buttons">
-                        <a href="{{ route('portal.export', ['employee_id' => $teacher->employee_id]) }}" class="btn-secondary">
+                    {{-- 4. Action Buttons with Print Slip --}}
+                    <div class="action-buttons" style="grid-template-columns: repeat(3, 1fr); gap: 0.6rem;">
+                        <a href="{{ route('portal.export', ['employee_id' => $teacher->employee_id]) }}" class="btn-secondary" style="padding: 0.75rem 0.4rem; font-size: 0.8rem;">
                             <i class="ph ph-file-csv"></i>
                             {{ __('Export CSV') }}
                         </a>
-                        <button onclick="openCorrectionModal()" class="btn-secondary">
+                        <button onclick="printMonthlySlip()" class="btn-secondary" style="padding: 0.75rem 0.4rem; font-size: 0.8rem;">
+                            <i class="ph ph-printer"></i>
+                            {{ __('Print Slip') }}
+                        </button>
+                        <button onclick="openCorrectionModal()" class="btn-secondary" style="padding: 0.75rem 0.4rem; font-size: 0.8rem;">
                             <i class="ph ph-shield-warning"></i>
-                            {{ __('Dispute / Correct') }}
+                            {{ __('Dispute') }}
                         </button>
                     </div>
 
@@ -954,6 +1025,36 @@
                                     </div>
                                     <div style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6; padding: 0.4rem 0.8rem; border-radius: 0.75rem; font-size: 0.8rem; font-weight: 800;">
                                         {{ \Carbon\Carbon::parse($holiday->date)->diffForHumans() }}
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @if(isset($leaveRequestsHistory) && $leaveRequestsHistory->count() > 0)
+                    <div style="margin-bottom: 2.5rem;">
+                        <div class="history-title">
+                            <i class="ph ph-calendar-plus" style="color: #3b82f6;"></i>
+                            {{ __('My Leave Request History') }}
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            @foreach($leaveRequestsHistory as $lReq)
+                                <div style="background: rgba(0,0,0,0.02); border: 1px solid var(--border); border-radius: 1rem; padding: 0.85rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <div style="font-weight: 800; color: var(--text-main); font-size: 0.9rem;">
+                                            {{ ucfirst($lReq->leave_type) }} {{ __('Leave') }}
+                                        </div>
+                                        <div style="font-size: 0.75rem; color: var(--text-sub); margin-top: 2px;">
+                                            {{ \Carbon\Carbon::parse($lReq->start_date)->format('M d') }} - {{ \Carbon\Carbon::parse($lReq->end_date)->format('M d, Y') }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        @if($lReq->status === 'approved')
+                                            <span style="font-size: 0.7rem; font-weight: 800; background: rgba(16,185,129,0.15); color: var(--success); padding: 0.25rem 0.6rem; border-radius: 0.5rem; border: 1px solid rgba(16,185,129,0.3);">{{ __('Approved') }}</span>
+                                        @elseif($lReq->status === 'rejected')
+                                            <span style="font-size: 0.7rem; font-weight: 800; background: rgba(239,68,68,0.15); color: var(--danger); padding: 0.25rem 0.6rem; border-radius: 0.5rem; border: 1px solid rgba(239,68,68,0.3);">{{ __('Rejected') }}</span>
+                                        @else
+                                            <span style="font-size: 0.7rem; font-weight: 800; background: rgba(245,158,11,0.15); color: var(--warning); padding: 0.25rem 0.6rem; border-radius: 0.5rem; border: 1px solid rgba(245,158,11,0.3);">{{ __('Pending') }}</span>
+                                        @endif
                                     </div>
                                 </div>
                             @endforeach
@@ -1771,6 +1872,141 @@ async function submitLeaveForm(e) {
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
+    }
+
+    // PWA Install Prompt Listener
+    let deferredPwaPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPwaPrompt = e;
+        const banner = document.getElementById('pwaInstallBanner');
+        if (banner) banner.style.display = 'flex';
+    });
+
+    const pwaBtn = document.getElementById('pwaInstallBtn');
+    if (pwaBtn) {
+        pwaBtn.addEventListener('click', async () => {
+            if (deferredPwaPrompt) {
+                deferredPwaPrompt.prompt();
+                const choice = await deferredPwaPrompt.userChoice;
+                if (choice.outcome === 'accepted') {
+                    document.getElementById('pwaInstallBanner').style.display = 'none';
+                }
+                deferredPwaPrompt = null;
+            }
+        });
+    }
+
+    // Print Monthly Attendance Slip Function
+    function printMonthlySlip() {
+        const uName = @json(\App\Models\Setting::getValue('university_name', 'National Technical Training Institute'));
+        const uLogo = @json(\App\Models\Setting::getAssetUrl('university_logo', '/images/ntti_logo.png'));
+        const teacherName = @json($teacher->name_kh ? ($teacher->name_kh . " (" . $teacher->name . ")") : $teacher->name);
+        const employeeId = @json($teacher->employee_id);
+        const dept = @json($teacher->department);
+        const monthLabel = @json($calendarLabel);
+        const presentCount = @json($stats['present']);
+        const lateCount = @json($stats['late']);
+        const absentCount = @json($stats['absent']);
+        const workedHours = @json(floor(($totalWorkedMinutes ?? 0) / 60) . "h " . (($totalWorkedMinutes ?? 0) % 60) . "m");
+
+        const historyData = @json($history);
+
+        let tableRows = '';
+        historyData.forEach((item, index) => {
+            tableRows += `
+                <tr>
+                    <td style="text-align: center; border: 1px solid #ddd; padding: 6px;">${index + 1}</td>
+                    <td style="border: 1px solid #ddd; padding: 6px;">${item.date} (${item.day})</td>
+                    <td style="text-align: center; border: 1px solid #ddd; padding: 6px;">${item.morning}</td>
+                    <td style="text-align: center; border: 1px solid #ddd; padding: 6px;">${item.afternoon}</td>
+                    <td style="text-align: center; border: 1px solid #ddd; padding: 6px; font-weight: bold; color: ${item.has_late ? '#d97706' : '#059669'};">
+                        ${item.has_late ? 'LATE' : 'REGULAR'}
+                    </td>
+                </tr>
+            `;
+        });
+
+        const printWin = window.open('', '', 'width=850,height=900');
+        printWin.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Attendance Slip - ${employeeId}</title>
+                <style>
+                    body { font-family: 'Kantumruy Pro', 'Inter', sans-serif; padding: 30px; color: #1e293b; max-width: 800px; margin: 0 auto; }
+                    .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 15px; margin-bottom: 20px; }
+                    .logo { height: 70px; margin-bottom: 10px; }
+                    h2 { margin: 0; color: #1e3a8a; font-size: 20px; }
+                    h4 { margin: 5px 0 0; color: #64748b; font-size: 14px; font-weight: normal; }
+                    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
+                    .meta-item { font-size: 13px; }
+                    .meta-item strong { color: #0f172a; }
+                    .kpi-row { display: flex; justify-content: space-around; background: #eff6ff; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #bfdbfe; font-size: 13px; text-align: center; }
+                    .kpi-val { font-weight: bold; font-size: 16px; color: #1d4ed8; }
+                    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 30px; }
+                    th { background: #2563eb; color: white; border: 1px solid #1d4ed8; padding: 8px; }
+                    .footer-sig { display: flex; justify-content: space-between; margin-top: 50px; text-align: center; font-size: 12px; }
+                    .sig-box { width: 200px; border-top: 1px dashed #94a3b8; padding-top: 5px; }
+                    @media print {
+                        body { padding: 0; }
+                        button { display: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div style="text-align: right; margin-bottom: 10px;">
+                    <button onclick="window.print()" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;">🖨️ Print / Save PDF</button>
+                </div>
+                <div class="header">
+                    ${uLogo ? `<img src="${uLogo}" class="logo" />` : ''}
+                    <h2>${uName}</h2>
+                    <h4>Monthly Teacher Attendance Statement — <strong>${monthLabel}</strong></h4>
+                </div>
+
+                <div class="meta-grid">
+                    <div class="meta-item"><strong>Teacher Name:</strong> ${teacherName}</div>
+                    <div class="meta-item"><strong>Teacher ID:</strong> ${employeeId}</div>
+                    <div class="meta-item"><strong>Department:</strong> ${dept}</div>
+                    <div class="meta-item"><strong>Issued Date:</strong> ${new Date().toLocaleDateString()}</div>
+                </div>
+
+                <div class="kpi-row">
+                    <div><div>Present Days</div><div class="kpi-val">${presentCount}</div></div>
+                    <div><div>Late Days</div><div class="kpi-val" style="color:#d97706;">${lateCount}</div></div>
+                    <div><div>Absent Days</div><div class="kpi-val" style="color:#dc2626;">${absentCount}</div></div>
+                    <div><div>Total Worked</div><div class="kpi-val">${workedHours}</div></div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">#</th>
+                            <th>Date</th>
+                            <th>Morning Shift</th>
+                            <th>Afternoon Shift</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+
+                <div class="footer-sig">
+                    <div>
+                        <br/><br/>
+                        <div class="sig-box">Teacher Signature</div>
+                    </div>
+                    <div>
+                        <br/><br/>
+                        <div class="sig-box">Academic Director / HR</div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `);
+        printWin.document.close();
     }
 </script>
 </html>
