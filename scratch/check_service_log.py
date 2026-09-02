@@ -12,7 +12,7 @@ ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
 try:
     ssh.connect(host, username=user, password=password, timeout=10)
-    stdin, stdout, stderr = ssh.exec_command('tail -n 60 /var/www/ntti-attendance/storage/logs/laravel.log')
+    stdin, stdout, stderr = ssh.exec_command('journalctl -u ntti-telegram-sync -o cat --no-pager | tail -n 30')
     print(stdout.read().decode('utf-8', errors='replace'))
 finally:
     ssh.close()

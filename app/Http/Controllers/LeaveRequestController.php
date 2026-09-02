@@ -91,6 +91,9 @@ class LeaveRequestController extends Controller
             'admin_note' => $request->admin_note
         ]);
 
+        // Send Telegram alert to teacher
+        \App\Services\TelegramService::sendLeaveNotification($leave);
+
         $teacherName = $leave->teacher ? $leave->teacher->name : "ID #{$leave->teacher_id}";
         $actionTitle = ucfirst($request->status) . ' Leave Request';
 
