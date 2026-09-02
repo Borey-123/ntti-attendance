@@ -1901,93 +1901,162 @@ async function submitLeaveForm(e) {
 
     // Print Monthly Attendance Slip Function
     function printMonthlySlip() {
-        const uName = @json(\App\Models\Setting::getValue('university_name', 'National Technical Training Institute'));
-        const uLogo = @json(\App\Models\Setting::getAssetUrl('university_logo', '/images/ntti_logo.png'));
-        const teacherName = @json($teacher->name_kh ? ($teacher->name_kh . " (" . $teacher->name . ")") : $teacher->name);
+        let uLogoRaw = @json(\App\Models\Setting::getAssetUrl('university_logo', '/images/ntti_logo.png'));
+        let uLogo = uLogoRaw;
+        if (uLogo && !uLogo.startsWith('http://') && !uLogo.startsWith('https://') && !uLogo.startsWith('data:')) {
+            uLogo = window.location.origin + (uLogo.startsWith('/') ? '' : '/') + uLogo;
+        }
+
+        const uNameKh = @json(\App\Models\Setting::getValue('university_name_kh', 'វិទ្យាស្ថានជាតិបណ្តុះបណ្តាលបច្ចេកទេស'));
+        const uNameEn = @json(\App\Models\Setting::getValue('university_name', 'National Technical Training Institute'));
+        
+        const teacherNameKh = @json($teacher->name_kh ?: $teacher->name);
+        const teacherNameEn = @json($teacher->name);
+        const displayTeacherName = teacherNameKh === teacherNameEn ? teacherNameEn : `${teacherNameKh} (${teacherNameEn})`;
+        
         const employeeId = @json($teacher->employee_id);
         const dept = @json($teacher->department);
         const monthLabel = @json($calendarLabel);
         const presentCount = @json($stats['present']);
         const lateCount = @json($stats['late']);
         const absentCount = @json($stats['absent']);
-        const workedHours = @json(floor(($totalWorkedMinutes ?? 0) / 60) . "h " . (($totalWorkedMinutes ?? 0) % 60) . "m");
+        const totalMins = @json($totalWorkedMinutes ?? 0);
+        const workedHours = `${Math.floor(totalMins / 60)}ម៉ោង ${totalMins % 60}នាទី (${Math.floor(totalMins / 60)}h ${totalMins % 60}m)`;
 
         const historyData = @json($history);
 
         let tableRows = '';
         historyData.forEach((item, index) => {
+            const statusBadge = item.has_late 
+                ? `<span style="color: #d97706; font-weight: bold;">មកយឺត (LATE)</span>` 
+                : `<span style="color: #059669; font-weight: bold;">ទៀងម៉ោង (REGULAR)</span>`;
+
             tableRows += `
                 <tr>
-                    <td style="text-align: center; border: 1px solid #ddd; padding: 6px;">${index + 1}</td>
-                    <td style="border: 1px solid #ddd; padding: 6px;">${item.date} (${item.day})</td>
-                    <td style="text-align: center; border: 1px solid #ddd; padding: 6px;">${item.morning}</td>
-                    <td style="text-align: center; border: 1px solid #ddd; padding: 6px;">${item.afternoon}</td>
-                    <td style="text-align: center; border: 1px solid #ddd; padding: 6px; font-weight: bold; color: ${item.has_late ? '#d97706' : '#059669'};">
-                        ${item.has_late ? 'LATE' : 'REGULAR'}
-                    </td>
+                    <td style="text-align: center; border: 1px solid #cbd5e1; padding: 7px;">${index + 1}</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 7px; font-weight: 600;">${item.date} (${item.day})</td>
+                    <td style="text-align: center; border: 1px solid #cbd5e1; padding: 7px;">${item.morning || '—'}</td>
+                    <td style="text-align: center; border: 1px solid #cbd5e1; padding: 7px;">${item.afternoon || '—'}</td>
+                    <td style="text-align: center; border: 1px solid #cbd5e1; padding: 7px;">${statusBadge}</td>
                 </tr>
             `;
         });
 
-        const printWin = window.open('', '', 'width=850,height=900');
+        const printWin = window.open('', '', 'width=900,height=950');
         printWin.document.write(`
             <!DOCTYPE html>
-            <html>
+            <html lang="km">
             <head>
-                <title>Attendance Slip - ${employeeId}</title>
+                <meta charset="UTF-8">
+                <base href="${window.location.origin}/">
+                <title>ប័ណ្ណវត្តមានប្រចាំខែ - ${employeeId}</title>
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@400;700;900&family=Kantumruy+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
                 <style>
-                    body { font-family: 'Kantumruy Pro', 'Inter', sans-serif; padding: 30px; color: #1e293b; max-width: 800px; margin: 0 auto; }
-                    .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 15px; margin-bottom: 20px; }
-                    .logo { height: 70px; margin-bottom: 10px; }
-                    h2 { margin: 0; color: #1e3a8a; font-size: 20px; }
-                    h4 { margin: 5px 0 0; color: #64748b; font-size: 14px; font-weight: normal; }
-                    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
-                    .meta-item { font-size: 13px; }
+                    body { font-family: 'Kantumruy Pro', 'Battambang', sans-serif; padding: 35px; color: #1e293b; max-width: 850px; margin: 0 auto; line-height: 1.5; }
+                    .kingdom-header { text-align: center; margin-bottom: 20px; }
+                    .kingdom-title { font-family: 'Moul', 'Battambang', serif; font-weight: 700; font-size: 16px; color: #1e3a8a; }
+                    .kingdom-sub { font-family: 'Battambang', sans-serif; font-weight: 700; font-size: 13px; color: #1e3a8a; margin-top: 2px; }
+                    .kingdom-dots { margin-top: 4px; font-size: 10px; color: #64748b; letter-spacing: 3px; }
+                    
+                    .brand-row { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #2563eb; padding-bottom: 15px; margin-bottom: 25px; }
+                    .brand-info { text-align: left; }
+                    .u-name-kh { font-size: 18px; font-weight: 700; color: #1e3a8a; margin: 0; font-family: 'Battambang', sans-serif; }
+                    .u-name-en { font-size: 12px; font-weight: 600; color: #64748b; margin-top: 2px; }
+                    .logo-img { height: 75px; max-width: 180px; object-fit: contain; }
+                    
+                    .doc-title { text-align: center; margin-bottom: 20px; }
+                    .doc-title h3 { margin: 0; font-size: 17px; font-weight: 700; color: #0f172a; font-family: 'Battambang', sans-serif; }
+                    .doc-title p { margin: 3px 0 0; font-size: 13px; color: #475569; }
+                    
+                    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #f8fafc; padding: 16px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #e2e8f0; font-size: 13px; }
                     .meta-item strong { color: #0f172a; }
-                    .kpi-row { display: flex; justify-content: space-around; background: #eff6ff; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #bfdbfe; font-size: 13px; text-align: center; }
-                    .kpi-val { font-weight: bold; font-size: 16px; color: #1d4ed8; }
-                    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 30px; }
-                    th { background: #2563eb; color: white; border: 1px solid #1d4ed8; padding: 8px; }
-                    .footer-sig { display: flex; justify-content: space-between; margin-top: 50px; text-align: center; font-size: 12px; }
-                    .sig-box { width: 200px; border-top: 1px dashed #94a3b8; padding-top: 5px; }
+                    
+                    .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #eff6ff; padding: 14px; border-radius: 10px; margin-bottom: 25px; border: 1px solid #bfdbfe; font-size: 12px; text-align: center; }
+                    .kpi-label { font-weight: 600; color: #475569; margin-bottom: 4px; }
+                    .kpi-val { font-weight: 700; font-size: 15px; color: #1d4ed8; }
+                    
+                    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 35px; }
+                    th { background: #2563eb; color: white; border: 1px solid #1d4ed8; padding: 9px 8px; font-weight: 700; }
+                    td { font-size: 12px; }
+                    
+                    .footer-sig { display: flex; justify-content: space-between; margin-top: 40px; text-align: center; font-size: 13px; }
+                    .sig-title { font-weight: 700; margin-bottom: 60px; color: #1e293b; }
+                    .sig-box { width: 220px; border-top: 1px dashed #94a3b8; padding-top: 6px; font-weight: 600; color: #64748b; margin: 0 auto; }
+                    
                     @media print {
-                        body { padding: 0; }
-                        button { display: none; }
+                        body { padding: 10px; }
+                        .no-print { display: none !important; }
                     }
                 </style>
             </head>
             <body>
-                <div style="text-align: right; margin-bottom: 10px;">
-                    <button onclick="window.print()" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;">🖨️ Print / Save PDF</button>
-                </div>
-                <div class="header">
-                    ${uLogo ? `<img src="${uLogo}" class="logo" />` : ''}
-                    <h2>${uName}</h2>
-                    <h4>Monthly Teacher Attendance Statement — <strong>${monthLabel}</strong></h4>
+                <div class="no-print" style="text-align: right; margin-bottom: 15px;">
+                    <button onclick="window.print()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: 'Kantumruy Pro', sans-serif; font-size: 14px; display: inline-flex; align-items: center; gap: 6px;">
+                        🖨️ បោះពុម្ព / រក្សាទុកជា PDF (Print / Save PDF)
+                    </button>
                 </div>
 
+                <!-- Kingdom Motto -->
+                <div class="kingdom-header">
+                    <div class="kingdom-title">ព្រះរាជាណាចក្រកម្ពុជា</div>
+                    <div class="kingdom-sub">ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+                    <div class="kingdom-dots">-----------------</div>
+                </div>
+
+                <!-- Header Brand & Logo -->
+                <div class="brand-row">
+                    <div class="brand-info">
+                        <h2 class="u-name-kh">${uNameKh}</h2>
+                        <div class="u-name-en">${uNameEn}</div>
+                    </div>
+                    ${uLogo ? `<img src="${uLogo}" class="logo-img" alt="Logo" />` : ''}
+                </div>
+
+                <!-- Document Title -->
+                <div class="doc-title">
+                    <h3>ប័ណ្ណសង្ខេបវត្តមានគ្រូបង្រៀនប្រចាំខែ</h3>
+                    <p>Monthly Teacher Attendance Statement — <strong>${monthLabel}</strong></p>
+                </div>
+
+                <!-- Teacher Meta Info -->
                 <div class="meta-grid">
-                    <div class="meta-item"><strong>Teacher Name:</strong> ${teacherName}</div>
-                    <div class="meta-item"><strong>Teacher ID:</strong> ${employeeId}</div>
-                    <div class="meta-item"><strong>Department:</strong> ${dept}</div>
-                    <div class="meta-item"><strong>Issued Date:</strong> ${new Date().toLocaleDateString()}</div>
+                    <div class="meta-item"><strong>ឈ្មោះគ្រូបង្រៀន (Teacher Name):</strong> ${displayTeacherName}</div>
+                    <div class="meta-item"><strong>អត្តលេខ (Employee ID):</strong> ${employeeId}</div>
+                    <div class="meta-item"><strong>ដេប៉ាតឺម៉ង់ (Department):</strong> ${dept || '—'}</div>
+                    <div class="meta-item"><strong>ថ្ងៃចេញប័ណ្ណ (Issued Date):</strong> ${new Date().toLocaleDateString('km-KH')}</div>
                 </div>
 
+                <!-- KPI Summary Box -->
                 <div class="kpi-row">
-                    <div><div>Present Days</div><div class="kpi-val">${presentCount}</div></div>
-                    <div><div>Late Days</div><div class="kpi-val" style="color:#d97706;">${lateCount}</div></div>
-                    <div><div>Absent Days</div><div class="kpi-val" style="color:#dc2626;">${absentCount}</div></div>
-                    <div><div>Total Worked</div><div class="kpi-val">${workedHours}</div></div>
+                    <div>
+                        <div class="kpi-label">វត្តមាន (Present)</div>
+                        <div class="kpi-val">${presentCount} ថ្ងៃ</div>
+                    </div>
+                    <div>
+                        <div class="kpi-label">មកយឺត (Late)</div>
+                        <div class="kpi-val" style="color:#d97706;">${lateCount} ថ្ងៃ</div>
+                    </div>
+                    <div>
+                        <div class="kpi-label">អវត្តមាន (Absent)</div>
+                        <div class="kpi-val" style="color:#dc2626;">${absentCount} ថ្ងៃ</div>
+                    </div>
+                    <div>
+                        <div class="kpi-label">ម៉ោងធ្វើការសរុប (Worked)</div>
+                        <div class="kpi-val" style="font-size:13px;">${workedHours}</div>
+                    </div>
                 </div>
 
+                <!-- Attendance History Table -->
                 <table>
                     <thead>
                         <tr>
-                            <th style="width: 40px;">#</th>
-                            <th>Date</th>
-                            <th>Morning Shift</th>
-                            <th>Afternoon Shift</th>
-                            <th>Status</th>
+                            <th style="width: 40px;">ល.រ</th>
+                            <th>កាលបរិច្ឆេទ (Date)</th>
+                            <th>វេនព្រឹក (Morning Shift)</th>
+                            <th>វេនរសៀល (Afternoon Shift)</th>
+                            <th>ស្ថានភាព (Status)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1995,14 +2064,15 @@ async function submitLeaveForm(e) {
                     </tbody>
                 </table>
 
+                <!-- Signatures -->
                 <div class="footer-sig">
                     <div>
-                        <br/><br/>
-                        <div class="sig-box">Teacher Signature</div>
+                        <div class="sig-title">ហត្ថលេខាគ្រូបង្រៀន (Teacher Signature)</div>
+                        <div class="sig-box">កាលបរិច្ឆេទ (Date): ...... / ...... / ..........</div>
                     </div>
                     <div>
-                        <br/><br/>
-                        <div class="sig-box">Academic Director / HR</div>
+                        <div class="sig-title">បានឃើញ និងពិនិត្យ (Approved By HR/Director)</div>
+                        <div class="sig-box">នាយកសិក្សា / ការិយាល័យបុគ្គលិក</div>
                     </div>
                 </div>
             </body>
