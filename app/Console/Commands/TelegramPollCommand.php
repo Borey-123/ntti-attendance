@@ -41,9 +41,16 @@ class TelegramPollCommand extends Command
                     $updates = $res->json('result') ?? [];
                     foreach ($updates as $update) {
                         $offset = $update['update_id'] + 1;
+                        $controller = new TelegramWebhookController();
+
+                        // Regular text/command message
                         if (isset($update['message'])) {
-                            $controller = new TelegramWebhookController();
                             $controller->processIncomingMessage($update['message']);
+                        }
+
+                        // Inline keyboard button tap
+                        if (isset($update['callback_query'])) {
+                            $controller->processCallbackQuery($update['callback_query']);
                         }
                     }
                 }
