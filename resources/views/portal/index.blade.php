@@ -1030,6 +1030,8 @@
                             @endforeach
                         </div>
                     </div>
+                    @endif
+
                     @if(isset($leaveRequestsHistory) && $leaveRequestsHistory->count() > 0)
                     <div style="margin-bottom: 2.5rem;">
                         <div class="history-title">
