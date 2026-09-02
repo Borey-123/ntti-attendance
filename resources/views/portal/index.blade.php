@@ -841,11 +841,10 @@
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 2rem;">
                         <div style="background: rgba(0,0,0,0.02); border: 1px solid var(--border); padding: 0.85rem 0.5rem; border-radius: 1.25rem; text-align: center;">
                             @php
-                                $kpiHours = floor(($totalWorkedMinutes ?? 0) / 60);
-                                $kpiMins = ($totalWorkedMinutes ?? 0) % 60;
+                                $kpiHoursDecimal = number_format(($totalWorkedMinutes ?? 0) / 60, 2);
                             @endphp
                             <i class="ph ph-clock" style="font-size: 1.3rem; color: var(--primary); margin-bottom: 0.2rem; display: block;"></i>
-                            <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-main);">{{ $kpiHours }}h {{ $kpiMins }}m</div>
+                            <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-main);">{{ $kpiHoursDecimal }}h</div>
                             <div style="font-size: 0.65rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; margin-top: 2px;">{{ __('Worked Hours') }}</div>
                         </div>
                         <div style="background: rgba(0,0,0,0.02); border: 1px solid var(--border); padding: 0.85rem 0.5rem; border-radius: 1.25rem; text-align: center;">
@@ -1921,7 +1920,8 @@ async function submitLeaveForm(e) {
         const lateCount = @json($stats['late']);
         const absentCount = @json($stats['absent']);
         const totalMins = @json($totalWorkedMinutes ?? 0);
-        const workedHours = `${Math.floor(totalMins / 60)}ម៉ោង ${totalMins % 60}នាទី (${Math.floor(totalMins / 60)}h ${totalMins % 60}m)`;
+        const workedHoursDecimal = (totalMins / 60).toFixed(2);
+        const workedHours = `${workedHoursDecimal} ម៉ោង (${workedHoursDecimal}h)`;
 
         const historyData = @json($history);
 
@@ -1964,7 +1964,7 @@ async function submitLeaveForm(e) {
                     .brand-info { text-align: left; }
                     .u-name-kh { font-size: 18px; font-weight: 700; color: #1e3a8a; margin: 0; font-family: 'Battambang', sans-serif; }
                     .u-name-en { font-size: 12px; font-weight: 600; color: #64748b; margin-top: 2px; }
-                    .logo-img { height: 75px; max-width: 180px; object-fit: contain; }
+                    .logo-img { width: 75px; height: 75px; border-radius: 50%; object-fit: cover; border: 2px solid #2563eb; background: transparent; }
                     
                     .doc-title { text-align: center; margin-bottom: 20px; }
                     .doc-title h3 { margin: 0; font-size: 17px; font-weight: 700; color: #0f172a; font-family: 'Battambang', sans-serif; }
