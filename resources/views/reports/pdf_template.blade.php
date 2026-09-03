@@ -197,18 +197,24 @@
         @forelse($attendances as $index => $att)
             <tr>
                 <td>{{ $index + 1 }}</td>
-                <td>{{ $att->date ? \Carbon\Carbon::parse($att->date)->format('Y-m-d (D)') : '-' }}</td>
+                <td>{{ $att->date ? ($att->date instanceof \Carbon\Carbon ? $att->date->format('Y-m-d (D)') : \Carbon\Carbon::parse($att->date)->format('Y-m-d (D)')) : '-' }}</td>
                 <td style="text-align: left; font-weight: bold;">
                     {{ $att->teacher ? ($att->teacher->name_kh ?: $att->teacher->name) : 'N/A' }}
                 </td>
-                <td>{{ $att->teacher && $att->teacher->department ? $att->teacher->department->name : '-' }}</td>
+                <td>{{ $att->teacher && $att->teacher->department ? (app()->getLocale() === 'km' ? ($att->teacher->department->name_kh ?: $att->teacher->department->name) : $att->teacher->department->name) : '-' }}</td>
                 <td>{{ $att->morning_in ? substr($att->morning_in, 0, 5) . ' - ' . substr($att->morning_out ?? '--:--', 0, 5) : '—' }}</td>
                 <td>{{ $att->afternoon_in ? substr($att->afternoon_in, 0, 5) . ' - ' . substr($att->afternoon_out ?? '--:--', 0, 5) : '—' }}</td>
                 <td style="font-weight: bold;">
                     @php
                         $m = 0;
-                        if($att->morning_in && $att->morning_out) $m += \Carbon\Carbon::parse($att->morning_in)->diffInMinutes(\Carbon\Carbon::parse($att->morning_out));
-                        if($att->afternoon_in && $att->afternoon_out) $m += \Carbon\Carbon::parse($att->afternoon_in)->diffInMinutes(\Carbon\Carbon::parse($att->afternoon_out));
+                        try {
+                            if(!empty($att->morning_in) && !empty($att->morning_out)) {
+                                $m += \Carbon\Carbon::parse($att->morning_in)->diffInMinutes(\Carbon\Carbon::parse($att->morning_out));
+                            }
+                            if(!empty($att->afternoon_in) && !empty($att->afternoon_out)) {
+                                $m += \Carbon\Carbon::parse($att->afternoon_in)->diffInMinutes(\Carbon\Carbon::parse($att->afternoon_out));
+                            }
+                        } catch (\Throwable $e) {}
                     @endphp
                     {{ $m > 0 ? round($m/60, 1) . 'h' : '—' }}
                 </td>

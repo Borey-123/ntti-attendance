@@ -25,7 +25,13 @@ class PdfReportController extends Controller
 
         if ($departmentId) {
             $query->whereHas('teacher', function ($q) use ($departmentId) {
-                $q->where('department_id', $departmentId);
+                if (is_numeric($departmentId)) {
+                    $q->where('department_id', $departmentId);
+                } else {
+                    $q->whereHas('department', function($dq) use ($departmentId) {
+                        $dq->where('name', $departmentId)->orWhere('name_kh', $departmentId);
+                    });
+                }
             });
         }
 
@@ -39,7 +45,7 @@ class PdfReportController extends Controller
         $departments = Department::all();
 
         $selectedTeacher = $teacherId ? Teacher::find($teacherId) : null;
-        $selectedDept = $departmentId ? Department::find($departmentId) : null;
+        $selectedDept = $departmentId ? (is_numeric($departmentId) ? Department::find($departmentId) : Department::where('name', $departmentId)->orWhere('name_kh', $departmentId)->first()) : null;
 
         $scorecard = null;
         if ($selectedTeacher) {
