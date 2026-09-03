@@ -886,6 +886,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                             <tr style="text-align: left; color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase;">
                                 <th style="padding: 1rem;">{{ __('Administrator') }}</th>
                                 <th style="padding: 1rem;">{{ __('Security Level') }}</th>
+                                <th style="padding: 1rem;">{{ __('Two-Factor (2FA)') }}</th>
                                 <th style="padding: 1rem; text-align: right;">{{ __('Controls') }}</th>
                             </tr>
                         </thead>
@@ -896,8 +897,8 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                                         <div style="display: flex; align-items: center; gap: 1rem;">
                                             <div class="avatar">{{ strtoupper(substr($admin->name, 0, 1)) }}</div>
                                             <div>
-                                                <div style="font-weight: 700; font-size: 1rem;">{{ $admin->name }}</div>
-                                                <div style="font-size: 0.8rem; color: var(--text-secondary);">{{ $admin->email }}</div>
+                                                <div style="font-weight: 700; font-size: 1rem; color: var(--text-primary);">{{ $admin->name }}</div>
+                                                <div style="font-size: 0.82rem; color: var(--text-secondary);">{{ $admin->email }}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -906,13 +907,29 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                                             {{ $admin->id === 1 ? __('ROOT ADMIN') : __('SYSTEM ADMIN') }}
                                         </span>
                                     </td>
+                                    <td>
+                                        @if($admin->two_factor_enabled)
+                                            <span style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); padding: 0.35rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem;">
+                                                <i class="ph-bold ph-shield-check"></i> {{ __('2FA Enabled') }}
+                                            </span>
+                                        @else
+                                            <span style="background: rgba(255, 255, 255, 0.05); color: var(--text-secondary); border: 1px solid rgba(255, 255, 255, 0.1); padding: 0.35rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;">
+                                                <i class="ph ph-shield-slash"></i> {{ __('Disabled') }}
+                                            </span>
+                                        @endif
+                                    </td>
                                     <td style="text-align: right;">
-                                        @if(auth()->id() === 1)
+                                        @if(auth()->id() === 1 || auth()->id() === $admin->id)
                                         <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                                            <button class="btn-secondary" onclick="toggleReset('reset-{{ $admin->id }}')">
-                                                <i class="ph ph-key"></i> {{ __('Reset') }}
+                                            <button type="button" class="btn-secondary" onclick="toggleDrawer('edit-admin-{{ $admin->id }}')">
+                                                <i class="ph ph-pencil-simple"></i> {{ __('Edit Email/Info') }}
                                             </button>
-                                            @if($admin->id !== 1)
+
+                                            <button type="button" class="btn-secondary" onclick="toggleDrawer('reset-{{ $admin->id }}')">
+                                                <i class="ph ph-key"></i> {{ __('Reset Pass') }}
+                                            </button>
+
+                                            @if(auth()->id() === 1 && $admin->id !== 1)
                                             <form action="{{ route('settings.admin.destroy', $admin->id) }}" method="POST" onsubmit="return confirm('{{ __('Are you sure you want to delete this administrator? This action cannot be undone.') }}');" style="margin:0;">
                                                 @csrf
                                                 @method('DELETE')
@@ -923,22 +940,62 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                                             @endif
                                         </div>
                                         
-                                        <div id="reset-{{ $admin->id }}" style="display:none; margin-top: 1.5rem; text-align: left; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--primary);">
+                                        {{-- Edit Admin Email & 2FA Form Drawer --}}
+                                        <div id="edit-admin-{{ $admin->id }}" class="admin-drawer" style="display:none; margin-top: 1.5rem; text-align: left; background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--primary);">
+                                            <form action="{{ route('settings.admin.update', $admin->id) }}" method="POST">
+                                                @csrf
+                                                @method('PUT')
+                                                <h4 style="margin: 0 0 1rem; font-size: 0.95rem; font-weight: 700; color: var(--primary);">
+                                                    <i class="ph ph-user-gear" style="margin-right:0.3rem;"></i> {{ __('Edit Admin Account Details') }}
+                                                </h4>
+                                                <div class="form-grid" style="margin-bottom: 1rem;">
+                                                    <div class="form-group" style="margin:0;">
+                                                        <label>{{ __('Full Name') }}</label>
+                                                        <input type="text" name="name" class="form-control" value="{{ $admin->name }}" required>
+                                                    </div>
+                                                    <div class="form-group" style="margin:0;">
+                                                        <label>{{ __('Email Address') }}</label>
+                                                        <input type="email" name="email" class="form-control" value="{{ $admin->email }}" required>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group" style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; background: rgba(168, 85, 247, 0.08); padding: 1rem; border-radius: 0.75rem; border: 1px solid rgba(168, 85, 247, 0.2);">
+                                                    <div>
+                                                        <span style="font-weight: 700; color: #fff; font-size: 0.9rem;">{{ __('Two-Factor Authentication (2FA)') }}</span>
+                                                        <p style="margin: 0.15rem 0 0; font-size: 0.75rem; color: var(--text-secondary);">{{ __('Require OTP code check during login for this account') }}</p>
+                                                    </div>
+                                                    <label class="toggle-switch">
+                                                        <input type="hidden" name="two_factor_enabled" value="0">
+                                                        <input type="checkbox" name="two_factor_enabled" value="1" {{ $admin->two_factor_enabled ? 'checked' : '' }}>
+                                                        <span class="slider"></span>
+                                                    </label>
+                                                </div>
+                                                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                                    <button type="button" class="btn-secondary" onclick="toggleDrawer('edit-admin-{{ $admin->id }}')">{{ __('Cancel') }}</button>
+                                                    <button type="submit" class="btn-premium" style="padding: 0.6rem 1.2rem;">{{ __('Save Changes') }}</button>
+                                                </div>
+                                            </form>
+                                        </div>
+
+                                        {{-- Reset Password Drawer --}}
+                                        <div id="reset-{{ $admin->id }}" class="admin-drawer" style="display:none; margin-top: 1.5rem; text-align: left; background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 1rem; border: 1px solid rgba(239, 68, 68, 0.4);">
                                             <form action="{{ route('settings.admin.reset-password', $admin->id) }}" method="POST">
                                                 @csrf
+                                                <h4 style="margin: 0 0 1rem; font-size: 0.95rem; font-weight: 700; color: var(--danger);">
+                                                    <i class="ph ph-key" style="margin-right:0.3rem;"></i> {{ __('Reset Password for') }} {{ $admin->name }}
+                                                </h4>
                                                 <div class="form-grid" style="margin-bottom: 1rem;">
                                                     <div class="form-group" style="margin:0;">
                                                         <label>{{ __('New Password') }}</label>
                                                         <input type="password" name="password" class="form-control" required minlength="6">
                                                     </div>
                                                     <div class="form-group" style="margin:0;">
-                                                        <label>{{ __('Confirm') }}</label>
+                                                        <label>{{ __('Confirm Password') }}</label>
                                                         <input type="password" name="password_confirmation" class="form-control" required minlength="6">
                                                     </div>
                                                 </div>
                                                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                                                    <button type="button" class="btn-secondary" onclick="toggleReset('reset-{{ $admin->id }}')">{{ __('Cancel') }}</button>
-                                                    <button type="submit" class="btn-premium" style="padding: 0.6rem 1.2rem;">{{ __('Update') }}</button>
+                                                    <button type="button" class="btn-secondary" onclick="toggleDrawer('reset-{{ $admin->id }}')">{{ __('Cancel') }}</button>
+                                                    <button type="submit" class="btn-premium" style="padding: 0.6rem 1.2rem; background: var(--danger);">{{ __('Update Password') }}</button>
                                                 </div>
                                             </form>
                                         </div>
@@ -957,22 +1014,32 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                     </h3>
                     <form action="{{ route('settings.admin.store') }}" method="POST">
                         @csrf
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1.5rem; align-items: flex-end;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1.5rem; align-items: flex-end; margin-bottom: 1.5rem;">
                             <div class="form-group" style="margin:0;">
                                 <label>{{ __('Full Name') }}</label>
-                                <input type="text" name="name" class="form-control" placeholder="IT08B2" required>
+                                <input type="text" name="name" class="form-control" placeholder="Admin Name" required>
                             </div>
                             <div class="form-group" style="margin:0;">
-                                <label>{{ __('Email') }}</label>
-                                <input type="email" name="email" class="form-control" placeholder="admin@ntti.edu" required>
+                                <label>{{ __('Email Address') }}</label>
+                                <input type="email" name="email" class="form-control" placeholder="admin@ntti.edu.kh" required>
                             </div>
                             <div class="form-group" style="margin:0;">
                                 <label>{{ __('Password') }}</label>
                                 <input type="password" name="password" class="form-control" placeholder="••••••••" required>
                             </div>
                             <button type="submit" class="btn-premium" style="height: 48px;">
-                                <i class="ph ph-plus"></i> {{ __('Create') }}
+                                <i class="ph ph-plus"></i> {{ __('Create Admin') }}
                             </button>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(168, 85, 247, 0.06); padding: 1rem 1.25rem; border-radius: 0.75rem; border: 1px solid rgba(168, 85, 247, 0.15);">
+                            <div>
+                                <span style="font-weight: 700; color: #fff; font-size: 0.85rem;">{{ __('Enable 2FA Verification on Login') }}</span>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 0.5rem;">{{ __('Enforces 6-digit OTP code verification when this new admin logs in') }}</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="two_factor_enabled" value="1">
+                                <span class="slider"></span>
+                            </label>
                         </div>
                     </form>
                 </div>
@@ -1387,6 +1454,19 @@ function openModal(id) {
 }
 function closeModal(id) { 
     document.getElementById(id).classList.remove('active'); 
+}
+
+function toggleDrawer(id) {
+    const drawer = document.getElementById(id);
+    if (!drawer) return;
+    const isHidden = drawer.style.display === 'none' || drawer.style.display === '';
+    document.querySelectorAll('.admin-drawer').forEach(d => {
+        if (d.id !== id) d.style.display = 'none';
+    });
+    drawer.style.display = isHidden ? 'block' : 'none';
+}
+function toggleReset(id) {
+    toggleDrawer(id);
 }
 
 // ── Holidays Logic ──────────────────────────────

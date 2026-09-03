@@ -172,6 +172,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings/telegram-chats', [SettingController::class, 'fetchTelegramChats'])->name('settings.telegram.chats');
     Route::post('/settings/appearance', [SettingController::class, 'updateAppearance'])->name('settings.appearance.update');
     Route::post('/settings/admin', [SettingController::class, 'storeAdmin'])->name('settings.admin.store');
+    Route::put('/settings/admin/{user}', [SettingController::class, 'updateAdmin'])->name('settings.admin.update');
     Route::post('/settings/admin/{user}/reset-password', [SettingController::class, 'resetAdminPassword'])->name('settings.admin.reset-password');
     Route::delete('/settings/admin/{user}', [SettingController::class, 'destroyAdmin'])->name('settings.admin.destroy');
 

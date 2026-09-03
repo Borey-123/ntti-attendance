@@ -256,6 +256,35 @@ class SettingController extends Controller
         return back()->with('success', 'Appearance settings saved. Refresh any open pages to apply the new theme.');
     }
 
+    public function updateAdmin(Request $request, User $user)
+    {
+        if (auth()->id() !== 1 && auth()->id() !== $user->id) {
+            return back()->with('error', 'You do not have permission to edit this admin account.');
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'two_factor_enabled' => 'nullable|string',
+        ]);
+
+        $user->name = $request->name;
+        $user->email = $request->email;
+        
+        $twoFactor = $request->has('two_factor_enabled') && ($request->two_factor_enabled === 'true' || $request->two_factor_enabled === '1' || $request->two_factor_enabled === 'on');
+        $user->two_factor_enabled = $twoFactor;
+        if (!$twoFactor) {
+            $user->two_factor_code = null;
+            $user->two_factor_expires_at = null;
+        }
+
+        $user->save();
+
+        SecurityLog::record('Updated Admin Account', $user->name . ' (' . $user->email . ')');
+
+        return back()->with('success', __('Admin account updated successfully.'));
+    }
+
     public function storeAdmin(Request $request)
     {
         if (auth()->id() !== 1) {
@@ -266,12 +295,16 @@ class SettingController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
+            'two_factor_enabled' => 'nullable|string',
         ]);
+
+        $twoFactor = $request->has('two_factor_enabled') && ($request->two_factor_enabled === 'true' || $request->two_factor_enabled === '1' || $request->two_factor_enabled === 'on');
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'two_factor_enabled' => $twoFactor,
         ]);
 
         SecurityLog::record('Created Admin User', $user->name);
