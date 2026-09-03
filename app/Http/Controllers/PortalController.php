@@ -229,12 +229,17 @@ class PortalController extends Controller
             ->take(5)
             ->get();
 
+        $portalAnnouncements = \App\Models\Announcement::where(function($q) {
+            $q->whereNull('expires_at')->orWhere('expires_at', '>=', now()->toDateString());
+        })->latest()->take(5)->get();
+
         $departments = \App\Models\Department::all();
         return view('portal.index', compact(
             'teacher', 'history', 'stats', 'error', 'departments', 'calendar', 'corrections',
             'todayRecord', 'upcomingHolidays', 'calendarMonth', 'calendarYear', 'calendarLabel',
             'presentToday', 'totalTeachers', 'isOnline',
-            'totalWorkedMinutes', 'avgArrivalTime', 'onTimeStreak', 'todaySchedules', 'leaveRequestsHistory'
+            'totalWorkedMinutes', 'avgArrivalTime', 'onTimeStreak', 'todaySchedules', 'leaveRequestsHistory',
+            'portalAnnouncements'
         ));
     }
 

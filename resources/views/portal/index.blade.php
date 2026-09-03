@@ -228,6 +228,54 @@
         .form-control:focus { outline: none; border-color: var(--primary); background: rgba(0, 0, 0, 0.07); box-shadow: 0 0 0 8px rgba(var(--primary-rgb), 0.1); }
         [data-theme="dark"] .form-control:focus { background: rgba(255, 255, 255, 0.1); }
 
+        /* ── Action Tile Cards ── */
+        .action-tile-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.1rem 0.65rem;
+            border-radius: 1.25rem;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            outline: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+        .action-tile-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+        }
+        .action-tile-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 0.6rem;
+            transition: transform 0.2s ease;
+        }
+        .action-tile-btn:hover .action-tile-icon {
+            transform: scale(1.1);
+        }
+        .action-tile-label {
+            font-weight: 800;
+            font-size: 0.85rem;
+            margin-bottom: 2px;
+            text-align: center;
+            line-height: 1.2;
+        }
+        .action-tile-sub {
+            font-size: 0.7rem;
+            color: var(--text-sub);
+            font-weight: 500;
+            text-align: center;
+        }
+
         .btn-check {
             width: 100%;
             padding: 1.1rem;
@@ -709,33 +757,123 @@
                 </div>
             @endif
 
-            {{-- Auth Controls --}}
-            <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem;">
-                <button onclick="triggerGpsCheckin()" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: var(--success); padding: 0.6rem 1rem; border-radius: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="ph ph-map-pin"></i> {{ __('Mobile GPS Check-In') }}
-                </button>
-                <button onclick="downloadQrCode('{{ $teacher->employee_id }}', '{{ addslashes($teacher->name) }}')" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: #a855f7; padding: 0.6rem 1rem; border-radius: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="ph ph-qr-code"></i> {{ __('My QR Code') }}
-                </button>
-                <button onclick="openLeaveModal()" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #3b82f6; padding: 0.6rem 1rem; border-radius: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="ph ph-calendar-plus"></i> {{ __('Apply Leave') }}
-                </button>
-                <button onclick="openPortalFaceRegisterModal()" style="background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.3); color: #ec4899; padding: 0.6rem 1rem; border-radius: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
-                    @if($teacher->face_descriptor)
-                    <i class="ph-fill ph-bounding-box"></i> {{ __('Update Face ID') }}
-                    @else
-                    <i class="ph ph-bounding-box"></i> {{ __('Register Face ID') }}
-                    @endif
-                </button>
-                <button onclick="openChangePinModal()" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--success); padding: 0.6rem 1rem; border-radius: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="ph ph-key"></i> {{ __('Change PIN') }}
-                </button>
-                <form action="{{ route('portal.logout') }}" method="POST" style="margin: 0;">
-                    @csrf
-                    <button type="submit" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--danger); padding: 0.6rem 1rem; border-radius: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="ph ph-sign-out"></i> {{ __('Logout') }}
+            {{-- ── Official Announcements Section ── --}}
+            @if(isset($portalAnnouncements) && $portalAnnouncements->count() > 0)
+                <div style="margin-bottom: 2rem;">
+                    <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-sub); margin-bottom: 0.85rem; display: flex; align-items: center; justify-content: space-between;">
+                        <span style="display: flex; align-items: center; gap: 0.4rem;">
+                            <i class="ph ph-megaphone" style="color: var(--primary);"></i>
+                            {{ __('Official Announcements') }}
+                        </span>
+                        <span class="badge" style="background: rgba(var(--primary-rgb), 0.15); color: var(--primary); font-size: 0.7rem; padding: 0.2rem 0.55rem; border-radius: 0.5rem; font-weight: 800;">
+                            {{ $portalAnnouncements->count() }}
+                        </span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+                        @foreach($portalAnnouncements as $ann)
+                            @php
+                                $pBadge = 'background: rgba(59, 130, 246, 0.12); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3);';
+                                if ($ann->priority === 'urgent') {
+                                    $pBadge = 'background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);';
+                                } elseif ($ann->priority === 'warning') {
+                                    $pBadge = 'background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);';
+                                }
+                            @endphp
+                            <div style="background: var(--card); border: 1px solid var(--border); border-radius: 1.25rem; padding: 1.25rem; backdrop-filter: blur(10px); transition: transform 0.2s, box-shadow 0.2s;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span style="{{ $pBadge }} font-size: 0.7rem; font-weight: 800; padding: 0.25rem 0.6rem; border-radius: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        <i class="ph ph-warning-circle" style="margin-right: 0.2rem;"></i>{{ strtoupper($ann->priority) }}
+                                    </span>
+                                    <span style="font-size: 0.75rem; color: var(--text-sub); display: flex; align-items: center; gap: 0.3rem;">
+                                        <i class="ph ph-clock"></i> {{ $ann->created_at->diffForHumans() }}
+                                    </span>
+                                </div>
+
+                                <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.25rem 0; line-height: 1.3;">
+                                    {{ app()->getLocale() === 'km' && $ann->title_kh ? $ann->title_kh : $ann->title }}
+                                </h4>
+
+                                <p style="font-size: 0.88rem; color: var(--text-sub); margin: 0; line-height: 1.5; font-family: 'Battambang', sans-serif;">
+                                    {{ app()->getLocale() === 'km' && $ann->content_kh ? $ann->content_kh : $ann->content }}
+                                </p>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            {{-- ── Quick Actions Grid ── --}}
+            <div style="margin-bottom: 2.25rem;">
+                <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-sub); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <i class="ph ph-squares-four" style="color: var(--primary);"></i>
+                    {{ __('Quick Actions & Services') }}
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 0.85rem;">
+                    {{-- 1. Mobile GPS Check-In --}}
+                    <button onclick="triggerGpsCheckin()" class="action-tile-btn" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: var(--text-main);">
+                        <div class="action-tile-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                            <i class="ph ph-map-pin"></i>
+                        </div>
+                        <div class="action-tile-label">{{ __('GPS Check-In') }}</div>
+                        <div class="action-tile-sub">{{ __('Location Check') }}</div>
                     </button>
-                </form>
+
+                    {{-- 2. My QR Code --}}
+                    <button onclick="downloadQrCode('{{ $teacher->employee_id }}', '{{ addslashes($teacher->name) }}')" class="action-tile-btn" style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); color: var(--text-main);">
+                        <div class="action-tile-icon" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;">
+                            <i class="ph ph-qr-code"></i>
+                        </div>
+                        <div class="action-tile-label">{{ __('My QR Code') }}</div>
+                        <div class="action-tile-sub">{{ __('Digital ID Pass') }}</div>
+                    </button>
+
+                    {{-- 3. Apply Leave --}}
+                    <button onclick="openLeaveModal()" class="action-tile-btn" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); color: var(--text-main);">
+                        <div class="action-tile-icon" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+                            <i class="ph ph-calendar-plus"></i>
+                        </div>
+                        <div class="action-tile-label">{{ __('Apply Leave') }}</div>
+                        <div class="action-tile-sub">{{ __('Absence Request') }}</div>
+                    </button>
+
+                    {{-- 4. Register/Update Face ID --}}
+                    <button onclick="openPortalFaceRegisterModal()" class="action-tile-btn" style="background: rgba(236, 72, 153, 0.08); border: 1px solid rgba(236, 72, 153, 0.25); color: var(--text-main);">
+                        <div class="action-tile-icon" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;">
+                            @if($teacher->face_descriptor)
+                                <i class="ph-fill ph-bounding-box"></i>
+                            @else
+                                <i class="ph ph-bounding-box"></i>
+                            @endif
+                        </div>
+                        <div class="action-tile-label">
+                            {{ $teacher->face_descriptor ? __('Update Face ID') : __('Register Face ID') }}
+                        </div>
+                        <div class="action-tile-sub">{{ __('Biometric Profile') }}</div>
+                    </button>
+
+                    {{-- 5. Change PIN --}}
+                    <button onclick="openChangePinModal()" class="action-tile-btn" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); color: var(--text-main);">
+                        <div class="action-tile-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                            <i class="ph ph-key"></i>
+                        </div>
+                        <div class="action-tile-label">{{ __('Change PIN') }}</div>
+                        <div class="action-tile-sub">{{ __('Portal Security') }}</div>
+                    </button>
+
+                    {{-- 6. Logout --}}
+                    <form action="{{ route('portal.logout') }}" method="POST" style="margin: 0;">
+                        @csrf
+                        <button type="submit" class="action-tile-btn" style="width: 100%; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); color: var(--text-main);">
+                            <div class="action-tile-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
+                                <i class="ph ph-sign-out"></i>
+                            </div>
+                            <div class="action-tile-label" style="color: #ef4444;">{{ __('Logout') }}</div>
+                            <div class="action-tile-sub">{{ __('End Session') }}</div>
+                        </button>
+                    </form>
+                </div>
             </div>
 
                     <div class="teacher-header" style="margin-bottom: 1rem;">

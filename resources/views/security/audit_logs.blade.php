@@ -68,32 +68,31 @@
         </div>
     </div>
 
-    {{-- ── Search & Filter Bar ── --}}
-    <div class="card" style="padding: 1rem 1.5rem; border-radius: 1.25rem; margin-bottom: 2rem;">
-        <form method="GET" action="{{ route('security.audit_logs') }}" style="display: flex; gap: 0.75rem; align-items: center; width: 100%;">
-            <div class="input-with-icon" style="flex: 1;">
-                <i class="ph ph-magnifying-glass"></i>
-                <input type="text" name="search" class="form-control" placeholder="{{ __('Search by user, action, IP or description...') }}" value="{{ request('search') }}" style="background: var(--bg-dark); font-weight: 600; padding-top: 0.55rem; padding-bottom: 0.55rem; border-radius: 0.75rem;">
-            </div>
-            <button type="submit" class="btn btn-primary" style="padding: 0.55rem 1.2rem; border-radius: 0.75rem; font-weight: 800; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; flex-shrink: 0;">
-                <i class="ph ph-funnel"></i> {{ __('Filter') }}
-            </button>
-            @if(request('search'))
-            <a href="{{ route('security.audit_logs') }}" class="btn btn-secondary" style="padding: 0.55rem 1rem; border-radius: 0.75rem; font-weight: 700; font-size: 0.88rem; text-decoration: none; white-space: nowrap; flex-shrink: 0;">
-                {{ __('Reset') }}
-            </a>
-            @endif
-        </form>
-    </div>
-
     {{-- ── Audit Log Table Container ── --}}
     <div class="card" style="border-radius: 2rem; overflow: hidden;">
         <div class="card-header" style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
             <h3 style="margin: 0; font-weight: 800; display: flex; align-items: center; gap: 0.75rem; color: var(--text-primary);">
-                <i class="ph ph-shield-check"></i>
+                <i class="ph ph-shield-check" style="color: var(--primary);"></i>
                 {{ __('Audit Trail Registry') }}
                 <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">({{ $logs->total() }})</span>
             </h3>
+
+            <div style="flex: 1;"></div>
+
+            <form method="GET" action="{{ route('security.audit_logs') }}" style="display: flex; gap: 0.5rem; align-items: center; margin: 0;">
+                <div style="position: relative; width: 280px;">
+                    <i class="ph ph-magnifying-glass" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem;"></i>
+                    <input type="text" name="search" placeholder="{{ __('Search by user, action, IP...') }}" value="{{ request('search') }}" class="form-control" style="width: 100%; padding-left: 2.2rem; border-radius: 1rem; background: var(--bg-elevated); font-size: 0.85rem; height: 38px; border: 1px solid var(--border);">
+                </div>
+                <button type="submit" class="btn btn-primary" style="height: 38px; border-radius: 1rem; font-weight: 800; font-size: 0.85rem; padding: 0 1rem; display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap;">
+                    <i class="ph ph-funnel"></i> {{ __('Filter') }}
+                </button>
+                @if(request('search'))
+                <a href="{{ route('security.audit_logs') }}" class="btn btn-secondary" style="height: 38px; border-radius: 1rem; font-weight: 700; font-size: 0.85rem; padding: 0 0.85rem; display: inline-flex; align-items: center; text-decoration: none; white-space: nowrap;">
+                    {{ __('Reset') }}
+                </a>
+                @endif
+            </form>
         </div>
         <div style="overflow-x: auto;">
             <table class="table" style="min-width: 900px;">
