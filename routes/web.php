@@ -17,6 +17,9 @@ use App\Http\Controllers\AnalyticsController;
 // Auth
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::get('/login/2fa', [AuthController::class, 'show2FaForm'])->name('login.2fa');
+Route::post('/login/2fa', [AuthController::class, 'verify2Fa'])->name('login.2fa.post');
+Route::post('/login/2fa/cancel', [AuthController::class, 'cancel2Fa'])->name('login.2fa.cancel');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 

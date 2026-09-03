@@ -35,9 +35,30 @@ class AuthController extends Controller
 
         // Support login by email or name
         $field = filter_var($credentials['email'], FILTER_VALIDATE_EMAIL) ? 'email' : 'name';
-        if (Auth::attempt([$field => $credentials['email'], 'password' => $credentials['password']], $request->boolean('remember'))) {
-            $request->session()->regenerate();
+        $user = User::where($field, $credentials['email'])->first();
+
+        if ($user && Hash::check($credentials['password'], $user->password)) {
             RateLimiter::clear($key);
+
+            // Check if 2FA is enabled for this admin account
+            if ($user->two_factor_enabled) {
+                $code = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+                $user->two_factor_code = $code;
+                $user->two_factor_expires_at = now()->addMinutes(10);
+                $user->save();
+
+                session([
+                    '2fa_pending_user_id' => $user->id,
+                    '2fa_remember' => $request->boolean('remember'),
+                ]);
+
+                SecurityLog::record('Admin Login 2FA Required', $user->name);
+
+                return redirect()->route('login.2fa');
+            }
+
+            Auth::login($user, $request->boolean('remember'));
+            $request->session()->regenerate();
             
             SecurityLog::record('Admin Login', Auth::user()->name);
             
@@ -48,6 +69,66 @@ class AuthController extends Controller
         SecurityLog::record('Failed Login Attempt', $credentials['email'], "IP: " . $request->ip());
 
         return back()->withErrors(['email' => 'Invalid credentials.'])->withInput($request->except('password'));
+    }
+
+    public function show2FaForm(Request $request)
+    {
+        $pendingUserId = session('2fa_pending_user_id');
+        if (!$pendingUserId) {
+            return redirect()->route('login');
+        }
+
+        $user = User::find($pendingUserId);
+        if (!$user) {
+            session()->forget(['2fa_pending_user_id', '2fa_remember']);
+            return redirect()->route('login');
+        }
+
+        return view('auth.2fa', compact('user'));
+    }
+
+    public function verify2Fa(Request $request)
+    {
+        $pendingUserId = session('2fa_pending_user_id');
+        if (!$pendingUserId) {
+            return redirect()->route('login');
+        }
+
+        $request->validate([
+            'code' => 'required|string',
+        ]);
+
+        $user = User::find($pendingUserId);
+        if (!$user) {
+            session()->forget(['2fa_pending_user_id', '2fa_remember']);
+            return redirect()->route('login');
+        }
+
+        if ($user->two_factor_code !== $request->code || now()->greaterThan($user->two_factor_expires_at)) {
+            return back()->withErrors(['code' => __('Invalid or expired OTP code.')]);
+        }
+
+        // OTP verified successfully
+        $user->two_factor_code = null;
+        $user->two_factor_expires_at = null;
+        $user->save();
+
+        $remember = session('2fa_remember', false);
+        session()->forget(['2fa_pending_user_id', '2fa_remember']);
+
+        Auth::login($user, $remember);
+        $request->session()->regenerate();
+        session(['2fa_verified' => true]);
+
+        SecurityLog::record('Admin Login 2FA Verified', $user->name);
+
+        return redirect()->intended(route('dashboard'));
+    }
+
+    public function cancel2Fa(Request $request)
+    {
+        session()->forget(['2fa_pending_user_id', '2fa_remember']);
+        return redirect()->route('login');
     }
 
     public function logout(Request $request)
