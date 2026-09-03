@@ -1354,12 +1354,30 @@ function toggle2fa(enabled) {
             'Accept': 'application/json'
         },
         body: JSON.stringify({ enabled: enabled })
-    }).then(r => r.json()).then(d => {
+    })
+    .then(r => r.json())
+    .then(d => {
         if (d.success) {
-            alert(d.message);
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: d.message,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                alert(d.message);
+            }
         } else {
-            alert("Failed to toggle 2FA.");
+            alert(d.message || "Failed to toggle 2FA.");
+            const checkbox = document.querySelector('input[name="admin_2fa_enabled"]');
+            if (checkbox) checkbox.checked = !enabled;
         }
+    })
+    .catch(err => {
+        alert("Failed to toggle 2FA: " + err.message);
+        const checkbox = document.querySelector('input[name="admin_2fa_enabled"]');
+        if (checkbox) checkbox.checked = !enabled;
     });
 }
 

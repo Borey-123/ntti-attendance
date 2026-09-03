@@ -12,17 +12,23 @@ class TwoFactorController extends Controller
 {
     public function toggle(Request $request)
     {
-        $request->validate([
-            'current_password' => 'required|string',
-        ]);
-
         $user = auth()->user();
-
-        if (!Hash::check($request->current_password, $user->password)) {
-            return response()->json(['success' => false, 'message' => __('Incorrect current password.')], 422);
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => __('Unauthenticated.')], 401);
         }
 
-        $user->two_factor_enabled = !$user->two_factor_enabled;
+        if ($request->filled('current_password')) {
+            if (!Hash::check($request->current_password, $user->password)) {
+                return response()->json(['success' => false, 'message' => __('Incorrect current password.')], 422);
+            }
+        }
+
+        if ($request->has('enabled')) {
+            $user->two_factor_enabled = filter_var($request->enabled, FILTER_VALIDATE_BOOLEAN);
+        } else {
+            $user->two_factor_enabled = !$user->two_factor_enabled;
+        }
+
         if (!$user->two_factor_enabled) {
             $user->two_factor_code = null;
             $user->two_factor_expires_at = null;
