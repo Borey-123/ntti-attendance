@@ -68,9 +68,8 @@ class TwoFactorController extends Controller
 
         return response()->json([
             'success' => true,
-            'code' => $code, // For local demonstration / screen display
             'expires_at' => $user->two_factor_expires_at->toIso8601String(),
-            'message' => __('Verification OTP generated successfully.'),
+            'message' => __('Verification OTP sent via Telegram.'),
         ]);
     }
 

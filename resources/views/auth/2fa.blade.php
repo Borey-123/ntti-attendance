@@ -170,15 +170,18 @@
             <p style="color: rgba(255,255,255,0.5); font-size: 0.9rem;">{{ __('Account') }}: <strong style="color: #fff;">{{ $user->name }}</strong> ({{ $user->email }})</p>
         </div>
 
-        {{-- OTP Demo / Display Box --}}
-        <div class="otp-display-box">
-            <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 1.5px; color: rgba(255,255,255,0.6); display: block;">
-                <i class="ph ph-key" style="margin-right: 0.3rem;"></i> {{ __('Your 2FA Verification OTP Code') }}
-            </span>
-            <div class="otp-code">{{ $user->two_factor_code ?? '000000' }}</div>
-            <span style="font-size: 0.75rem; color: rgba(255,255,255,0.4);">
-                {{ __('Expires in 10 minutes') }}
-            </span>
+        {{-- Telegram OTP Delivery Notification Box --}}
+        <div class="telegram-delivery-box" style="background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(14, 165, 233, 0.35); border-radius: 1rem; padding: 1.25rem; text-align: center; margin-bottom: 2rem;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 0.6rem; color: #38bdf8; font-weight: 800; font-size: 1rem; margin-bottom: 0.5rem;">
+                <i class="ph-bold ph-paper-plane-tilt" style="font-size: 1.4rem;"></i> {{ __('Code Sent via Telegram Bot') }}
+            </div>
+            <p style="font-size: 0.85rem; color: rgba(255,255,255,0.75); margin: 0; line-height: 1.5;">
+                {{ __('A 6-digit security OTP code has been sent directly to your Telegram account.') }}<br>
+                <span style="color: #38bdf8; font-weight: 700;">{{ __('Please check your Telegram messages and enter the code below.') }}</span>
+            </p>
+            <div style="margin-top: 0.75rem; font-size: 0.75rem; color: rgba(255,255,255,0.45); display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                <i class="ph ph-clock" style="color: #38bdf8;"></i> {{ __('Code expires in 10 minutes') }}
+            </div>
         </div>
 
         @if($errors->any())
