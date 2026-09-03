@@ -757,53 +757,73 @@
                 </div>
             @endif
 
-            {{-- ── Official Announcements Section ── --}}
-            @if(isset($portalAnnouncements) && $portalAnnouncements->count() > 0)
-                <div style="margin-bottom: 2rem;">
-                    <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-sub); margin-bottom: 0.85rem; display: flex; align-items: center; justify-content: space-between;">
-                        <span style="display: flex; align-items: center; gap: 0.4rem;">
-                            <i class="ph ph-megaphone" style="color: var(--primary);"></i>
-                            {{ __('Official Announcements') }}
+            {{-- 1. Teacher Header Profile Card --}}
+            <div class="teacher-header" style="margin-bottom: 1.5rem;">
+                <div class="teacher-photo-wrapper" style="position: relative; cursor: pointer;" onclick="document.getElementById('portalPhotoInput').click()" title="{{ __('Change Profile Picture') }}">
+                    @if($teacher->photo)
+                        <img src="{{ to_asset_url($teacher->photo) }}" class="teacher-photo" id="portal-profile-img" alt="{{ $teacher->name }}">
+                    @else
+                        <div class="teacher-photo" style="display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; background:var(--primary); font-size:2rem;">{{ substr($teacher->name, 0, 1) }}</div>
+                    @endif
+                    <div style="position: absolute; bottom: 5px; right: 5px; background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; border: 2px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 10;">
+                        <i class="ph ph-camera"></i>
+                    </div>
+                </div>
+                <form id="portalPhotoForm" style="display: none;">
+                    <input type="file" id="portalPhotoInput" accept="image/*" onchange="initPortalCropper(this)">
+                </form>
+                <div class="teacher-meta">
+                    <h2 style="color:var(--primary); margin-bottom: 0.25rem;">{{ $teacher->name_kh ?: '' }}</h2>
+                    <h3 style="margin:0; font-size:1.1rem; font-weight: 700; opacity:0.8;">{{ $teacher->name }}</h3>
+                    @php
+                        $deptObj = $departments->firstWhere('name', $teacher->department);
+                        $deptLabel = $deptObj ? (app()->getLocale() == 'km' ? ($deptObj->name_kh ?: $deptObj->name) : $deptObj->name) : $teacher->department;
+                    @endphp
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem;">
+                        <span class="badge" style="background: rgba(var(--primary-rgb), 0.12); color: var(--primary); font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 0.5rem;">
+                            <i class="ph ph-buildings" style="margin-right: 0.2rem;"></i> {{ $deptLabel }}
                         </span>
-                        <span class="badge" style="background: rgba(var(--primary-rgb), 0.15); color: var(--primary); font-size: 0.7rem; padding: 0.2rem 0.55rem; border-radius: 0.5rem; font-weight: 800;">
-                            {{ $portalAnnouncements->count() }}
+                        <span style="font-size: 0.78rem; color: var(--text-sub); font-weight: 600;">
+                            ID: <strong>{{ $teacher->employee_id }}</strong>
                         </span>
                     </div>
+                </div>
+            </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 0.85rem;">
-                        @foreach($portalAnnouncements as $ann)
-                            @php
-                                $pBadge = 'background: rgba(59, 130, 246, 0.12); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3);';
-                                if ($ann->priority === 'urgent') {
-                                    $pBadge = 'background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);';
-                                } elseif ($ann->priority === 'warning') {
-                                    $pBadge = 'background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);';
-                                }
-                            @endphp
-                            <div style="background: var(--card); border: 1px solid var(--border); border-radius: 1.25rem; padding: 1.25rem; backdrop-filter: blur(10px); transition: transform 0.2s, box-shadow 0.2s;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-                                    <span style="{{ $pBadge }} font-size: 0.7rem; font-weight: 800; padding: 0.25rem 0.6rem; border-radius: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                                        <i class="ph ph-warning-circle" style="margin-right: 0.2rem;"></i>{{ strtoupper($ann->priority) }}
-                                    </span>
-                                    <span style="font-size: 0.75rem; color: var(--text-sub); display: flex; align-items: center; gap: 0.3rem;">
-                                        <i class="ph ph-clock"></i> {{ $ann->created_at->diffForHumans() }}
-                                    </span>
-                                </div>
-
-                                <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.25rem 0; line-height: 1.3;">
-                                    {{ app()->getLocale() === 'km' && $ann->title_kh ? $ann->title_kh : $ann->title }}
-                                </h4>
-
-                                <p style="font-size: 0.88rem; color: var(--text-sub); margin: 0; line-height: 1.5; font-family: 'Battambang', sans-serif;">
-                                    {{ app()->getLocale() === 'km' && $ann->content_kh ? $ann->content_kh : $ann->content }}
-                                </p>
-                            </div>
-                        @endforeach
+            {{-- 2. Today's Attendance Status Banner --}}
+            @if($todayRecord)
+                <div style="background: rgba(var(--primary-rgb), 0.05); border: 1px solid var(--primary); border-radius: 1.25rem; padding: 1.1rem 1.25rem; margin-bottom: 1.75rem; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h4 style="margin: 0; font-size: 0.88rem; font-weight: 800; color: var(--primary);">{{ __("Today's Status") }}</h4>
+                        <p style="margin: 0.25rem 0 0; font-size: 0.82rem; color: var(--text-main); font-weight: 600;">
+                            @if($todayRecord->morning_in)
+                                {{ __('Checked in at') }} {{ substr($todayRecord->morning_in, 0, 5) }}
+                                @if($todayRecord->morning_out) - {{ __('Checked out at') }} {{ substr($todayRecord->morning_out, 0, 5) }} @else - <span style="color: var(--success); font-weight: 700;">{{ __('On Duty') }}</span> @endif
+                            @elseif($todayRecord->afternoon_in)
+                                {{ __('Checked in at') }} {{ substr($todayRecord->afternoon_in, 0, 5) }}
+                                @if($todayRecord->afternoon_out) - {{ __('Checked out at') }} {{ substr($todayRecord->afternoon_out, 0, 5) }} @else - <span style="color: var(--success); font-weight: 700;">{{ __('On Duty') }}</span> @endif
+                            @else
+                                <span style="color: var(--warning);">{{ __('Not checked in yet') }}</span>
+                            @endif
+                        </p>
+                    </div>
+                    <div style="font-size: 1.8rem; color: var(--primary);">
+                        <i class="ph ph-calendar-star"></i>
+                    </div>
+                </div>
+            @else
+                <div style="background: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.3); border-radius: 1.25rem; padding: 1.1rem 1.25rem; margin-bottom: 1.75rem; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h4 style="margin: 0; font-size: 0.88rem; font-weight: 800; color: var(--danger);">{{ __("Today's Status") }}</h4>
+                        <p style="margin: 0.25rem 0 0; font-size: 0.82rem; color: var(--danger); font-weight: 600;">{{ __('Not checked in yet') }}</p>
+                    </div>
+                    <div style="font-size: 1.8rem; color: var(--danger);">
+                        <i class="ph ph-warning-circle"></i>
                     </div>
                 </div>
             @endif
 
-            {{-- ── Quick Actions Grid ── --}}
+            {{-- 3. Quick Actions Grid --}}
             <div style="margin-bottom: 2.25rem;">
                 <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-sub); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
                     <i class="ph ph-squares-four" style="color: var(--primary);"></i>
@@ -876,62 +896,51 @@
                 </div>
             </div>
 
-                    <div class="teacher-header" style="margin-bottom: 1rem;">
-                        <div class="teacher-photo-wrapper" style="position: relative; cursor: pointer;" onclick="document.getElementById('portalPhotoInput').click()" title="{{ __('Change Profile Picture') }}">
-                            @if($teacher->photo)
-                                <img src="{{ to_asset_url($teacher->photo) }}" class="teacher-photo" id="portal-profile-img" alt="{{ $teacher->name }}">
-                            @else
-                                <div class="teacher-photo" style="display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; background:var(--primary); font-size:2rem;">{{ substr($teacher->name, 0, 1) }}</div>
-                            @endif
-                            <div style="position: absolute; bottom: 5px; right: 5px; background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; border: 2px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 10;">
-                                <i class="ph ph-camera"></i>
-                            </div>
-                        </div>
-                        <form id="portalPhotoForm" style="display: none;">
-                            <input type="file" id="portalPhotoInput" accept="image/*" onchange="initPortalCropper(this)">
-                        </form>
-                        <div class="teacher-meta">
-                            <h2 style="color:var(--primary); margin-bottom: 0.25rem;">{{ $teacher->name_kh ?: '' }}</h2>
-                            <h3 style="margin:0; font-size:1.1rem; font-weight: 700; opacity:0.8;">{{ $teacher->name }}</h3>
-                            @php
-                                $deptObj = $departments->firstWhere('name', $teacher->department);
-                                $deptLabel = $deptObj ? (app()->getLocale() == 'km' ? ($deptObj->name_kh ?: $deptObj->name) : $deptObj->name) : $teacher->department;
-                            @endphp
-                            <span>{{ $deptLabel }}</span>
-                        </div>
-                    </div> <!-- Close teacher-header -->
+            {{-- 4. Official Announcements Section --}}
+            @if(isset($portalAnnouncements) && $portalAnnouncements->count() > 0)
+                <div style="margin-bottom: 2rem;">
+                    <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-sub); margin-bottom: 0.85rem; display: flex; align-items: center; justify-content: space-between;">
+                        <span style="display: flex; align-items: center; gap: 0.4rem;">
+                            <i class="ph ph-megaphone" style="color: var(--primary);"></i>
+                            {{ __('Official Announcements') }}
+                        </span>
+                        <span class="badge" style="background: rgba(var(--primary-rgb), 0.15); color: var(--primary); font-size: 0.7rem; padding: 0.2rem 0.55rem; border-radius: 0.5rem; font-weight: 800;">
+                            {{ $portalAnnouncements->count() }}
+                        </span>
+                    </div>
 
-                    @if($todayRecord)
-                        <div style="background: rgba(var(--primary-rgb), 0.05); border: 1px solid var(--primary); border-radius: 1.5rem; padding: 1.25rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between;">
-                            <div>
-                                <h4 style="margin: 0; font-size: 0.9rem; font-weight: 800; color: var(--primary);">{{ __("Today's Status") }}</h4>
-                                <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-main); font-weight: 600;">
-                                    @if($todayRecord->morning_in)
-                                        {{ __('Checked in at') }} {{ substr($todayRecord->morning_in, 0, 5) }}
-                                        @if($todayRecord->morning_out) - {{ __('Checked out at') }} {{ substr($todayRecord->morning_out, 0, 5) }} @else - <span style="color: var(--success); font-weight: 700;">{{ __('On Duty') }}</span> @endif
-                                    @elseif($todayRecord->afternoon_in)
-                                        {{ __('Checked in at') }} {{ substr($todayRecord->afternoon_in, 0, 5) }}
-                                        @if($todayRecord->afternoon_out) - {{ __('Checked out at') }} {{ substr($todayRecord->afternoon_out, 0, 5) }} @else - <span style="color: var(--success); font-weight: 700;">{{ __('On Duty') }}</span> @endif
-                                    @else
-                                        <span style="color: var(--warning);">{{ __('Not checked in yet') }}</span>
-                                    @endif
+                    <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+                        @foreach($portalAnnouncements as $ann)
+                            @php
+                                $pBadge = 'background: rgba(59, 130, 246, 0.12); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3);';
+                                if ($ann->priority === 'urgent') {
+                                    $pBadge = 'background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);';
+                                } elseif ($ann->priority === 'warning') {
+                                    $pBadge = 'background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);';
+                                }
+                            @endphp
+                            <div style="background: var(--card); border: 1px solid var(--border); border-radius: 1.25rem; padding: 1.25rem; backdrop-filter: blur(10px); transition: transform 0.2s, box-shadow 0.2s;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span style="{{ $pBadge }} font-size: 0.7rem; font-weight: 800; padding: 0.25rem 0.6rem; border-radius: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        <i class="ph ph-warning-circle" style="margin-right: 0.2rem;"></i>{{ strtoupper($ann->priority) }}
+                                    </span>
+                                    <span style="font-size: 0.75rem; color: var(--text-sub); display: flex; align-items: center; gap: 0.3rem;">
+                                        <i class="ph ph-clock"></i> {{ $ann->created_at->diffForHumans() }}
+                                    </span>
+                                </div>
+
+                                <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.25rem 0; line-height: 1.3;">
+                                    {{ app()->getLocale() === 'km' && $ann->title_kh ? $ann->title_kh : $ann->title }}
+                                </h4>
+
+                                <p style="font-size: 0.88rem; color: var(--text-sub); margin: 0; line-height: 1.5; font-family: 'Battambang', sans-serif;">
+                                    {{ app()->getLocale() === 'km' && $ann->content_kh ? $ann->content_kh : $ann->content }}
                                 </p>
                             </div>
-                            <div style="font-size: 2rem; color: var(--primary);">
-                                <i class="ph ph-calendar-star"></i>
-                            </div>
-                        </div>
-                    @else
-                        <div style="background: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.3); border-radius: 1.5rem; padding: 1.25rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between;">
-                            <div>
-                                <h4 style="margin: 0; font-size: 0.9rem; font-weight: 800; color: var(--danger);">{{ __("Today's Status") }}</h4>
-                                <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--danger); font-weight: 600;">{{ __('Not checked in yet') }}</p>
-                            </div>
-                            <div style="font-size: 2rem; color: var(--danger);">
-                                <i class="ph ph-warning-circle"></i>
-                            </div>
-                        </div>
-                    @endif
+                        @endforeach
+                    </div>
+                </div>
+            @endif
 
                     @php
                         $total = 30;
