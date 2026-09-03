@@ -265,11 +265,13 @@ class SettingController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'telegram_chat_id' => 'nullable|string|max:255',
             'two_factor_enabled' => 'nullable|string',
         ]);
 
         $user->name = $request->name;
         $user->email = $request->email;
+        $user->telegram_chat_id = $request->telegram_chat_id;
         
         $twoFactor = $request->has('two_factor_enabled') && ($request->two_factor_enabled === 'true' || $request->two_factor_enabled === '1' || $request->two_factor_enabled === 'on');
         $user->two_factor_enabled = $twoFactor;
@@ -295,6 +297,7 @@ class SettingController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
+            'telegram_chat_id' => 'nullable|string|max:255',
             'two_factor_enabled' => 'nullable|string',
         ]);
 
@@ -304,6 +307,7 @@ class SettingController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'telegram_chat_id' => $request->telegram_chat_id,
             'two_factor_enabled' => $twoFactor,
         ]);
 

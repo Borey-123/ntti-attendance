@@ -62,6 +62,10 @@ class TwoFactorController extends Controller
         $user->two_factor_expires_at = now()->addMinutes(10);
         $user->save();
 
+        try {
+            \App\Services\TelegramService::sendAdminOtp($user, $code);
+        } catch (\Throwable $e) {}
+
         return response()->json([
             'success' => true,
             'code' => $code, // For local demonstration / screen display

@@ -47,6 +47,13 @@ class AuthController extends Controller
                 $user->two_factor_expires_at = now()->addMinutes(10);
                 $user->save();
 
+                // Dispatch OTP code via Telegram
+                try {
+                    \App\Services\TelegramService::sendAdminOtp($user, $code);
+                } catch (\Throwable $e) {
+                    \Log::error("Failed to send Telegram OTP: " . $e->getMessage());
+                }
+
                 session([
                     '2fa_pending_user_id' => $user->id,
                     '2fa_remember' => $request->boolean('remember'),

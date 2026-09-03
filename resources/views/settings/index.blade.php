@@ -958,6 +958,13 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                                                         <input type="email" name="email" class="form-control" value="{{ $admin->email }}" required>
                                                     </div>
                                                 </div>
+                                                <div class="form-group" style="margin-bottom: 1rem;">
+                                                    <label>{{ __('Personal Telegram Chat ID (for OTP delivery)') }}</label>
+                                                    <input type="text" name="telegram_chat_id" class="form-control" value="{{ $admin->telegram_chat_id }}" placeholder="e.g. 123456789">
+                                                    <p style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem;">
+                                                        {{ __('If left empty, OTP will be sent to the primary system Telegram Bot channel.') }}
+                                                    </p>
+                                                </div>
                                                 <div class="form-group" style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; background: rgba(168, 85, 247, 0.08); padding: 1rem; border-radius: 0.75rem; border: 1px solid rgba(168, 85, 247, 0.2);">
                                                     <div>
                                                         <span style="font-weight: 700; color: #fff; font-size: 0.9rem;">{{ __('Two-Factor Authentication (2FA)') }}</span>
@@ -1014,7 +1021,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                     </h3>
                     <form action="{{ route('settings.admin.store') }}" method="POST">
                         @csrf
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1.5rem; align-items: flex-end; margin-bottom: 1.5rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 1rem; align-items: flex-end; margin-bottom: 1.5rem;">
                             <div class="form-group" style="margin:0;">
                                 <label>{{ __('Full Name') }}</label>
                                 <input type="text" name="name" class="form-control" placeholder="Admin Name" required>
@@ -1026,6 +1033,10 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                             <div class="form-group" style="margin:0;">
                                 <label>{{ __('Password') }}</label>
                                 <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>{{ __('Telegram Chat ID') }}</label>
+                                <input type="text" name="telegram_chat_id" class="form-control" placeholder="e.g. 123456789">
                             </div>
                             <button type="submit" class="btn-premium" style="height: 48px;">
                                 <i class="ph ph-plus"></i> {{ __('Create Admin') }}

@@ -44,6 +44,33 @@ class TelegramService
     }
 
     /**
+     * Send 2FA OTP security verification code to an Admin via Telegram.
+     */
+    public static function sendAdminOtp(\App\Models\User $user, string $code): bool
+    {
+        // 1. If user has a specific telegram_chat_id set
+        $targetChatId = $user->telegram_chat_id;
+
+        // 2. Fallback to broadcast/system telegram_chat_id setting if user's chat ID isn't set yet
+        if (empty($targetChatId)) {
+            $targetChatId = Setting::getValue('telegram_chat_id');
+        }
+
+        if (empty($targetChatId)) {
+            Log::warning('TelegramService: No admin telegram_chat_id available to send 2FA OTP.');
+            return false;
+        }
+
+        $msg = "🔒 *NTTI Security Verification*\n\n"
+             . "Hello *{$user->name}*,\n"
+             . "Your 2FA Login OTP Code is: `{$code}`\n\n"
+             . "⏰ This code expires in *10 minutes*.\n"
+             . "If you did not request this login attempt, please change your password immediately.";
+
+        return self::sendMessage($targetChatId, $msg);
+    }
+
+    /**
      * Broadcast a message to configured channel ID or all teachers with a telegram_chat_id.
      */
     public static function broadcastMessage(string $text, array $replyMarkup = []): int
