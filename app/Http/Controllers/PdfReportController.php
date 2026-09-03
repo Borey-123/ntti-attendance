@@ -20,17 +20,18 @@ class PdfReportController extends Controller
         $startDate = Carbon::parse($month . '-01')->startOfMonth();
         $endDate = Carbon::parse($month . '-01')->endOfMonth();
 
-        $query = Attendance::with(['teacher.department'])
+        $query = Attendance::with(['teacher'])
             ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()]);
 
         if ($departmentId) {
             $query->whereHas('teacher', function ($q) use ($departmentId) {
                 if (is_numeric($departmentId)) {
-                    $q->where('department_id', $departmentId);
+                    $deptObj = Department::find($departmentId);
+                    if ($deptObj) {
+                        $q->where('department', $deptObj->name);
+                    }
                 } else {
-                    $q->whereHas('department', function($dq) use ($departmentId) {
-                        $dq->where('name', $departmentId)->orWhere('name_kh', $departmentId);
-                    });
+                    $q->where('department', $departmentId);
                 }
             });
         }
@@ -41,7 +42,7 @@ class PdfReportController extends Controller
 
         $attendances = $query->orderBy('date', 'asc')->get();
 
-        $teachers = Teacher::with('department')->get();
+        $teachers = Teacher::all();
         $departments = Department::all();
 
         $selectedTeacher = $teacherId ? Teacher::find($teacherId) : null;

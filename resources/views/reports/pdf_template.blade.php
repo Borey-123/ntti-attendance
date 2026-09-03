@@ -201,7 +201,7 @@
                 <td style="text-align: left; font-weight: bold;">
                     {{ $att->teacher ? ($att->teacher->name_kh ?: $att->teacher->name) : 'N/A' }}
                 </td>
-                <td>{{ $att->teacher && $att->teacher->department ? (app()->getLocale() === 'km' ? ($att->teacher->department->name_kh ?: $att->teacher->department->name) : $att->teacher->department->name) : '-' }}</td>
+                <td>{{ $att->teacher ? $att->teacher->department : '-' }}</td>
                 <td>{{ $att->morning_in ? substr($att->morning_in, 0, 5) . ' - ' . substr($att->morning_out ?? '--:--', 0, 5) : '—' }}</td>
                 <td>{{ $att->afternoon_in ? substr($att->afternoon_in, 0, 5) . ' - ' . substr($att->afternoon_out ?? '--:--', 0, 5) : '—' }}</td>
                 <td style="font-weight: bold;">

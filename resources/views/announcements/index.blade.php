@@ -6,17 +6,19 @@
 <div class="animate-fade-up">
 
     {{-- ── Header ── --}}
-    <div class="d-flex justify-between align-center" style="margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
         <div>
-            <h1 class="page-title" style="margin-bottom: 0.25rem;">
-                <i class="ph ph-megaphone" style="color: var(--primary); margin-right: 0.5rem;"></i>{{ __('Announcements & Broadcasts') }}
-            </h1>
-            <p style="color: var(--text-secondary); font-size: 0.9rem;">{{ __('Publish institution notices, portal banners, and instant Telegram broadcast alerts.') }}</p>
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <h1 class="page-title" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="ph ph-megaphone" style="color: var(--primary);"></i>{{ __('Announcements & Broadcasts') }}
+                </h1>
+                <button class="btn btn-primary" onclick="openAnnouncementModal()" style="border-radius: 0.75rem; font-weight: 800; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.95rem; background: linear-gradient(135deg, var(--primary), #00b894); border: none; color: #000; white-space: nowrap; box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.25);">
+                    <i class="ph ph-plus-circle" style="font-size: 1.05rem;"></i>
+                    {{ __('Create Announcement') }}
+                </button>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 0.88rem; margin-top: 0.25rem; margin-bottom: 0;">{{ __('Publish institution notices, portal banners, and instant Telegram broadcast alerts.') }}</p>
         </div>
-        <button class="btn btn-primary" onclick="openAnnouncementModal()" style="border-radius: 0.85rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.65rem 1.4rem; background: linear-gradient(135deg, var(--primary), #00b894); border: none; color: #000; box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.3);">
-            <i class="ph ph-plus-circle" style="font-size: 1.15rem;"></i>
-            {{ __('Create Announcement') }}
-        </button>
     </div>
 
     {{-- ── Summary Metrics Grid ── --}}

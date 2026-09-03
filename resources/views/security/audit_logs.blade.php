@@ -69,17 +69,17 @@
     </div>
 
     {{-- ── Search & Filter Bar ── --}}
-    <div class="card" style="padding: 1.25rem 1.75rem; border-radius: 1.5rem; margin-bottom: 2rem;">
-        <form method="GET" action="{{ route('security.audit_logs') }}" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-            <div class="input-with-icon" style="flex: 1; min-width: 280px;">
+    <div class="card" style="padding: 1rem 1.5rem; border-radius: 1.25rem; margin-bottom: 2rem;">
+        <form method="GET" action="{{ route('security.audit_logs') }}" style="display: flex; gap: 0.75rem; align-items: center; width: 100%;">
+            <div class="input-with-icon" style="flex: 1;">
                 <i class="ph ph-magnifying-glass"></i>
-                <input type="text" name="search" class="form-control" placeholder="{{ __('Search by user, action, IP or description...') }}" value="{{ request('search') }}" style="background: var(--bg-dark); font-weight: 600;">
+                <input type="text" name="search" class="form-control" placeholder="{{ __('Search by user, action, IP or description...') }}" value="{{ request('search') }}" style="background: var(--bg-dark); font-weight: 600; padding-top: 0.55rem; padding-bottom: 0.55rem; border-radius: 0.75rem;">
             </div>
-            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.75rem; border-radius: 0.85rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.5rem;">
+            <button type="submit" class="btn btn-primary" style="padding: 0.55rem 1.2rem; border-radius: 0.75rem; font-weight: 800; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; flex-shrink: 0;">
                 <i class="ph ph-funnel"></i> {{ __('Filter') }}
             </button>
             @if(request('search'))
-            <a href="{{ route('security.audit_logs') }}" class="btn btn-secondary" style="padding: 0.75rem 1.25rem; border-radius: 0.85rem; font-weight: 700; text-decoration: none;">
+            <a href="{{ route('security.audit_logs') }}" class="btn btn-secondary" style="padding: 0.55rem 1rem; border-radius: 0.75rem; font-weight: 700; font-size: 0.88rem; text-decoration: none; white-space: nowrap; flex-shrink: 0;">
                 {{ __('Reset') }}
             </a>
             @endif
