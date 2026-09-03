@@ -50,14 +50,47 @@ class TelegramWebhookController extends Controller
             if (isset($parts[1])) {
                 $param = trim($parts[1]);
                 
-                // Handle Admin Telegram Linking: /start admin_1
+                // Handle One-Time Secure Signed Telegram Link Token: /start link_TOKEN
+                if (str_starts_with($param, 'link_')) {
+                    $token = str_replace('link_', '', $param);
+                    $adminId = \Illuminate\Support\Facades\Cache::pull("tg_link_token_{$token}");
+                    
+                    if ($adminId) {
+                        $admin = \App\Models\User::find($adminId);
+                        if ($admin) {
+                            $admin->update(['telegram_chat_id' => (string)$chatId]);
+
+                            // Generate fresh OTP code upon successful token linking
+                            $code = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+                            $admin->two_factor_code = $code;
+                            $admin->two_factor_expires_at = now()->addMinutes(10);
+                            $admin->save();
+
+                            $this->sendMessage($chatId,
+                                "🔒 *Admin Account Linked Successfully!*\n\n"
+                              . "Welcome, *{$admin->name}*!\n"
+                              . "Your Telegram is now securely connected to receive 2FA Security OTP codes.\n\n"
+                              . "🔑 *Your 2FA Verification Code:* `{$code}`\n"
+                              . "⏰ _Code expires in 10 minutes._"
+                            );
+                            return;
+                        }
+                    } else {
+                        $this->sendMessage($chatId,
+                            "⚠️ *Invalid or Expired Link Token*\n\n"
+                          . "This security token has expired or has already been used.\n"
+                          . "Please refresh your login page and tap 'Connect Telegram Bot' again."
+                        );
+                        return;
+                    }
+                }
+
+                // Fallback for Admin ID linking: /start admin_1
                 if (str_starts_with($param, 'admin_')) {
                     $adminId = str_replace('admin_', '', $param);
                     $admin = \App\Models\User::find($adminId);
                     if ($admin) {
                         $admin->update(['telegram_chat_id' => (string)$chatId]);
-
-                        // Generate OTP code immediately for login verification
                         $code = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
                         $admin->two_factor_code = $code;
                         $admin->two_factor_expires_at = now()->addMinutes(10);

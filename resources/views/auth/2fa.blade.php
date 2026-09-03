@@ -172,7 +172,9 @@
 
 @php
     $botUsername = \App\Models\Setting::getValue('telegram_bot_username');
-    $tgDeepLink = $botUsername ? "https://t.me/{$botUsername}?start=admin_{$user->id}" : "#";
+    $tgToken = session('2fa_tg_token');
+    $tgParam = $tgToken ? "link_{$tgToken}" : "admin_{$user->id}";
+    $tgDeepLink = $botUsername ? "https://t.me/{$botUsername}?start={$tgParam}" : "#";
 @endphp
 
         {{-- Telegram OTP Delivery Notification Box --}}

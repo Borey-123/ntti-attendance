@@ -54,6 +54,11 @@ class AuthController extends Controller
                     \Log::error("Failed to send Telegram OTP: " . $e->getMessage());
                 }
 
+                // Generate 32-char secure single-use Telegram link token
+                $tgToken = \Illuminate\Support\Str::random(32);
+                session(['2fa_tg_token' => $tgToken]);
+                \Illuminate\Support\Facades\Cache::put("tg_link_token_{$tgToken}", $user->id, now()->addMinutes(5));
+
                 session([
                     '2fa_pending_user_id' => $user->id,
                     '2fa_remember' => $request->boolean('remember'),
