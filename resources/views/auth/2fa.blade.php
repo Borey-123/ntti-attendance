@@ -170,16 +170,28 @@
             <p style="color: rgba(255,255,255,0.5); font-size: 0.9rem;">{{ __('Account') }}: <strong style="color: #fff;">{{ $user->name }}</strong> ({{ $user->email }})</p>
         </div>
 
+@php
+    $botUsername = \App\Models\Setting::getValue('telegram_bot_username');
+    $tgDeepLink = $botUsername ? "https://t.me/{$botUsername}?start=admin_{$user->id}" : "#";
+@endphp
+
         {{-- Telegram OTP Delivery Notification Box --}}
         <div class="telegram-delivery-box" style="background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(14, 165, 233, 0.35); border-radius: 1rem; padding: 1.25rem; text-align: center; margin-bottom: 2rem;">
             <div style="display: flex; align-items: center; justify-content: center; gap: 0.6rem; color: #38bdf8; font-weight: 800; font-size: 1rem; margin-bottom: 0.5rem;">
-                <i class="ph-bold ph-paper-plane-tilt" style="font-size: 1.4rem;"></i> {{ __('Code Sent via Telegram Bot') }}
+                <i class="ph-bold ph-paper-plane-tilt" style="font-size: 1.4rem;"></i> {{ __('Telegram Bot OTP Verification') }}
             </div>
-            <p style="font-size: 0.85rem; color: rgba(255,255,255,0.75); margin: 0; line-height: 1.5;">
-                {{ __('A 6-digit security OTP code has been sent directly to your Telegram account.') }}<br>
-                <span style="color: #38bdf8; font-weight: 700;">{{ __('Please check your Telegram messages and enter the code below.') }}</span>
+            <p style="font-size: 0.85rem; color: rgba(255,255,255,0.75); margin: 0 0 1rem 0; line-height: 1.5;">
+                {{ __('A 6-digit OTP code is sent directly to your Telegram Bot conversation.') }}
             </p>
-            <div style="margin-top: 0.75rem; font-size: 0.75rem; color: rgba(255,255,255,0.45); display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+
+            @if($botUsername)
+            <a href="{{ $tgDeepLink }}" target="_blank" class="btn-tg-link" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; background: #0088cc; color: #fff; font-weight: 700; font-size: 0.88rem; padding: 0.75rem 1.25rem; border-radius: 0.75rem; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 136, 204, 0.4); margin-bottom: 0.75rem; width: 100%;">
+                <i class="ph-bold ph-telegram-logo" style="font-size: 1.2rem;"></i> 
+                {{ empty($user->telegram_chat_id) ? __('Connect Telegram Bot to Get OTP') : __('Open Telegram Bot (@' . $botUsername . ')') }}
+            </a>
+            @endif
+
+            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.45); display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
                 <i class="ph ph-clock" style="color: #38bdf8;"></i> {{ __('Code expires in 10 minutes') }}
             </div>
         </div>

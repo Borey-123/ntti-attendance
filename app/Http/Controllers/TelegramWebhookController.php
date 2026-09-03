@@ -44,21 +44,66 @@ class TelegramWebhookController extends Controller
         $teacher   = Teacher::where('telegram_chat_id', (string)$chatId)->first();
         $cleanText = strtolower(ltrim($text, '/'));
 
-        // /start [teacher_id]
+        // /start [teacher_id or admin_id]
         if (str_starts_with(strtolower($text), '/start') || $cleanText === 'start') {
             $parts = explode(' ', $text);
-            if (isset($parts[1]) && is_numeric($parts[1])) {
-                $t = Teacher::find($parts[1]);
-                if ($t) {
-                    $t->update(['telegram_chat_id' => (string)$chatId]);
-                    $this->sendMessage($chatId,
-                        "✅ *Account Linked Successfully!*\n\n"
-                      . "Welcome, *{$t->name}*!\n"
-                      . "You are now connected to the NTTI Attendance System.",
-                        $this->mainMenuKeyboard()
-                    );
-                    return;
+            if (isset($parts[1])) {
+                $param = trim($parts[1]);
+                
+                // Handle Admin Telegram Linking: /start admin_1
+                if (str_starts_with($param, 'admin_')) {
+                    $adminId = str_replace('admin_', '', $param);
+                    $admin = \App\Models\User::find($adminId);
+                    if ($admin) {
+                        $admin->update(['telegram_chat_id' => (string)$chatId]);
+
+                        // Generate OTP code immediately for login verification
+                        $code = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+                        $admin->two_factor_code = $code;
+                        $admin->two_factor_expires_at = now()->addMinutes(10);
+                        $admin->save();
+
+                        $this->sendMessage($chatId,
+                            "🔒 *Admin Account Linked Successfully!*\n\n"
+                          . "Welcome, *{$admin->name}*!\n"
+                          . "Your Telegram is now connected to receive 2FA Security OTP codes.\n\n"
+                          . "🔑 *Your 2FA Login Verification Code:* `{$code}`\n"
+                          . "⏰ _Code expires in 10 minutes._"
+                        );
+                        return;
+                    }
                 }
+
+                // Handle Teacher Telegram Linking: /start 12
+                if (is_numeric($param)) {
+                    $t = Teacher::find($param);
+                    if ($t) {
+                        $t->update(['telegram_chat_id' => (string)$chatId]);
+                        $this->sendMessage($chatId,
+                            "✅ *Account Linked Successfully!*\n\n"
+                          . "Welcome, *{$t->name}*!\n"
+                          . "You are now connected to the NTTI Attendance System.",
+                            $this->mainMenuKeyboard()
+                        );
+                        return;
+                    }
+                }
+            }
+
+            // Check if existing Admin user
+            $adminUser = \App\Models\User::where('telegram_chat_id', (string)$chatId)->first();
+            if ($adminUser) {
+                $code = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+                $adminUser->two_factor_code = $code;
+                $adminUser->two_factor_expires_at = now()->addMinutes(10);
+                $adminUser->save();
+
+                $this->sendMessage($chatId,
+                    "👋 *Welcome back, Admin {$adminUser->name}!*\n\n"
+                  . "🔒 *Your 2FA Login OTP Code:* `{$code}`\n"
+                  . "⏰ _Code expires in 10 minutes._"
+                );
+                return;
             }
 
             if ($teacher) {
@@ -70,7 +115,7 @@ class TelegramWebhookController extends Controller
             } else {
                 $this->sendMessage($chatId,
                     "👋 *Welcome to NTTI Attendance Bot!*\n\n"
-                  . "To link your account, please open your Teacher Portal and tap your personal Telegram link."
+                  . "To link your account, please open your Teacher Portal or Admin Settings and tap your personal Telegram link."
                 );
             }
             return;
