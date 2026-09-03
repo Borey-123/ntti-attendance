@@ -15,11 +15,17 @@ class TeacherSchedule extends Model
         'start_time',
         'end_time',
         'subject_name',
-        'room_number'
+        'room_number',
+        'substitute_teacher_id',
     ];
 
     public function teacher()
     {
         return $this->belongsTo(Teacher::class);
+    }
+
+    public function substituteTeacher()
+    {
+        return $this->belongsTo(Teacher::class, 'substitute_teacher_id');
     }
 }

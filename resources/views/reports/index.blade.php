@@ -1739,6 +1739,19 @@ async function viewHistory(id) {
         content.innerHTML = '<div style="text-align:center; color:var(--danger);">Error loading history.</div>';
     }
 }
+
+function exportPdf() {
+    const from = document.getElementById('dateFrom').value;
+    const teacherId = document.getElementById('teacherFilter').value;
+    const dept = document.getElementById('departmentFilter').value;
+    const month = from ? from.substring(0, 7) : '{{ now()->format("Y-m") }}';
+    
+    let url = `{{ route('reports.pdf') }}?month=${month}`;
+    if (teacherId) url += `&teacher_id=${teacherId}`;
+    if (dept) url += `&department_id=${dept}`;
+    
+    window.open(url, '_blank');
+}
 </script>
 @endpush
 

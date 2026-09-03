@@ -575,6 +575,49 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                     @csrf
                     <input type="hidden" name="university_name" value="{{ $universityName }}">
                     
+                    <h3 style="font-size: 0.9rem; font-weight: 800; color: #a855f7; margin-bottom: 1.5rem;"><i class="ph ph-shield-check" style="margin-right:0.4rem;"></i> {{ __('Two-Factor Authentication (2FA)') }}</h3>
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(168, 85, 247, 0.05); padding: 1.5rem; border-radius: 1rem; border: 1px solid rgba(168, 85, 247, 0.2); margin-bottom: 2rem;">
+                        <div>
+                            <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">{{ __('Require 2FA for Admin Account') }}</h4>
+                            <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Enforce time-based OTP passcode verification on administrator login.') }}</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="admin_2fa_enabled" value="true" {{ auth()->user() && auth()->user()->two_factor_enabled ? 'checked' : '' }} onchange="toggle2fa(this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+                    <h3 style="font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 1.5rem;"><i class="ph ph-map-pin" style="margin-right:0.4rem;"></i> {{ __('Campus GPS Geofencing') }}</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>{{ __('Campus Latitude') }}</label>
+                            <input type="text" name="campus_latitude" class="form-control" value="{{ \App\Models\Setting::getValue('campus_latitude', '11.5621') }}">
+                        </div>
+                        <div class="form-group">
+                            <label>{{ __('Campus Longitude') }}</label>
+                            <input type="text" name="campus_longitude" class="form-control" value="{{ \App\Models\Setting::getValue('campus_longitude', '104.8885') }}">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>{{ __('Allowed Radius (Meters)') }}</label>
+                            <input type="number" name="campus_gps_radius" class="form-control" value="{{ \App\Models\Setting::getValue('campus_gps_radius', '1000') }}">
+                        </div>
+                        <div class="form-group" style="display:flex; align-items:center; justify-content:space-between; padding-top: 1.5rem;">
+                            <div>
+                                <label style="margin:0;">{{ __('Enforce Radius Boundary') }}</label>
+                                <p style="margin:0; font-size:0.75rem; color:var(--text-secondary);">{{ __('Block mobile check-ins outside radius.') }}</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="enforce_gps_geofence" value="true" {{ \App\Models\Setting::getValue('enforce_gps_geofence', 'true') === 'true' ? 'checked' : '' }}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid var(--border); margin: 2.5rem 0;">
 
                     <h3 style="font-size: 0.9rem; font-weight: 800; color: #0088cc; margin-bottom: 1.5rem;"><i class="ph ph-telegram-logo"></i> {{ __('Telegram Bot Integration') }}</h3>
                     <div class="form-group">
@@ -1300,6 +1343,25 @@ document.getElementById('defaultThemeSelect').addEventListener('change', functio
         document.documentElement.removeAttribute('data-theme');
     }
 });
+
+// 2FA Toggle helper
+function toggle2fa(enabled) {
+    fetch("{{ route('settings.2fa.toggle') }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ enabled: enabled })
+    }).then(r => r.json()).then(d => {
+        if (d.success) {
+            alert(d.message);
+        } else {
+            alert("Failed to toggle 2FA.");
+        }
+    });
+}
 
 // Modal helpers
 function openModal(id) { 

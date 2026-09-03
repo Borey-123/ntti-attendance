@@ -44,6 +44,34 @@ class TelegramService
     }
 
     /**
+     * Broadcast a message to configured channel ID or all teachers with a telegram_chat_id.
+     */
+    public static function broadcastMessage(string $text, array $replyMarkup = []): int
+    {
+        $sentCount = 0;
+
+        // Try setting channel ID first
+        $channelId = Setting::getValue('telegram_chat_id');
+        if ($channelId) {
+            if (self::sendMessage($channelId, $text, $replyMarkup)) {
+                $sentCount++;
+            }
+        }
+
+        // Also broadcast to all teachers registered with Telegram
+        $teachers = Teacher::whereNotNull('telegram_chat_id')->where('telegram_chat_id', '!=', '')->get();
+        foreach ($teachers as $teacher) {
+            if ($teacher->telegram_chat_id != $channelId) {
+                if (self::sendMessage($teacher->telegram_chat_id, $text, $replyMarkup)) {
+                    $sentCount++;
+                }
+            }
+        }
+
+        return $sentCount;
+    }
+
+    /**
      * Send message to a Teacher model if telegram_chat_id is present.
      */
     public static function sendToTeacher(Teacher $teacher, string $text, array $replyMarkup = []): bool

@@ -52,6 +52,7 @@ Route::get('/api-live/latest', [AttendanceController::class, 'latest'])->name('a
 // Teacher Portal Enhancements
 Route::get('/portal/export', [PortalController::class, 'export'])->name('portal.export');
 Route::post('/portal/correction', [PortalController::class, 'storeCorrection'])->name('portal.correction.store');
+Route::post('/portal/gps-checkin', [PortalController::class, 'gpsCheckin'])->name('portal.gps-checkin');
 Route::post('/settings/attendance-corrections/{correction}', [SettingController::class, 'handleCorrection'])->name('settings.attendance_corrections.handle');
 
 Route::get('/portal', [PortalController::class, 'index'])->name('portal.index');
@@ -61,6 +62,20 @@ Route::post('/portal/change-password', [PortalController::class, 'changePassword
 Route::post('/portal/change-photo', [PortalController::class, 'changePhoto'])->name('portal.change-photo');
 Route::post('/portal/change-face', [PortalController::class, 'changeFace'])->name('portal.change-face');
 Route::get('/api-web/portal/search', [PortalController::class, 'search'])->name('api.portal.search');
+Route::get('/api-web/announcements/active', [\App\Http\Controllers\AnnouncementController::class, 'activeAnnouncements'])->name('api.announcements.active');
+Route::post('/api/device/ping', function (\Illuminate\Http\Request $request) {
+    $request->validate(['device_code' => 'required|string']);
+    $device = \App\Models\DeviceHeartbeat::updateOrCreate(
+        ['device_code' => $request->device_code],
+        [
+            'device_name' => $request->input('device_name', 'Scanner Kiosk ' . $request->device_code),
+            'ip_address' => $request->ip(),
+            'last_ping_at' => now(),
+            'status' => 'online',
+        ]
+    );
+    return response()->json(['success' => true, 'device' => $device]);
+})->name('api.device.ping');
 
 // Architecture Diagram (public, no auth needed)
 Route::get('/architecture', function () {
@@ -156,4 +171,21 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/admin', [SettingController::class, 'storeAdmin'])->name('settings.admin.store');
     Route::post('/settings/admin/{user}/reset-password', [SettingController::class, 'resetAdminPassword'])->name('settings.admin.reset-password');
     Route::delete('/settings/admin/{user}', [SettingController::class, 'destroyAdmin'])->name('settings.admin.destroy');
+
+    // Audit Logs & Security
+    Route::get('/security/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('security.audit_logs');
+    Route::post('/api-web/audit-logs/clear', [\App\Http\Controllers\AuditLogController::class, 'clear'])->name('security.audit_logs.clear');
+
+    // 2FA Admin Authentication
+    Route::post('/settings/2fa/toggle', [\App\Http\Controllers\TwoFactorController::class, 'toggle'])->name('settings.2fa.toggle');
+    Route::post('/settings/2fa/generate-otp', [\App\Http\Controllers\TwoFactorController::class, 'generateOtp'])->name('settings.2fa.generate-otp');
+    Route::post('/settings/2fa/verify-otp', [\App\Http\Controllers\TwoFactorController::class, 'verifyOtp'])->name('settings.2fa.verify-otp');
+
+    // Announcements & Broadcasts
+    Route::get('/announcements', [\App\Http\Controllers\AnnouncementController::class, 'index'])->name('announcements.index');
+    Route::post('/api-web/announcements', [\App\Http\Controllers\AnnouncementController::class, 'store'])->name('api.announcements.store');
+    Route::delete('/api-web/announcements/{announcement}', [\App\Http\Controllers\AnnouncementController::class, 'destroy'])->name('api.announcements.destroy');
+
+    // PDF Reports Generator
+    Route::get('/reports/pdf', [\App\Http\Controllers\PdfReportController::class, 'generate'])->name('reports.pdf');
 });

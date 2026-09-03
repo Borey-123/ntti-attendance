@@ -711,6 +711,9 @@
 
             {{-- Auth Controls --}}
             <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem;">
+                <button onclick="triggerGpsCheckin()" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: var(--success); padding: 0.6rem 1rem; border-radius: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="ph ph-map-pin"></i> {{ __('Mobile GPS Check-In') }}
+                </button>
                 <button onclick="downloadQrCode('{{ $teacher->employee_id }}', '{{ addslashes($teacher->name) }}')" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: #a855f7; padding: 0.6rem 1rem; border-radius: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
                     <i class="ph ph-qr-code"></i> {{ __('My QR Code') }}
                 </button>
@@ -2079,6 +2082,36 @@ async function submitLeaveForm(e) {
             </html>
         `);
         printWin.document.close();
+    }
+
+    function triggerGpsCheckin() {
+        if (!navigator.geolocation) {
+            alert("Geolocation is not supported by your browser.");
+            return;
+        }
+        if (confirm("Allow Mobile GPS Check-In with your current location coordinates?")) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                fetch("{{ route('portal.gps-checkin') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    })
+                }).then(r => r.json()).then(d => {
+                    alert(d.message);
+                    if (d.success) location.reload();
+                }).catch(err => {
+                    alert("GPS Check-in error: " + err);
+                });
+            }, function(err) {
+                alert("GPS Geolocation Error: " + err.message);
+            }, { enableHighAccuracy: true });
+        }
     }
 </script>
 </html>

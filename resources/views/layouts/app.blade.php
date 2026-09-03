@@ -321,7 +321,13 @@
             <a href="{{ route('reports.index') }}" data-title="{{ __('Reports') }}" class="nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                 <i class="ph ph-chart-bar nav-icon"></i> <span class="nav-text">{{ __('Reports') }}</span>
             </a>
-            <a href="{{ route('security.index') }}" data-title="{{ __('Security Logs') }}" class="nav-item {{ request()->routeIs('security.*') ? 'active' : '' }}">
+            <a href="{{ route('announcements.index') }}" data-title="{{ __('Announcements') }}" class="nav-item {{ request()->routeIs('announcements.*') ? 'active' : '' }}">
+                <i class="ph ph-megaphone nav-icon"></i> <span class="nav-text">{{ __('Announcements') }}</span>
+            </a>
+            <a href="{{ route('security.audit_logs') }}" data-title="{{ __('Audit Logs') }}" class="nav-item {{ request()->routeIs('security.audit_logs') ? 'active' : '' }}">
+                <i class="ph ph-receipt nav-icon"></i> <span class="nav-text">{{ __('Audit Logs') }}</span>
+            </a>
+            <a href="{{ route('security.index') }}" data-title="{{ __('Security Logs') }}" class="nav-item {{ request()->routeIs('security.index') ? 'active' : '' }}">
                 <i class="ph ph-shield-checkered nav-icon"></i> <span class="nav-text">{{ __('Security Logs') }}</span>
             </a>
             <a href="{{ route('settings.index') }}" data-title="{{ __('Settings') }}" class="nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">

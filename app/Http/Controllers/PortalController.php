@@ -374,6 +374,91 @@ class PortalController extends Controller
         return response()->json(['status' => 'success', 'message' => 'Face registered successfully!']);
     }
 
+    public function gpsCheckin(Request $request)
+    {
+        $teacherId = session('portal_teacher_id');
+        if (!$teacherId) {
+            return response()->json(['success' => false, 'message' => __('Unauthorized. Please log in first.')], 401);
+        }
+
+        $request->validate([
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+        ]);
+
+        $teacher = Teacher::find($teacherId);
+        if (!$teacher || $teacher->status !== 'active') {
+            return response()->json(['success' => false, 'message' => __('Teacher invalid or inactive.')], 403);
+        }
+
+        // Campus coordinates (default NTTI campus or configured in Settings)
+        $campusLat = (float) \App\Models\Setting::getValue('campus_latitude', '11.5621');
+        $campusLng = (float) \App\Models\Setting::getValue('campus_longitude', '104.8885');
+        $allowedRadiusMeters = (float) \App\Models\Setting::getValue('campus_gps_radius', '1000'); // 1km radius
+
+        $lat = (float) $request->latitude;
+        $lng = (float) $request->longitude;
+
+        // Haversine distance calculation in meters
+        $earthRadius = 6371000;
+        $dLat = deg2rad($lat - $campusLat);
+        $dLng = deg2rad($lng - $campusLng);
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+             cos(deg2rad($campusLat)) * cos(deg2rad($lat)) *
+             sin($dLng / 2) * sin($dLng / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        $distance = $earthRadius * $c;
+
+        $gpsRestricted = \App\Models\Setting::getValue('enforce_gps_geofence', 'true') === 'true';
+
+        if ($gpsRestricted && $distance > $allowedRadiusMeters) {
+            return response()->json([
+                'success' => false,
+                'message' => __('GPS Check-in Failed: You are outside the allowed campus location radius (:dist m away).', ['dist' => round($distance)])
+            ], 422);
+        }
+
+        $today = now()->toDateString();
+        $currentTime = now()->format('H:i:s');
+        $hour = now()->hour + (now()->minute / 60);
+
+        $attendance = Attendance::firstOrCreate(
+            ['teacher_id' => $teacher->id, 'date' => $today],
+            ['checkin_method' => 'gps', 'latitude' => $lat, 'longitude' => $lng]
+        );
+
+        $attendance->latitude = $lat;
+        $attendance->longitude = $lng;
+        $attendance->checkin_method = 'gps';
+
+        // Determine morning or afternoon shift check-in/out
+        if ($hour < 12.0) {
+            if (!$attendance->morning_in) {
+                $attendance->morning_in = $currentTime;
+                $attendance->morning_status = ($hour > 8.25) ? 'late' : 'present';
+            } else {
+                $attendance->morning_out = $currentTime;
+            }
+        } else {
+            if (!$attendance->afternoon_in) {
+                $attendance->afternoon_in = $currentTime;
+                $attendance->afternoon_status = ($hour > 14.25) ? 'late' : 'present';
+            } else {
+                $attendance->afternoon_out = $currentTime;
+            }
+        }
+
+        $attendance->save();
+
+        \App\Models\SecurityLog::recordPortal('GPS Check-in', 'Teacher: ' . $teacher->name, "Coordinates: {$lat}, {$lng} (Distance: " . round($distance) . "m)");
+
+        return response()->json([
+            'success' => true,
+            'message' => __('GPS Check-in recorded successfully! Distance to campus: :dist m', ['dist' => round($distance)]),
+            'record' => $attendance
+        ]);
+    }
+
     public function export(Request $request)
     {
         $teacherId = session('portal_teacher_id');

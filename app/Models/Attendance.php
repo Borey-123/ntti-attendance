@@ -14,7 +14,7 @@ class Attendance extends Model
         'morning_in', 'morning_out', 'morning_status',
         'afternoon_in', 'afternoon_out', 'afternoon_status',
         'evening_in', 'evening_out', 'evening_status',
-        'manual_note'
+        'manual_note', 'latitude', 'longitude', 'checkin_method'
     ];
 
     protected $casts = ['date' => 'date'];
