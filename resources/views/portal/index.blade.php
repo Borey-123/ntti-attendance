@@ -228,6 +228,30 @@
         .form-control:focus { outline: none; border-color: var(--primary); background: rgba(0, 0, 0, 0.07); box-shadow: 0 0 0 8px rgba(var(--primary-rgb), 0.1); }
         [data-theme="dark"] .form-control:focus { background: rgba(255, 255, 255, 0.1); }
 
+        /* ── Date Inputs Mobile Responsive Fix ── */
+        input[type="date"].form-control, select.form-control, textarea.form-control {
+            padding-left: 1rem !important;
+        }
+        .date-range-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        @media (max-width: 576px) {
+            .date-range-grid {
+                grid-template-columns: 1fr !important;
+                gap: 0.5rem;
+            }
+        }
+        .date-input {
+            padding-left: 1rem !important;
+            padding-right: 0.75rem !important;
+            font-size: 0.9rem !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            height: 48px;
+        }
+
         /* ── Action Tile Cards ── */
         .action-tile-btn {
             display: flex;
@@ -1827,14 +1851,14 @@
                     <option value="personal">{{ __('Personal Leave') }}</option>
                 </select>
             </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
-                <div class="form-group">
+            <div class="date-range-grid">
+                <div class="form-group" style="margin-bottom: 1rem;">
                     <label>{{ __('Start Date') }}</label>
-                    <input type="date" name="start_date" class="form-control" required value="{{ date('Y-m-d') }}">
+                    <input type="date" name="start_date" class="form-control date-input" required value="{{ date('Y-m-d') }}">
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom: 1rem;">
                     <label>{{ __('End Date') }}</label>
-                    <input type="date" name="end_date" class="form-control" required value="{{ date('Y-m-d') }}">
+                    <input type="date" name="end_date" class="form-control date-input" required value="{{ date('Y-m-d') }}">
                 </div>
             </div>
             <div class="form-group">
