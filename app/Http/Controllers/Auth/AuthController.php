@@ -96,6 +96,14 @@ class AuthController extends Controller
             return redirect()->route('login');
         }
 
+        // Always ensure a valid single-use Telegram link token is available
+        $tgToken = session('2fa_tg_token');
+        if (!$tgToken) {
+            $tgToken = \Illuminate\Support\Str::random(32);
+            session(['2fa_tg_token' => $tgToken]);
+        }
+        \Illuminate\Support\Facades\Cache::put("tg_link_token_{$tgToken}", $user->id, now()->addMinutes(15));
+
         return view('auth.2fa', compact('user'));
     }
 

@@ -41,26 +41,25 @@ class TelegramWebhookController extends Controller
 
         if (!$chatId || !$text) return;
 
-        $teacher   = Teacher::where('telegram_chat_id', (string)$chatId)->first();
         $cleanText = strtolower(ltrim($text, '/'));
+        $parts     = explode(' ', $text);
+        $param     = isset($parts[1]) ? trim($parts[1]) : '';
 
-        // /start [teacher_id or admin_id]
+        // ---------------------------------------------------------------------
+        // 1. LINK TOKEN DISCOVERY & DEEP LINKING (/start link_TOKEN or /start admin_ID)
+        // ---------------------------------------------------------------------
         if (str_starts_with(strtolower($text), '/start') || $cleanText === 'start') {
-            $parts = explode(' ', $text);
-            if (isset($parts[1])) {
-                $param = trim($parts[1]);
-                
-                // Handle One-Time Secure Signed Telegram Link Token: /start link_TOKEN
+            if ($param) {
+                // One-Time Secure Signed Link Token: /start link_TOKEN
                 if (str_starts_with($param, 'link_')) {
-                    $token = str_replace('link_', '', $param);
+                    $token   = str_replace('link_', '', $param);
                     $adminId = \Illuminate\Support\Facades\Cache::pull("tg_link_token_{$token}");
-                    
+
                     if ($adminId) {
                         $admin = \App\Models\User::find($adminId);
                         if ($admin) {
                             $admin->update(['telegram_chat_id' => (string)$chatId]);
 
-                            // Generate fresh OTP code upon successful token linking
                             $code = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
                             $admin->two_factor_code = $code;
                             $admin->two_factor_expires_at = now()->addMinutes(10);
@@ -69,28 +68,22 @@ class TelegramWebhookController extends Controller
                             $this->sendMessage($chatId,
                                 "🔒 *Admin Account Linked Successfully!*\n\n"
                               . "Welcome, *{$admin->name}*!\n"
-                              . "Your Telegram is now securely connected to receive 2FA Security OTP codes.\n\n"
-                              . "🔑 *Your 2FA Verification Code:* `{$code}`\n"
+                              . "Your Telegram is now connected for 2FA verification.\n\n"
+                              . "🔑 *Your 2FA Login OTP Code:* `{$code}`\n"
                               . "⏰ _Code expires in 10 minutes._"
                             );
                             return;
                         }
-                    } else {
-                        $this->sendMessage($chatId,
-                            "⚠️ *Invalid or Expired Link Token*\n\n"
-                          . "This security token has expired or has already been used.\n"
-                          . "Please refresh your login page and tap 'Connect Telegram Bot' again."
-                        );
-                        return;
                     }
                 }
 
-                // Fallback for Admin ID linking: /start admin_1
+                // Fallback Admin ID Link: /start admin_4
                 if (str_starts_with($param, 'admin_')) {
                     $adminId = str_replace('admin_', '', $param);
-                    $admin = \App\Models\User::find($adminId);
+                    $admin   = \App\Models\User::find($adminId);
                     if ($admin) {
                         $admin->update(['telegram_chat_id' => (string)$chatId]);
+
                         $code = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
                         $admin->two_factor_code = $code;
                         $admin->two_factor_expires_at = now()->addMinutes(10);
@@ -99,15 +92,15 @@ class TelegramWebhookController extends Controller
                         $this->sendMessage($chatId,
                             "🔒 *Admin Account Linked Successfully!*\n\n"
                           . "Welcome, *{$admin->name}*!\n"
-                          . "Your Telegram is now connected to receive 2FA Security OTP codes.\n\n"
-                          . "🔑 *Your 2FA Login Verification Code:* `{$code}`\n"
+                          . "Your Telegram is now connected for 2FA verification.\n\n"
+                          . "🔑 *Your 2FA Login OTP Code:* `{$code}`\n"
                           . "⏰ _Code expires in 10 minutes._"
                         );
                         return;
                     }
                 }
 
-                // Handle Teacher Telegram Linking: /start 12
+                // Teacher Deep Link: /start 12
                 if (is_numeric($param)) {
                     $t = Teacher::find($param);
                     if ($t) {
@@ -122,37 +115,41 @@ class TelegramWebhookController extends Controller
                     }
                 }
             }
+        }
 
-            // Check if existing Admin user
-            $adminUser = \App\Models\User::where('telegram_chat_id', (string)$chatId)->first();
+        // ---------------------------------------------------------------------
+        // 2. CHECK IF USER IS AN ADMIN (User Model)
+        // ---------------------------------------------------------------------
+        $adminUser = \App\Models\User::where('telegram_chat_id', (string)$chatId)->first();
+
+        // If email entered directly (e.g. rinbory02@gmail.com)
+        if (!$adminUser && filter_var($text, FILTER_VALIDATE_EMAIL)) {
+            $adminUser = \App\Models\User::where('email', strtolower($text))->first();
             if ($adminUser) {
-                $code = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
-                $adminUser->two_factor_code = $code;
-                $adminUser->two_factor_expires_at = now()->addMinutes(10);
-                $adminUser->save();
-
-                $this->sendMessage($chatId,
-                    "👋 *Welcome back, Admin {$adminUser->name}!*\n\n"
-                  . "🔒 *Your 2FA Login OTP Code:* `{$code}`\n"
-                  . "⏰ _Code expires in 10 minutes._"
-                );
-                return;
+                $adminUser->update(['telegram_chat_id' => (string)$chatId]);
             }
+        }
 
-            if ($teacher) {
-                $this->sendMessage($chatId,
-                    "👋 *Welcome back, {$teacher->name}!*\n\n"
-                  . "_Tap any button below to get started:_",
-                    $this->mainMenuKeyboard()
-                );
-            } else {
-                $this->sendMessage($chatId,
-                    "👋 *Welcome to NTTI Attendance Bot!*\n\n"
-                  . "To link your account, please open your Teacher Portal or Admin Settings and tap your personal Telegram link."
-                );
-            }
+        if ($adminUser) {
+            // Generate & send OTP code whenever Admin messages the bot
+            $code = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+            $adminUser->two_factor_code = $code;
+            $adminUser->two_factor_expires_at = now()->addMinutes(10);
+            $adminUser->save();
+
+            $this->sendMessage($chatId,
+                "🔒 *NTTI Security Verification*\n\n"
+              . "Hello *{$adminUser->name}*,\n"
+              . "Your 2FA Login OTP Code is: `{$code}`\n\n"
+              . "⏰ _Code expires in 10 minutes._"
+            );
             return;
         }
+
+        // ---------------------------------------------------------------------
+        // 3. FALLBACK TO TEACHER MODEL
+        // ---------------------------------------------------------------------
+        $teacher = Teacher::where('telegram_chat_id', (string)$chatId)->first();
 
         if (!$teacher) {
             $this->sendMessage($chatId,
