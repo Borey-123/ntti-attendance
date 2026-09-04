@@ -120,17 +120,20 @@ class ReportController extends Controller
                     $status = 'present';
                 }
 
-                $source = 'RFID';
                 if ($r->checkin_method === 'gps' || ($r->latitude && $r->longitude)) {
                     $source = 'GPS Check-In';
                 } elseif ($r->checkin_method === 'face') {
                     $source = 'Face Scan';
                 } elseif ($r->checkin_method === 'qr') {
                     $source = 'QR Code';
-                } elseif ($r->checkin_method === 'manual' || $r->rfid_uid === 'Manual' || $r->rfid_uid === 'MANUAL') {
-                    $source = 'Manual';
+                } elseif ($r->checkin_method === 'portal' || $r->rfid_uid === 'PORTAL') {
+                    $source = 'Portal';
                 } elseif (str_contains($r->rfid_uid ?? '', 'Edited')) {
                     $source = 'Edited';
+                } elseif (!empty($r->rfid_uid) && $r->rfid_uid !== 'MANUAL' && $r->rfid_uid !== 'Manual') {
+                    $source = 'RFID';
+                } else {
+                    $source = 'Manual';
                 }
 
                 return [
@@ -686,17 +689,20 @@ class ReportController extends Controller
                     if (isset($teacherStats[$teacher->id])) $teacherStats[$teacher->id]['days_present']++;
                 }
                 
-                $source = 'RFID';
                 if ($record->checkin_method === 'gps' || ($record->latitude && $record->longitude)) {
                     $source = 'GPS Check-In';
                 } elseif ($record->checkin_method === 'face') {
                     $source = 'Face Scan';
                 } elseif ($record->checkin_method === 'qr') {
                     $source = 'QR Code';
-                } elseif ($record->checkin_method === 'manual' || $record->rfid_uid === 'Manual' || $record->rfid_uid === 'MANUAL') {
-                    $source = 'Manual';
+                } elseif ($record->checkin_method === 'portal' || $record->rfid_uid === 'PORTAL') {
+                    $source = 'Portal';
                 } elseif (str_contains($record->rfid_uid ?? '', 'Edited')) {
                     $source = 'Edited';
+                } elseif (!empty($record->rfid_uid) && $record->rfid_uid !== 'MANUAL' && $record->rfid_uid !== 'Manual') {
+                    $source = 'RFID';
+                } else {
+                    $source = 'Manual';
                 }
 
                 if (isset($teacherStats[$teacher->id])) $teacherStats[$teacher->id]['total_mins'] += $totalMins;

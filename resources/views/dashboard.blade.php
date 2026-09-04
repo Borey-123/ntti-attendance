@@ -542,10 +542,16 @@
                             $method = $record->checkin_method;
                             if ($record->latitude && $record->longitude) {
                                 $method = 'gps';
-                            } elseif (!$method || $method === 'card') {
-                                if ($record->rfid_uid === 'PORTAL') $method = 'portal';
-                                elseif ($record->rfid_uid === 'Manual' || $record->rfid_uid === 'MANUAL') $method = 'manual';
-                                elseif ($record->rfid_uid && $record->rfid_uid !== 'Manual') $method = 'card';
+                            } elseif ($method === 'face') {
+                                $method = 'face';
+                            } elseif ($method === 'qr') {
+                                $method = 'qr';
+                            } elseif ($method === 'portal' || $record->rfid_uid === 'PORTAL') {
+                                $method = 'portal';
+                            } elseif (!empty($record->rfid_uid) && !in_array($record->rfid_uid, ['Manual', 'MANUAL'])) {
+                                $method = 'card';
+                            } else {
+                                $method = 'manual';
                             }
                         @endphp
                         @if($method === 'gps')
@@ -1664,10 +1670,16 @@
         let method = r.checkin_method;
         if (r.latitude && r.longitude) {
             method = 'gps';
-        } else if (!method || method === 'card') {
-            if (r.rfid_uid === 'PORTAL') method = 'portal';
-            else if (r.rfid_uid === 'MANUAL' || r.rfid_uid === 'Manual') method = 'manual';
-            else if (r.rfid_uid && r.rfid_uid !== 'MANUAL') method = 'card';
+        } else if (method === 'face') {
+            method = 'face';
+        } else if (method === 'qr') {
+            method = 'qr';
+        } else if (method === 'portal' || r.rfid_uid === 'PORTAL') {
+            method = 'portal';
+        } else if (r.rfid_uid && r.rfid_uid !== 'MANUAL' && r.rfid_uid !== 'Manual') {
+            method = 'card';
+        } else {
+            method = 'manual';
         }
 
         let sourceBadge = `<span class="badge-pill secondary" style="font-weight:800;"><i class="ph ph-hand-tap"></i> {{ __('Manual') }}</span>`;
