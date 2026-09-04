@@ -781,7 +781,7 @@ class AttendanceController extends Controller
             ], 404);
         }
 
-        $request->merge(['teacher_id' => $teacher->id]);
+        $request->merge(['teacher_id' => $teacher->id, 'checkin_method' => 'qr']);
         return $this->adminScan($request);
     }
 
@@ -801,7 +801,7 @@ class AttendanceController extends Controller
             ], 404);
         }
 
-        $request->merge(['teacher_id' => $teacher->id]);
+        $request->merge(['teacher_id' => $teacher->id, 'checkin_method' => 'face']);
         return $this->adminScan($request);
     }
 
