@@ -15,6 +15,8 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <style>
         :root {
@@ -1872,6 +1874,65 @@
     </div>
 </div>
 
+{{-- Interactive GPS Check-In Radar Modal --}}
+<div id="portalGpsModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 540px; padding: 2rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+            <h3 style="margin:0; font-weight:800; color:var(--text-main); display:flex; align-items:center; gap:0.6rem;">
+                <i class="ph ph-map-pin" style="color:var(--primary); font-size:1.4rem;"></i>
+                {{ __('Mobile GPS Geofence Check-In') }}
+            </h3>
+            <button onclick="closePortalGpsModal()" style="background:none; border:none; color:var(--text-sub); font-size:1.5rem; cursor:pointer;"><i class="ph ph-x"></i></button>
+        </div>
+
+        {{-- Live Radar Distance Header --}}
+        <div style="background: rgba(0,0,0,0.03); border: 1px solid var(--border); border-radius: 1.25rem; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+                <span id="gpsRadarStatusBadge" class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; font-weight: 800; padding: 0.3rem 0.75rem; border-radius: 0.6rem;">
+                    <i class="ph ph-circle-notch animate-spin"></i> {{ __('Locating Satellite...') }}
+                </span>
+                <span id="gpsAccuracyText" style="font-size: 0.78rem; color: var(--text-sub); font-weight: 600;">
+                    <i class="ph ph-broadcast"></i> GPS: --
+                </span>
+            </div>
+
+            <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+                <span id="gpsDistanceValue" style="font-size: 1.8rem; font-weight: 900; color: var(--text-main);">--</span>
+                <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-sub);">{{ __('meters from Campus Center') }}</span>
+            </div>
+            <p id="gpsSubText" style="margin: 0.35rem 0 0; font-size: 0.82rem; color: var(--text-sub); font-weight: 600;">
+                {{ __('Maximum allowed geofence radius:') }} <strong>{{ \App\Models\Setting::getValue('campus_gps_radius', '1000') }}m</strong>
+            </p>
+        </div>
+
+        {{-- Interactive Leaflet Map --}}
+        <div id="portalGpsMap" style="height: 220px; width: 100%; border-radius: 1.25rem; border: 1px solid var(--border); margin-bottom: 1.25rem; background: rgba(0,0,0,0.05); position: relative; z-index: 1;"></div>
+
+        {{-- Off-Campus Warning & 1-Click Dispute Section --}}
+        <div id="gpsDisputeSection" style="display: none; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 1.25rem; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+            <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                <i class="ph ph-warning-circle" style="color: #ef4444; font-size: 1.4rem; flex-shrink: 0; margin-top: 2px;"></i>
+                <div>
+                    <h4 style="margin: 0; color: #ef4444; font-size: 0.92rem; font-weight: 800;">{{ __('Outside Campus Geofence Boundary') }}</h4>
+                    <p style="margin: 0.25rem 0 0.75rem; font-size: 0.82rem; color: var(--text-main); font-weight: 600;">
+                        {{ __('You are outside the required campus radius. If you are conducting off-campus duty or at an authorized event, submit a 1-click location dispute to HR.') }}
+                    </p>
+                    <button type="button" onclick="triggerLocationDispute()" style="background: #ef4444; color: white; border: none; padding: 0.55rem 1rem; border-radius: 0.75rem; font-weight: 800; font-size: 0.82rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
+                        <i class="ph ph-paper-plane-right"></i> {{ __('Submit Location Dispute to HR') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+            <button type="button" class="btn-back" style="flex: 1; padding: 0.9rem;" onclick="closePortalGpsModal()">{{ __('Cancel') }}</button>
+            <button type="button" id="btnConfirmGpsCheckin" class="btn-check" style="flex: 2; padding: 0.9rem;" disabled onclick="confirmGpsCheckinSubmit()">
+                <i class="ph ph-map-pin"></i> {{ __('Confirm Check-In') }}
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 function openLeaveModal() {
     document.getElementById('leaveModal').classList.add('active');
@@ -2255,33 +2316,192 @@ async function submitLeaveForm(e) {
         printWin.document.close();
     }
 
+    let portalGpsMap = null;
+    let portalGpsMarker = null;
+    let portalCampusCircle = null;
+    let portalCurrentPosition = null;
+
+    const CAMPUS_LAT = parseFloat(@json(\App\Models\Setting::getValue('campus_latitude', '11.5621')));
+    const CAMPUS_LNG = parseFloat(@json(\App\Models\Setting::getValue('campus_longitude', '104.8885')));
+    const ALLOWED_RADIUS = parseFloat(@json(\App\Models\Setting::getValue('campus_gps_radius', '1000')));
+    const IS_GEOFENCE_EXEMPT = @json(!empty($teacher->is_geofence_exempt));
+    const ENFORCE_GEOFENCE = @json(\App\Models\Setting::getValue('enforce_gps_geofence', 'true') === 'true');
+
+    function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371000; // meters
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    function openPortalGpsModal() {
+        document.getElementById('portalGpsModal').classList.add('active');
+        document.getElementById('gpsDisputeSection').style.display = 'none';
+        document.getElementById('btnConfirmGpsCheckin').disabled = true;
+        document.getElementById('gpsDistanceValue').innerText = '--';
+        document.getElementById('gpsAccuracyText').innerHTML = '<i class="ph ph-broadcast"></i> GPS: Locating...';
+        document.getElementById('gpsRadarStatusBadge').innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> Locating Satellite...';
+        document.getElementById('gpsRadarStatusBadge').style.background = 'rgba(245, 158, 11, 0.15)';
+        document.getElementById('gpsRadarStatusBadge').style.color = '#f59e0b';
+        document.getElementById('gpsRadarStatusBadge').style.borderColor = 'rgba(245, 158, 11, 0.3)';
+
+        initPortalGpsMap();
+    }
+
+    function closePortalGpsModal() {
+        document.getElementById('portalGpsModal').classList.remove('active');
+    }
+
+    function initPortalGpsMap() {
+        setTimeout(() => {
+            if (!portalGpsMap) {
+                portalGpsMap = L.map('portalGpsMap', { zoomControl: false }).setView([CAMPUS_LAT, CAMPUS_LNG], 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap'
+                }).addTo(portalGpsMap);
+
+                // Campus center marker
+                L.marker([CAMPUS_LAT, CAMPUS_LNG], {
+                    icon: L.divIcon({
+                        className: 'campus-center-icon',
+                        html: '<div style="background:#00d4a0; color:#fff; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:3px solid #fff; box-shadow:0 4px 10px rgba(0,0,0,0.3); font-size:1.1rem;"><i class="ph ph-buildings"></i></div>',
+                        iconSize: [34, 34], iconAnchor: [17, 17]
+                    })
+                }).addTo(portalGpsMap).bindPopup("<b>Campus Center</b>");
+
+                // Campus boundary circle
+                portalCampusCircle = L.circle([CAMPUS_LAT, CAMPUS_LNG], {
+                    color: '#00d4a0',
+                    fillColor: '#00d4a0',
+                    fillOpacity: 0.12,
+                    radius: ALLOWED_RADIUS
+                }).addTo(portalGpsMap);
+            } else {
+                portalGpsMap.invalidateSize();
+            }
+        }, 200);
+    }
+
     function triggerGpsCheckin() {
         if (!navigator.geolocation) {
-            alert("Geolocation is not supported by your browser.");
+            alert("Geolocation is not supported by your mobile browser.");
             return;
         }
-        if (confirm("Allow Mobile GPS Check-In with your current location coordinates?")) {
-            navigator.geolocation.getCurrentPosition(function(position) {
-                fetch("{{ route('portal.gps-checkin') }}", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude
+
+        openPortalGpsModal();
+
+        navigator.geolocation.getCurrentPosition(function(pos) {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            const accuracy = Math.round(pos.coords.accuracy || 0);
+            portalCurrentPosition = { lat, lng };
+
+            const distance = Math.round(calculateHaversineDistance(lat, lng, CAMPUS_LAT, CAMPUS_LNG));
+
+            document.getElementById('gpsDistanceValue').innerText = distance + ' m';
+            document.getElementById('gpsAccuracyText').innerHTML = `<i class="ph ph-broadcast"></i> GPS Accuracy: ±${accuracy}m`;
+
+            const isWithin = distance <= ALLOWED_RADIUS;
+            const canCheckin = isWithin || !ENFORCE_GEOFENCE || IS_GEOFENCE_EXEMPT;
+
+            const badge = document.getElementById('gpsRadarStatusBadge');
+            if (canCheckin) {
+                badge.innerHTML = IS_GEOFENCE_EXEMPT 
+                    ? '<i class="ph ph-shield-check"></i> Exempt Person' 
+                    : '<i class="ph ph-check-circle"></i> Inside Geofence';
+                badge.style.background = 'rgba(16, 185, 129, 0.15)';
+                badge.style.color = '#10b981';
+                badge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                document.getElementById('gpsDisputeSection').style.display = 'none';
+                document.getElementById('btnConfirmGpsCheckin').disabled = false;
+            } else {
+                badge.innerHTML = '<i class="ph ph-warning-circle"></i> Outside Geofence Boundary';
+                badge.style.background = 'rgba(239, 68, 68, 0.15)';
+                badge.style.color = '#ef4444';
+                badge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                document.getElementById('gpsDisputeSection').style.display = 'block';
+                document.getElementById('btnConfirmGpsCheckin').disabled = true;
+            }
+
+            // Map pin update
+            if (portalGpsMap) {
+                if (portalGpsMarker) portalGpsMap.removeLayer(portalGpsMarker);
+
+                const pinColor = canCheckin ? '#10b981' : '#ef4444';
+                portalGpsMarker = L.marker([lat, lng], {
+                    icon: L.divIcon({
+                        className: 'user-gps-icon',
+                        html: `<div style="background:${pinColor}; color:#fff; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:3px solid #fff; box-shadow:0 4px 10px rgba(0,0,0,0.3); font-size:1rem;"><i class="ph ph-user"></i></div>`,
+                        iconSize: [30, 30], iconAnchor: [15, 15]
                     })
-                }).then(r => r.json()).then(d => {
-                    alert(d.message);
-                    if (d.success) location.reload();
-                }).catch(err => {
-                    alert("GPS Check-in error: " + err);
-                });
-            }, function(err) {
-                alert("GPS Geolocation Error: " + err.message);
-            }, { enableHighAccuracy: true });
+                }).addTo(portalGpsMap).bindPopup(`<b>Your Location</b><br>${distance}m to campus center`).openPopup();
+
+                const bounds = L.latLngBounds([[CAMPUS_LAT, CAMPUS_LNG], [lat, lng]]);
+                portalGpsMap.fitBounds(bounds, { padding: [40, 40] });
+            }
+
+        }, function(err) {
+            alert("GPS Error: " + err.message + ". Please enable device location services.");
+            closePortalGpsModal();
+        }, { enableHighAccuracy: true, timeout: 15000 });
+    }
+
+    function confirmGpsCheckinSubmit() {
+        if (!portalCurrentPosition) return;
+        const btn = document.getElementById('btnConfirmGpsCheckin');
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> Submitting...';
+
+        fetch("{{ route('portal.gps-checkin') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                latitude: portalCurrentPosition.lat,
+                longitude: portalCurrentPosition.lng
+            })
+        }).then(r => r.json()).then(d => {
+            if (d.success) {
+                alert(d.message);
+                closePortalGpsModal();
+                location.reload();
+            } else {
+                alert(d.message);
+                if (d.can_dispute) {
+                    document.getElementById('gpsDisputeSection').style.display = 'block';
+                }
+            }
+        }).catch(err => {
+            alert("GPS Check-in error: " + err);
+        }).finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        });
+    }
+
+    function triggerLocationDispute() {
+        closePortalGpsModal();
+        openLeaveModal();
+        // Pre-fill dispute details in leave modal
+        const leaveForm = document.getElementById('leaveForm');
+        if (leaveForm) {
+            const selectType = leaveForm.querySelector('select[name="leave_type"]');
+            if (selectType) selectType.value = 'mission';
+            
+            const textReason = leaveForm.querySelector('textarea[name="reason"]');
+            if (textReason && portalCurrentPosition) {
+                const dist = document.getElementById('gpsDistanceValue').innerText;
+                textReason.value = `[GPS Location Dispute] Attempted Mobile GPS Check-In at (${portalCurrentPosition.lat.toFixed(5)}, ${portalCurrentPosition.lng.toFixed(5)}) - ${dist} away from campus. Reason: ...`;
+            }
         }
     }
 </script>

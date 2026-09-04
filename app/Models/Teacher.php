@@ -19,8 +19,13 @@ class Teacher extends Model
         'position',
         'status',
         'telegram_chat_id',
+        'is_geofence_exempt',
         'portal_pin',
         'face_descriptor',
+    ];
+
+    protected $casts = [
+        'is_geofence_exempt' => 'boolean',
     ];
 
     protected $hidden = [

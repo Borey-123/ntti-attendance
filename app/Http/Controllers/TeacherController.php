@@ -52,8 +52,13 @@ class TeacherController extends Controller
             'phone' => 'nullable|string|unique:teachers,phone',
             'position' => 'nullable|string',
             'telegram_chat_id' => 'nullable|string|max:255',
+            'is_geofence_exempt' => 'nullable|boolean',
             'photo' => 'nullable|image|max:2048',
         ]);
+
+        if ($request->has('is_geofence_exempt')) {
+            $validated['is_geofence_exempt'] = filter_var($request->is_geofence_exempt, FILTER_VALIDATE_BOOLEAN);
+        }
 
         if ($request->hasFile('photo')) {
             $file = $request->file('photo');
@@ -94,8 +99,13 @@ class TeacherController extends Controller
             'position' => 'nullable|string',
             'status' => 'in:active,inactive',
             'telegram_chat_id' => 'nullable|string|max:255',
+            'is_geofence_exempt' => 'nullable|boolean',
             'photo' => 'nullable|image|max:2048',
         ]);
+
+        if ($request->has('is_geofence_exempt')) {
+            $validated['is_geofence_exempt'] = filter_var($request->is_geofence_exempt, FILTER_VALIDATE_BOOLEAN);
+        }
 
         if ($request->remove_photo) {
             if ($teacher->photo) {

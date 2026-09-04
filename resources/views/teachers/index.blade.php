@@ -708,6 +708,9 @@
          data-search="{{ strtolower($teacher->name . ' ' . ($teacher->name_kh ?? '') . ' ' . $teacher->employee_id . ' ' . ($teacher->position ?? '') . ' ' . $teacher->department) }}">
         <div class="t-card-banner"></div>
         <div class="status-badge-float">
+            @if($teacher->is_geofence_exempt)
+                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);" title="{{ __('Exempt from GPS Geofence') }}"><i class="ph ph-map-pin-line"></i> GPS Exempt</span>
+            @endif
             @if($teacher->telegram_chat_id)
                 <span class="badge" style="background: rgba(0,136,204,0.15); color: #0088cc; border: 1px solid rgba(0,136,204,0.3);" title="{{ __('Telegram Connected') }}"><i class="ph ph-telegram-logo"></i></span>
             @endif
@@ -861,6 +864,12 @@
                 <label>{{ __('Profile Photo') }}</label>
                 <input type="file" name="photo" id="add_photo" class="form-control" accept="image/*" onchange="initCropper(this)">
             </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-weight: 700; color: var(--text-primary);">
+                    <input type="checkbox" name="is_geofence_exempt" value="1" style="width: 18px; height: 18px; accent-color: var(--primary);">
+                    <span><i class="ph ph-map-pin-line" style="color: var(--primary); margin-right: 0.2rem;"></i> {{ __('Exempt from Campus GPS Geofence (Allow Off-Campus Check-In)') }}</span>
+                </label>
+            </div>
             <div class="d-flex justify-between align-center mt-4">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('addTeacherModal')">{{ __('Cancel') }}</button>
                 <button type="submit" class="btn btn-primary" style="width: auto;">{{ __('Save Teacher') }}</button>
@@ -971,6 +980,12 @@
                     <option value="active">{{ __('Active') }}</option>
                     <option value="inactive">{{ __('Inactive') }}</option>
                 </select>
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-weight: 700; color: var(--text-primary);">
+                    <input type="checkbox" id="edit_is_geofence_exempt" name="is_geofence_exempt" value="1" style="width: 18px; height: 18px; accent-color: var(--primary);">
+                    <span><i class="ph ph-map-pin-line" style="color: var(--primary); margin-right: 0.2rem;"></i> {{ __('Exempt from Campus GPS Geofence (Allow Off-Campus Check-In)') }}</span>
+                </label>
             </div>
             <div class="d-flex justify-between align-center mt-4">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('editTeacherModal')">{{ __('Cancel') }}</button>
@@ -1174,6 +1189,7 @@
             document.getElementById('edit_position').value = teacher.position || '';
             document.getElementById('edit_telegram_chat_id').value = teacher.telegram_chat_id || '';
             document.getElementById('edit_status').value = teacher.status;
+            document.getElementById('edit_is_geofence_exempt').checked = !!teacher.is_geofence_exempt;
 
             // Photo preview
             const editForm = document.getElementById('editTeacherForm');

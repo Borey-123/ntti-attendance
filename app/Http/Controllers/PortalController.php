@@ -414,11 +414,17 @@ class PortalController extends Controller
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
         $distance = $earthRadius * $c;
 
+        $isExempt = !empty($teacher->is_geofence_exempt);
         $gpsRestricted = \App\Models\Setting::getValue('enforce_gps_geofence', 'true') === 'true';
 
-        if ($gpsRestricted && $distance > $allowedRadiusMeters) {
+        if ($gpsRestricted && !$isExempt && $distance > $allowedRadiusMeters) {
             return response()->json([
                 'success' => false,
+                'can_dispute' => true,
+                'distance' => round($distance),
+                'allowed_radius' => round($allowedRadiusMeters),
+                'latitude' => $lat,
+                'longitude' => $lng,
                 'message' => __('GPS Check-in Failed: You are outside the allowed campus location radius (:dist m away).', ['dist' => round($distance)])
             ], 422);
         }
@@ -455,11 +461,44 @@ class PortalController extends Controller
 
         $attendance->save();
 
-        \App\Models\SecurityLog::recordPortal('GPS Check-in', 'Teacher: ' . $teacher->name, "Coordinates: {$lat}, {$lng} (Distance: " . round($distance) . "m)");
+        $distNote = $isExempt ? "Exempt Person (Distance: " . round($distance) . "m)" : "Distance: " . round($distance) . "m";
+        \App\Models\SecurityLog::recordPortal('GPS Check-in', 'Teacher: ' . $teacher->name, "Coordinates: {$lat}, {$lng} ({$distNote})");
+
+        // Send Telegram Notification if teacher has linked Telegram
+        if (!empty($teacher->telegram_chat_id)) {
+            $botToken = \App\Models\Setting::getValue('telegram_bot_token');
+            if ($botToken) {
+                try {
+                    $mapsUrl = "https://maps.google.com/?q={$lat},{$lng}";
+                    $statusTxt = $isExempt ? "✅ Successful (Geofence Exempt)" : "✅ Successful (Within Boundary)";
+                    $msgText = "📍 *Mobile GPS Check-in Verified*\n"
+                             . "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n"
+                             . "👤 *Teacher:* {$teacher->name}\n"
+                             . "🕒 *Time:* " . now()->format('h:i:s A') . "\n"
+                             . "📏 *Distance to Campus:* " . round($distance) . "m\n"
+                             . "🛡️ *Status:* {$statusTxt}\n\n"
+                             . "🗺️ [View Pin on Google Maps]({$mapsUrl})";
+
+                    \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+                        'chat_id' => $teacher->telegram_chat_id,
+                        'text' => $msgText,
+                        'parse_mode' => 'Markdown',
+                        'disable_web_page_preview' => false
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Telegram GPS alert failed: ' . $e->getMessage());
+                }
+            }
+        }
 
         return response()->json([
             'success' => true,
-            'message' => __('GPS Check-in recorded successfully! Distance to campus: :dist m', ['dist' => round($distance)]),
+            'message' => $isExempt 
+                ? __('GPS Check-in recorded! (Geofence Exempt - :dist m away)', ['dist' => round($distance)])
+                : __('GPS Check-in recorded successfully! Distance to campus: :dist m', ['dist' => round($distance)]),
+            'distance' => round($distance),
+            'latitude' => $lat,
+            'longitude' => $lng,
             'record' => $attendance
         ]);
     }
