@@ -549,6 +549,7 @@ class AttendanceController extends Controller
         $record->update([
             $inCol     => $timeString,
             $statusCol => $status,
+            'checkin_method' => 'card',
         ]);
 
         $tgSent = $this->sendTelegramNotification($teacher, 'check-in', $shiftType, $now->format('h:i:s A'), $status);
@@ -743,6 +744,7 @@ class AttendanceController extends Controller
         $record->update([
             $inCol    => $timeString,
             $statusCol => $status,
+            'checkin_method' => $request->checkin_method ?? 'manual',
         ]);
 
         $tgSent = $this->sendTelegramNotification($teacher, 'check-in', $shiftType, $now->format('h:i:s A'), $status);

@@ -538,10 +538,40 @@
                         @endif
                     </td>
                     <td>
-                        @if($record->rfid_uid)
-                            <span class="badge-pill info"><i class="ph ph-identification-card"></i> RFID</span>
+                        @php
+                            $method = $record->checkin_method;
+                            if (!$method) {
+                                if ($record->latitude && $record->longitude) $method = 'gps';
+                                elseif ($record->rfid_uid === 'PORTAL') $method = 'portal';
+                                elseif ($record->rfid_uid === 'Manual' || $record->rfid_uid === 'MANUAL') $method = 'manual';
+                                elseif ($record->rfid_uid) $method = 'card';
+                                else $method = 'manual';
+                            }
+                        @endphp
+                        @if($method === 'gps')
+                            <span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight:800;" title="GPS Lat: {{ $record->latitude }}, Lng: {{ $record->longitude }}">
+                                <i class="ph ph-map-pin"></i> GPS Check-In
+                            </span>
+                        @elseif($method === 'face')
+                            <span class="badge-pill" style="background: rgba(236, 72, 153, 0.15); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.3); font-weight:800;">
+                                <i class="ph ph-bounding-box"></i> Face Scan
+                            </span>
+                        @elseif($method === 'qr')
+                            <span class="badge-pill" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); font-weight:800;">
+                                <i class="ph ph-qr-code"></i> QR Code
+                            </span>
+                        @elseif($method === 'portal')
+                            <span class="badge-pill" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.3); font-weight:800;">
+                                <i class="ph ph-globe"></i> Portal
+                            </span>
+                        @elseif($method === 'card')
+                            <span class="badge-pill info" style="font-weight:800;">
+                                <i class="ph ph-identification-card"></i> RFID
+                            </span>
                         @else
-                            <span class="badge-pill secondary"><i class="ph ph-hand-tap"></i> Manual</span>
+                            <span class="badge-pill secondary" style="font-weight:800;">
+                                <i class="ph ph-hand-tap"></i> Manual
+                            </span>
                         @endif
                     </td>
                     <td>
@@ -1631,11 +1661,27 @@
 
     // ── Build a table row (present/late) ──────────
     function buildRow(r, index = 0, animate = false) {
-        let sourceBadge = `<span class="badge-pill secondary"><i class="ph ph-hand-tap"></i> {{ __('Manual') }}</span>`;
-        if (r.rfid_uid === 'PORTAL') {
-            sourceBadge = `<span class="badge-pill" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;"><i class="ph ph-globe"></i> {{ __('Portal') }}</span>`;
-        } else if (r.rfid_uid && r.rfid_uid !== 'MANUAL') {
-            sourceBadge = `<span class="badge-pill info"><i class="ph ph-identification-card"></i> RFID</span>`;
+        let method = r.checkin_method;
+        if (!method) {
+            if (r.latitude && r.longitude) method = 'gps';
+            else if (r.rfid_uid === 'PORTAL') method = 'portal';
+            else if (r.rfid_uid === 'MANUAL' || r.rfid_uid === 'Manual') method = 'manual';
+            else if (r.rfid_uid) method = 'card';
+            else method = 'manual';
+        }
+
+        let sourceBadge = `<span class="badge-pill secondary" style="font-weight:800;"><i class="ph ph-hand-tap"></i> {{ __('Manual') }}</span>`;
+        if (method === 'gps') {
+            const locTitle = (r.latitude && r.longitude) ? `title="GPS Lat: ${r.latitude}, Lng: ${r.longitude}"` : '';
+            sourceBadge = `<span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight:800;" ${locTitle}><i class="ph ph-map-pin"></i> GPS Check-In</span>`;
+        } else if (method === 'face') {
+            sourceBadge = `<span class="badge-pill" style="background: rgba(236, 72, 153, 0.15); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.3); font-weight:800;"><i class="ph ph-bounding-box"></i> Face Scan</span>`;
+        } else if (method === 'qr') {
+            sourceBadge = `<span class="badge-pill" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); font-weight:800;"><i class="ph ph-qr-code"></i> QR Code</span>`;
+        } else if (method === 'portal') {
+            sourceBadge = `<span class="badge-pill" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.3); font-weight:800;"><i class="ph ph-globe"></i> Portal</span>`;
+        } else if (method === 'card') {
+            sourceBadge = `<span class="badge-pill info" style="font-weight:800;"><i class="ph ph-identification-card"></i> RFID</span>`;
         }
 
         const initial = r.teacher && r.teacher.name ? r.teacher.name.charAt(0).toUpperCase() : '?';

@@ -121,7 +121,13 @@ class ReportController extends Controller
                 }
 
                 $source = 'RFID';
-                if ($r->rfid_uid === 'Manual') {
+                if ($r->checkin_method === 'gps' || ($r->latitude && $r->longitude)) {
+                    $source = 'GPS Check-In';
+                } elseif ($r->checkin_method === 'face') {
+                    $source = 'Face Scan';
+                } elseif ($r->checkin_method === 'qr') {
+                    $source = 'QR Code';
+                } elseif ($r->checkin_method === 'manual' || $r->rfid_uid === 'Manual' || $r->rfid_uid === 'MANUAL') {
                     $source = 'Manual';
                 } elseif (str_contains($r->rfid_uid ?? '', 'Edited')) {
                     $source = 'Edited';
@@ -681,7 +687,13 @@ class ReportController extends Controller
                 }
                 
                 $source = 'RFID';
-                if ($record->rfid_uid === 'Manual') {
+                if ($record->checkin_method === 'gps' || ($record->latitude && $record->longitude)) {
+                    $source = 'GPS Check-In';
+                } elseif ($record->checkin_method === 'face') {
+                    $source = 'Face Scan';
+                } elseif ($record->checkin_method === 'qr') {
+                    $source = 'QR Code';
+                } elseif ($record->checkin_method === 'manual' || $record->rfid_uid === 'Manual' || $record->rfid_uid === 'MANUAL') {
                     $source = 'Manual';
                 } elseif (str_contains($record->rfid_uid ?? '', 'Edited')) {
                     $source = 'Edited';

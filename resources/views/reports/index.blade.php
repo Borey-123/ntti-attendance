@@ -1150,12 +1150,18 @@ async function loadDaily(params) {
                             const src = r.source || 'RFID';
                             const note = r.manual_note ? ` title="${r.manual_note}"` : '';
                             const historyIcon = `<i class="ph ph-clock-counter-clockwise" style="cursor:pointer; color:var(--primary); margin-left:0.25rem;" onclick="viewHistory(${r.id})" title="{{ __('View Edit History') }}"></i>`;
-                            if (src === 'Manual') {
-                                return `<span style="font-size:0.72rem;font-weight:800;color:var(--success,#10b981);background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);padding:0.2rem 0.55rem;border-radius:0.5rem;display:inline-flex;align-items:center;gap:0.3rem;"${note}><i class="ph ph-pencil-simple-line"></i> {{ __("Admin") }} ${historyIcon}</span>`;
+                            if (src === 'GPS Check-In' || src === 'GPS') {
+                                return `<span style="font-size:0.72rem;font-weight:800;color:#10b981;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.28);padding:0.2rem 0.55rem;border-radius:0.5rem;display:inline-flex;align-items:center;gap:0.3rem;"${note}><i class="ph ph-map-pin"></i> GPS Check-In ${historyIcon}</span>`;
+                            } else if (src === 'Face Scan') {
+                                return `<span style="font-size:0.72rem;font-weight:800;color:#ec4899;background:rgba(236,72,153,0.12);border:1px solid rgba(236,72,153,0.28);padding:0.2rem 0.55rem;border-radius:0.5rem;display:inline-flex;align-items:center;gap:0.3rem;"${note}><i class="ph ph-bounding-box"></i> Face Scan ${historyIcon}</span>`;
+                            } else if (src === 'QR Code') {
+                                return `<span style="font-size:0.72rem;font-weight:800;color:#a855f7;background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.28);padding:0.2rem 0.55rem;border-radius:0.5rem;display:inline-flex;align-items:center;gap:0.3rem;"${note}><i class="ph ph-qr-code"></i> QR Code ${historyIcon}</span>`;
+                            } else if (src === 'Manual') {
+                                return `<span style="font-size:0.72rem;font-weight:800;color:#10b981;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);padding:0.2rem 0.55rem;border-radius:0.5rem;display:inline-flex;align-items:center;gap:0.3rem;"${note}><i class="ph ph-pencil-simple-line"></i> {{ __("Manual") }} ${historyIcon}</span>`;
                             } else if (src.includes('Edited')) {
                                 return `<span style="font-size:0.72rem;font-weight:700;color:var(--warning,#f59e0b);background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);padding:0.2rem 0.55rem;border-radius:0.5rem;display:inline-flex;align-items:center;gap:0.3rem;"${note}><i class="ph ph-pencil-simple"></i> {{ __("Edited") }} ${historyIcon}</span>`;
                             }
-                            return `<span style="font-size:0.72rem;font-weight:700;color:var(--text-secondary);background:rgba(255,255,255,0.05);padding:0.2rem 0.5rem;border-radius:0.5rem;">${src}</span>`;
+                            return `<span style="font-size:0.72rem;font-weight:700;color:#3b82f6;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);padding:0.2rem 0.5rem;border-radius:0.5rem;display:inline-flex;align-items:center;gap:0.3rem;"${note}><i class="ph ph-identification-card"></i> RFID ${historyIcon}</span>`;
                         })()}
                     </td>
                     <td class="col-action">
