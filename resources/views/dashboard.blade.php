@@ -540,12 +540,12 @@
                     <td>
                         @php
                             $method = $record->checkin_method;
-                            if (!$method) {
-                                if ($record->latitude && $record->longitude) $method = 'gps';
-                                elseif ($record->rfid_uid === 'PORTAL') $method = 'portal';
+                            if ($record->latitude && $record->longitude) {
+                                $method = 'gps';
+                            } elseif (!$method || $method === 'card') {
+                                if ($record->rfid_uid === 'PORTAL') $method = 'portal';
                                 elseif ($record->rfid_uid === 'Manual' || $record->rfid_uid === 'MANUAL') $method = 'manual';
-                                elseif ($record->rfid_uid) $method = 'card';
-                                else $method = 'manual';
+                                elseif ($record->rfid_uid && $record->rfid_uid !== 'Manual') $method = 'card';
                             }
                         @endphp
                         @if($method === 'gps')
@@ -1662,12 +1662,12 @@
     // ── Build a table row (present/late) ──────────
     function buildRow(r, index = 0, animate = false) {
         let method = r.checkin_method;
-        if (!method) {
-            if (r.latitude && r.longitude) method = 'gps';
-            else if (r.rfid_uid === 'PORTAL') method = 'portal';
+        if (r.latitude && r.longitude) {
+            method = 'gps';
+        } else if (!method || method === 'card') {
+            if (r.rfid_uid === 'PORTAL') method = 'portal';
             else if (r.rfid_uid === 'MANUAL' || r.rfid_uid === 'Manual') method = 'manual';
-            else if (r.rfid_uid) method = 'card';
-            else method = 'manual';
+            else if (r.rfid_uid && r.rfid_uid !== 'MANUAL') method = 'card';
         }
 
         let sourceBadge = `<span class="badge-pill secondary" style="font-weight:800;"><i class="ph ph-hand-tap"></i> {{ __('Manual') }}</span>`;
