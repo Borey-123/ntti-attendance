@@ -149,6 +149,15 @@ class SettingController extends Controller
                 Setting::updateOrCreate(['key' => 'auto_checkout_delay'], ['value' => $request->auto_checkout_delay]);
             }
 
+            if ($request->has('campus_latitude')) {
+                Setting::updateOrCreate(['key' => 'campus_latitude'], ['value' => $request->campus_latitude]);
+                Setting::updateOrCreate(['key' => 'campus_longitude'], ['value' => $request->campus_longitude ?? '104.8885']);
+                Setting::updateOrCreate(['key' => 'campus_gps_radius'], ['value' => $request->campus_gps_radius ?? '1000']);
+                
+                $enforceGps = ($request->has('enforce_gps_geofence') && in_array($request->enforce_gps_geofence, ['true', '1', 'on'])) ? 'true' : 'false';
+                Setting::updateOrCreate(['key' => 'enforce_gps_geofence'], ['value' => $enforceGps]);
+            }
+
             if ($request->has('telegram_bot_token')) {
                 $token = $request->telegram_bot_token;
                 Setting::updateOrCreate(['key' => 'telegram_bot_token'], ['value' => $token]);

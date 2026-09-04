@@ -4,6 +4,7 @@
 
 @push('styles')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
 /* ── Settings Hub Layout ── */
 .settings-container {
@@ -590,20 +591,45 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                     <hr style="border: 0; border-top: 1px solid var(--border); margin: 2.5rem 0;">
 
                     <h3 style="font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 1.5rem;"><i class="ph ph-map-pin" style="margin-right:0.4rem;"></i> {{ __('Campus GPS Geofencing') }}</h3>
+                    
+                    <div style="background: rgba(var(--primary-rgb), 0.04); border: 1px dashed rgba(var(--primary-rgb), 0.2); border-radius: 1rem; padding: 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="ph ph-info" style="font-size: 1.5rem; color: var(--primary);"></i>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);">
+                                {{ __('Geofencing restricts mobile check-ins to teachers within campus boundaries. Pick location on map or auto-detect.') }}
+                            </span>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button type="button" class="btn-secondary" onclick="detectGPSLocation()" style="font-size: 0.8rem; padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.4rem;">
+                                <i class="ph ph-crosshair" style="font-size: 1rem;"></i> {{ __('Detect My Location') }}
+                            </button>
+                            <a id="gmapsLink" href="#" target="_blank" class="btn-secondary" style="font-size: 0.8rem; padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.4rem; text-decoration: none;">
+                                <i class="ph ph-arrow-square-out" style="font-size: 1rem;"></i> {{ __('Google Maps') }}
+                            </a>
+                        </div>
+                    </div>
+
                     <div class="form-grid">
                         <div class="form-group">
                             <label>{{ __('Campus Latitude') }}</label>
-                            <input type="text" name="campus_latitude" class="form-control" value="{{ \App\Models\Setting::getValue('campus_latitude', '11.5621') }}">
+                            <input type="text" id="campus_latitude" name="campus_latitude" class="form-control" value="{{ \App\Models\Setting::getValue('campus_latitude', '11.5621') }}" oninput="updateMapFromInputs()">
                         </div>
                         <div class="form-group">
                             <label>{{ __('Campus Longitude') }}</label>
-                            <input type="text" name="campus_longitude" class="form-control" value="{{ \App\Models\Setting::getValue('campus_longitude', '104.8885') }}">
+                            <input type="text" id="campus_longitude" name="campus_longitude" class="form-control" value="{{ \App\Models\Setting::getValue('campus_longitude', '104.8885') }}" oninput="updateMapFromInputs()">
                         </div>
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label>{{ __('Allowed Radius (Meters)') }}</label>
-                            <input type="number" name="campus_gps_radius" class="form-control" value="{{ \App\Models\Setting::getValue('campus_gps_radius', '1000') }}">
+                            <input type="number" id="campus_gps_radius" name="campus_gps_radius" class="form-control" value="{{ \App\Models\Setting::getValue('campus_gps_radius', '1000') }}" oninput="updateMapFromInputs()">
+                            <div style="display: flex; gap: 0.4rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                                <button type="button" class="btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" onclick="setRadiusPreset(100)">100m</button>
+                                <button type="button" class="btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" onclick="setRadiusPreset(300)">300m</button>
+                                <button type="button" class="btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" onclick="setRadiusPreset(500)">500m</button>
+                                <button type="button" class="btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" onclick="setRadiusPreset(1000)">1km</button>
+                                <button type="button" class="btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" onclick="setRadiusPreset(2000)">2km</button>
+                            </div>
                         </div>
                         <div class="form-group" style="display:flex; align-items:center; justify-content:space-between; padding-top: 1.5rem;">
                             <div>
@@ -615,6 +641,17 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                                 <span class="slider"></span>
                             </label>
                         </div>
+                    </div>
+
+                    <!-- Interactive Geofence Map Picker -->
+                    <div style="margin-top: 1rem; margin-bottom: 2rem;">
+                        <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; display: block;">
+                            <i class="ph ph-map-trifold" style="margin-right: 0.3rem;"></i> {{ __('Interactive Geofence Location Picker') }}
+                        </label>
+                        <div id="geofenceMap" style="height: 320px; width: 100%; border-radius: 1rem; border: 1px solid var(--border); overflow: hidden; z-index: 1;"></div>
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                            <i class="ph ph-hand-tap" style="margin-right: 0.2rem;"></i> {{ __('Click anywhere on the map or drag the marker to instantly set the Campus Center.') }}
+                        </p>
                     </div>
 
                     <hr style="border: 0; border-top: 1px solid var(--border); margin: 2.5rem 0;">
@@ -1549,6 +1586,144 @@ function selectLiveStyle(style) {
     const saved = localStorage.getItem('live_radar_style') || 'radar';
     selectLiveStyle(saved);
 })();
+</script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let geofenceMap = null;
+let campusMarker = null;
+let geofenceCircle = null;
+
+function initGeofenceMap() {
+    const latInput = document.getElementById('campus_latitude');
+    const lngInput = document.getElementById('campus_longitude');
+    const radiusInput = document.getElementById('campus_gps_radius');
+
+    if (!latInput || !lngInput || !document.getElementById('geofenceMap')) return;
+
+    let lat = parseFloat(latInput.value) || 11.5621;
+    let lng = parseFloat(lngInput.value) || 104.8885;
+    let radius = parseFloat(radiusInput.value) || 1000;
+
+    updateGmapsLink(lat, lng);
+
+    if (typeof L === 'undefined') return;
+
+    if (geofenceMap) {
+        geofenceMap.invalidateSize();
+        return;
+    }
+
+    geofenceMap = L.map('geofenceMap').setView([lat, lng], 15);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(geofenceMap);
+
+    campusMarker = L.marker([lat, lng], { draggable: true }).addTo(geofenceMap);
+
+    geofenceCircle = L.circle([lat, lng], {
+        radius: radius,
+        color: '#00d4a0',
+        fillColor: '#00d4a0',
+        fillOpacity: 0.15,
+        weight: 2
+    }).addTo(geofenceMap);
+
+    campusMarker.on('dragend', function (e) {
+        const coord = e.target.getLatLng();
+        setMapCoordinates(coord.lat, coord.lng);
+    });
+
+    geofenceMap.on('click', function (e) {
+        setMapCoordinates(e.latlng.lat, e.latlng.lng);
+    });
+
+    document.querySelectorAll('.settings-nav-item').forEach(item => {
+        item.addEventListener('click', function () {
+            if (this.getAttribute('data-target') === 'section-security') {
+                setTimeout(() => {
+                    if (geofenceMap) geofenceMap.invalidateSize();
+                }, 250);
+            }
+        });
+    });
+}
+
+function setMapCoordinates(lat, lng) {
+    const latFixed = parseFloat(lat).toFixed(6);
+    const lngFixed = parseFloat(lng).toFixed(6);
+
+    document.getElementById('campus_latitude').value = latFixed;
+    document.getElementById('campus_longitude').value = lngFixed;
+
+    if (campusMarker) campusMarker.setLatLng([latFixed, lngFixed]);
+    if (geofenceCircle) geofenceCircle.setLatLng([latFixed, lngFixed]);
+
+    updateGmapsLink(latFixed, lngFixed);
+}
+
+function updateMapFromInputs() {
+    const lat = parseFloat(document.getElementById('campus_latitude').value) || 11.5621;
+    const lng = parseFloat(document.getElementById('campus_longitude').value) || 104.8885;
+    const radius = parseFloat(document.getElementById('campus_gps_radius').value) || 1000;
+
+    if (campusMarker) campusMarker.setLatLng([lat, lng]);
+    if (geofenceCircle) {
+        geofenceCircle.setLatLng([lat, lng]);
+        geofenceCircle.setRadius(radius);
+    }
+    if (geofenceMap) geofenceMap.setView([lat, lng], geofenceMap.getZoom());
+
+    updateGmapsLink(lat, lng);
+}
+
+function setRadiusPreset(val) {
+    document.getElementById('campus_gps_radius').value = val;
+    updateMapFromInputs();
+}
+
+function updateGmapsLink(lat, lng) {
+    const link = document.getElementById('gmapsLink');
+    if (link) {
+        link.href = `https://www.google.com/maps?q=${lat},${lng}`;
+    }
+}
+
+function detectGPSLocation() {
+    if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser.");
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            setMapCoordinates(lat, lng);
+            if (geofenceMap) geofenceMap.setView([lat, lng], 16);
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Location Detected!',
+                    text: `Updated Campus coordinates to ${lat.toFixed(5)}, ${lng.toFixed(5)}`,
+                    timer: 2500,
+                    showConfirmButton: false
+                });
+            } else {
+                alert(`Location set to: ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+            }
+        },
+        (error) => {
+            alert("Unable to retrieve location: " + error.message);
+        },
+        { enableHighAccuracy: true }
+    );
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    setTimeout(initGeofenceMap, 300);
+});
 </script>
 @endpush
 
