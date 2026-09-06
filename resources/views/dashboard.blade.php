@@ -540,7 +540,9 @@
                     <td>
                         @php
                             $method = $record->checkin_method;
-                            if ($record->latitude && $record->longitude) {
+                            if ($method === 'dynamic_qr' || $method === 'screen_qr' || $method === 'manual') {
+                                $method = 'manual';
+                            } elseif ($record->latitude && $record->longitude) {
                                 $method = 'gps';
                             } elseif ($method === 'face') {
                                 $method = 'face';
@@ -556,27 +558,27 @@
                         @endphp
                         @if($method === 'gps')
                             <span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight:800;" title="GPS Lat: {{ $record->latitude }}, Lng: {{ $record->longitude }}">
-                                <i class="ph ph-map-pin"></i> GPS Check-In
+                                <i class="ph ph-map-pin"></i> {{ __('GPS Check-In') }}
                             </span>
                         @elseif($method === 'face')
                             <span class="badge-pill" style="background: rgba(236, 72, 153, 0.15); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.3); font-weight:800;">
-                                <i class="ph ph-bounding-box"></i> Face Scan
+                                <i class="ph ph-bounding-box"></i> {{ __('Face Scan') }}
                             </span>
                         @elseif($method === 'qr')
                             <span class="badge-pill" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); font-weight:800;">
-                                <i class="ph ph-qr-code"></i> QR Code
+                                <i class="ph ph-qr-code"></i> {{ __('QR Code') }}
                             </span>
                         @elseif($method === 'portal')
                             <span class="badge-pill" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.3); font-weight:800;">
-                                <i class="ph ph-globe"></i> Portal
+                                <i class="ph ph-globe"></i> {{ __('Portal') }}
                             </span>
                         @elseif($method === 'card')
                             <span class="badge-pill info" style="font-weight:800;">
-                                <i class="ph ph-identification-card"></i> RFID
+                                <i class="ph ph-identification-card"></i> {{ __('RFID') }}
                             </span>
                         @else
                             <span class="badge-pill secondary" style="font-weight:800;">
-                                <i class="ph ph-hand-tap"></i> Manual
+                                <i class="ph ph-hand-tap"></i> {{ __('Manual') }}
                             </span>
                         @endif
                     </td>
@@ -1668,7 +1670,9 @@
     // ── Build a table row (present/late) ──────────
     function buildRow(r, index = 0, animate = false) {
         let method = r.checkin_method;
-        if (r.latitude && r.longitude) {
+        if (method === 'dynamic_qr' || method === 'screen_qr' || method === 'manual') {
+            method = 'manual';
+        } else if (r.latitude && r.longitude) {
             method = 'gps';
         } else if (method === 'face') {
             method = 'face';
@@ -1685,15 +1689,15 @@
         let sourceBadge = `<span class="badge-pill secondary" style="font-weight:800;"><i class="ph ph-hand-tap"></i> {{ __('Manual') }}</span>`;
         if (method === 'gps') {
             const locTitle = (r.latitude && r.longitude) ? `title="GPS Lat: ${r.latitude}, Lng: ${r.longitude}"` : '';
-            sourceBadge = `<span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight:800;" ${locTitle}><i class="ph ph-map-pin"></i> GPS Check-In</span>`;
+            sourceBadge = `<span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight:800;" ${locTitle}><i class="ph ph-map-pin"></i> {{ __('GPS Check-In') }}</span>`;
         } else if (method === 'face') {
-            sourceBadge = `<span class="badge-pill" style="background: rgba(236, 72, 153, 0.15); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.3); font-weight:800;"><i class="ph ph-bounding-box"></i> Face Scan</span>`;
+            sourceBadge = `<span class="badge-pill" style="background: rgba(236, 72, 153, 0.15); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.3); font-weight:800;"><i class="ph ph-bounding-box"></i> {{ __('Face Scan') }}</span>`;
         } else if (method === 'qr') {
-            sourceBadge = `<span class="badge-pill" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); font-weight:800;"><i class="ph ph-qr-code"></i> QR Code</span>`;
+            sourceBadge = `<span class="badge-pill" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); font-weight:800;"><i class="ph ph-qr-code"></i> {{ __('QR Code') }}</span>`;
         } else if (method === 'portal') {
-            sourceBadge = `<span class="badge-pill" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.3); font-weight:800;"><i class="ph ph-globe"></i> Portal</span>`;
+            sourceBadge = `<span class="badge-pill" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.3); font-weight:800;"><i class="ph ph-globe"></i> {{ __('Portal') }}</span>`;
         } else if (method === 'card') {
-            sourceBadge = `<span class="badge-pill info" style="font-weight:800;"><i class="ph ph-identification-card"></i> RFID</span>`;
+            sourceBadge = `<span class="badge-pill info" style="font-weight:800;"><i class="ph ph-identification-card"></i> {{ __('RFID') }}</span>`;
         }
 
         const initial = r.teacher && r.teacher.name ? r.teacher.name.charAt(0).toUpperCase() : '?';
@@ -1705,12 +1709,12 @@
         // Generate shift columns
         const mIn = r.morning_in ? r.morning_in.substring(0,5) : '—';
         const mOut = r.morning_out ? r.morning_out.substring(0,5) : '?';
-        const mLate = r.morning_status === 'late' ? '<span class="badge badge-warning" style="font-size:0.65rem; padding:1px 6px;">LATE</span>' : '';
+        const mLate = r.morning_status === 'late' ? '<span class="badge badge-warning" style="font-size:0.65rem; padding:1px 6px;">{{ __("LATE") }}</span>' : '';
         const mCell = r.morning_in ? `<div style="font-size:0.85rem;"><span style="color:var(--success); font-weight:700;">${mIn}</span> <i class="ph ph-arrow-right" style="font-size:0.7rem; opacity:0.5;"></i> ${mOut}</div>${mLate}` : '—';
 
         const aIn = r.afternoon_in ? r.afternoon_in.substring(0,5) : '—';
         const aOut = r.afternoon_out ? r.afternoon_out.substring(0,5) : '?';
-        const aLate = r.afternoon_status === 'late' ? '<span class="badge badge-warning" style="font-size:0.65rem; padding:1px 6px;">LATE</span>' : '';
+        const aLate = r.afternoon_status === 'late' ? '<span class="badge badge-warning" style="font-size:0.65rem; padding:1px 6px;">{{ __("LATE") }}</span>' : '';
         const aCell = r.afternoon_in ? `<div style="font-size:0.85rem;"><span style="color:var(--success); font-weight:700;">${aIn}</span> <i class="ph ph-arrow-right" style="font-size:0.7rem; opacity:0.5;"></i> ${aOut}</div>${aLate}` : '—';
 
         let completedSeconds = 0;

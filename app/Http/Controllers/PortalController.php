@@ -532,7 +532,7 @@ class PortalController extends Controller
 
         $scanRequest = new Request([
             'teacher_id'     => $teacher->id,
-            'checkin_method' => 'dynamic_qr',
+            'checkin_method' => 'manual',
         ]);
 
         $response = app(AttendanceController::class)->adminScan($scanRequest);

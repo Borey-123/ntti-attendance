@@ -189,7 +189,7 @@
             @if($botUsername)
             <a href="{{ $tgDeepLink }}" target="_blank" class="btn-tg-link" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; background: #0088cc; color: #fff; font-weight: 700; font-size: 0.88rem; padding: 0.75rem 1.25rem; border-radius: 0.75rem; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 136, 204, 0.4); margin-bottom: 0.75rem; width: 100%;">
                 <i class="ph-bold ph-telegram-logo" style="font-size: 1.2rem;"></i> 
-                {{ empty($user->telegram_chat_id) ? __('Connect Telegram Bot to Get OTP') : __('Open Telegram Bot (@' . $botUsername . ')') }}
+                {{ empty($user->telegram_chat_id) ? __('Connect Telegram Bot to Get OTP') : __('Open Telegram Bot') . ' (@' . $botUsername . ')' }}
             </a>
             @endif
 

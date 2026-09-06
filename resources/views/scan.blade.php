@@ -332,13 +332,13 @@
             {{-- Scan Mode Switcher Tabs --}}
             <div class="scan-mode-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 0.4rem; border-radius: 1.25rem; border: 1px solid var(--border);">
                 <button id="modeRfidBtn" class="mode-tab-btn active" onclick="switchScanMode('rfid')" style="flex: 1; border: none; padding: 0.75rem 0.5rem; border-radius: 0.9rem; font-weight: 800; font-size: 0.85rem; cursor: pointer; background: var(--primary); color: #000; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;">
-                    <i class="ph ph-identification-badge" style="font-size: 1.2rem;"></i> <span>RFID Card</span>
+                    <i class="ph ph-identification-badge" style="font-size: 1.2rem;"></i> <span>{{ __('RFID Card') }}</span>
                 </button>
                 <button id="modeFaceBtn" class="mode-tab-btn" onclick="switchScanMode('face')" style="flex: 1; border: none; padding: 0.75rem 0.5rem; border-radius: 0.9rem; font-weight: 800; font-size: 0.85rem; cursor: pointer; background: transparent; color: var(--text-secondary); transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;">
-                    <i class="ph ph-bounding-box" style="font-size: 1.2rem; color: #ec4899;"></i> <span>Face Scan</span>
+                    <i class="ph ph-bounding-box" style="font-size: 1.2rem; color: #ec4899;"></i> <span>{{ __('Face Scan') }}</span>
                 </button>
                 <button id="modeQrBtn" class="mode-tab-btn" onclick="switchScanMode('qr')" style="flex: 1; border: none; padding: 0.75rem 0.5rem; border-radius: 0.9rem; font-weight: 800; font-size: 0.85rem; cursor: pointer; background: transparent; color: var(--text-secondary); transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;">
-                    <i class="ph ph-qr-code" style="font-size: 1.2rem; color: var(--info);"></i> <span>QR Scan</span>
+                    <i class="ph ph-qr-code" style="font-size: 1.2rem; color: var(--info);"></i> <span>{{ __('QR Scan') }}</span>
                 </button>
                 <button id="modeDynamicQrBtn" class="mode-tab-btn" onclick="switchScanMode('dynamic_qr')" style="flex: 1; border: none; padding: 0.75rem 0.5rem; border-radius: 0.9rem; font-weight: 800; font-size: 0.85rem; cursor: pointer; background: transparent; color: var(--text-secondary); transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;">
                     <i class="ph ph-broadcast" style="font-size: 1.2rem; color: #10b981;"></i> <span>{{ __('Live Kiosk QR') }}</span>

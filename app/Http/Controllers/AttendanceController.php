@@ -852,7 +852,7 @@ class AttendanceController extends Controller
 
         $request->merge([
             'teacher_id'     => $teacher->id,
-            'checkin_method' => 'dynamic_qr'
+            'checkin_method' => 'manual'
         ]);
 
         return $this->adminScan($request);
