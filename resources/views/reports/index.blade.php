@@ -1148,12 +1148,11 @@ async function loadDaily(params) {
                     <td class="col-source">
                         ${(() => {
                             let src = r.source || 'RFID';
-                            if (src === 'dynamic_qr' || src === 'screen_qr' || (typeof src === 'string' && src.toLowerCase().includes('screen'))) {
-                                src = 'Manual';
-                            }
                             const note = r.manual_note ? ` title="${r.manual_note}"` : '';
                             const historyIcon = `<i class="ph ph-clock-counter-clockwise" style="cursor:pointer; color:var(--primary); margin-left:0.25rem;" onclick="viewHistory(${r.id})" title="{{ __('View Edit History') }}"></i>`;
-                            if (src === 'GPS Check-In' || src === 'GPS') {
+                            if (src === 'Scan by Screen QR' || src === 'dynamic_qr' || src === 'screen_qr' || (typeof src === 'string' && src.toLowerCase().includes('screen'))) {
+                                return `<span style="font-size:0.72rem;font-weight:800;color:#0284c7;background:rgba(14,165,233,0.15);border:1px solid rgba(14,165,233,0.3);padding:0.2rem 0.55rem;border-radius:0.5rem;display:inline-flex;align-items:center;gap:0.3rem;"${note}><i class="ph ph-broadcast"></i> {{ __('Scan by Screen QR') }} ${historyIcon}</span>`;
+                            } else if (src === 'GPS Check-In' || src === 'GPS') {
                                 return `<span style="font-size:0.72rem;font-weight:800;color:#10b981;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.28);padding:0.2rem 0.55rem;border-radius:0.5rem;display:inline-flex;align-items:center;gap:0.3rem;"${note}><i class="ph ph-map-pin"></i> {{ __('GPS Check-In') }} ${historyIcon}</span>`;
                             } else if (src === 'Face Scan') {
                                 return `<span style="font-size:0.72rem;font-weight:800;color:#ec4899;background:rgba(236,72,153,0.12);border:1px solid rgba(236,72,153,0.28);padding:0.2rem 0.55rem;border-radius:0.5rem;display:inline-flex;align-items:center;gap:0.3rem;"${note}><i class="ph ph-bounding-box"></i> {{ __('Face Scan') }} ${historyIcon}</span>`;

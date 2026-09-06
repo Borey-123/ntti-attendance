@@ -540,10 +540,10 @@
                     <td>
                         @php
                             $method = $record->checkin_method;
-                            if ($method === 'dynamic_qr' || $method === 'screen_qr' || $method === 'manual') {
-                                $method = 'manual';
-                            } elseif ($record->latitude && $record->longitude) {
+                            if ($record->latitude && $record->longitude) {
                                 $method = 'gps';
+                            } elseif ($method === 'dynamic_qr' || $method === 'screen_qr') {
+                                $method = 'dynamic_qr';
                             } elseif ($method === 'face') {
                                 $method = 'face';
                             } elseif ($method === 'qr') {
@@ -556,7 +556,11 @@
                                 $method = 'manual';
                             }
                         @endphp
-                        @if($method === 'gps')
+                        @if($method === 'dynamic_qr')
+                            <span class="badge-pill" style="background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.3); font-weight:800;" title="{{ __('Scan by Screen QR') }}">
+                                <i class="ph ph-broadcast"></i> {{ __('Scan by Screen QR') }}
+                            </span>
+                        @elseif($method === 'gps')
                             <span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight:800;" title="GPS Lat: {{ $record->latitude }}, Lng: {{ $record->longitude }}">
                                 <i class="ph ph-map-pin"></i> {{ __('GPS Check-In') }}
                             </span>
@@ -1670,10 +1674,10 @@
     // ── Build a table row (present/late) ──────────
     function buildRow(r, index = 0, animate = false) {
         let method = r.checkin_method;
-        if (method === 'dynamic_qr' || method === 'screen_qr' || method === 'manual') {
-            method = 'manual';
-        } else if (r.latitude && r.longitude) {
+        if (r.latitude && r.longitude) {
             method = 'gps';
+        } else if (method === 'dynamic_qr' || method === 'screen_qr') {
+            method = 'dynamic_qr';
         } else if (method === 'face') {
             method = 'face';
         } else if (method === 'qr') {
@@ -1687,7 +1691,9 @@
         }
 
         let sourceBadge = `<span class="badge-pill secondary" style="font-weight:800;"><i class="ph ph-hand-tap"></i> {{ __('Manual') }}</span>`;
-        if (method === 'gps') {
+        if (method === 'dynamic_qr') {
+            sourceBadge = `<span class="badge-pill" style="background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.3); font-weight:800;"><i class="ph ph-broadcast"></i> {{ __('Scan by Screen QR') }}</span>`;
+        } else if (method === 'gps') {
             const locTitle = (r.latitude && r.longitude) ? `title="GPS Lat: ${r.latitude}, Lng: ${r.longitude}"` : '';
             sourceBadge = `<span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight:800;" ${locTitle}><i class="ph ph-map-pin"></i> {{ __('GPS Check-In') }}</span>`;
         } else if (method === 'face') {

@@ -1083,5 +1083,7 @@
     "GPS Check-in recorded successfully! Distance to campus: :dist m": "បានកត់ត្រាវត្តមានតាម GPS ដោយជោគជ័យ! ចម្ងាយទៅកាន់វិទ្យាស្ថាន៖ :dist ម៉ែត្រ",
     "Invalid or expired QR code. Please scan the current live screen.": "កូដ QR មិនត្រឹមត្រូវ ឬបានផុតកំណត់។ សូមស្កេនកូដលើអេក្រង់ផ្ទាល់បច្ចុប្បន្ន។",
     "Attendance recorded successfully via Dynamic QR.": "បានកត់ត្រាវត្តមានដោយជោគជ័យតាមរយៈកូដ QR លើអេក្រង់ផ្ទាល់។",
-    "Attendance could not be recorded at this time.": "មិនអាចកត់ត្រាវត្តមានបានទេនៅពេលនេះ។"
+    "Attendance could not be recorded at this time.": "មិនអាចកត់ត្រាវត្តមានបានទេនៅពេលនេះ។",
+    "Scan by Screen QR": "ស្កេនតាមអេក្រង់ QR",
+    "Screen QR": "ស្កេន QR លើអេក្រង់"
 }

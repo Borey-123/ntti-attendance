@@ -120,8 +120,8 @@ class ReportController extends Controller
                     $status = 'present';
                 }
 
-                if ($r->checkin_method === 'dynamic_qr' || $r->checkin_method === 'screen_qr' || $r->checkin_method === 'manual') {
-                    $source = 'Manual';
+                if ($r->checkin_method === 'dynamic_qr' || $r->checkin_method === 'screen_qr') {
+                    $source = 'Scan by Screen QR';
                 } elseif ($r->checkin_method === 'gps' || ($r->latitude && $r->longitude)) {
                     $source = 'GPS Check-In';
                 } elseif ($r->checkin_method === 'face') {
@@ -691,8 +691,8 @@ class ReportController extends Controller
                     if (isset($teacherStats[$teacher->id])) $teacherStats[$teacher->id]['days_present']++;
                 }
                 
-                if ($record->checkin_method === 'dynamic_qr' || $record->checkin_method === 'screen_qr' || $record->checkin_method === 'manual') {
-                    $source = 'Manual';
+                if ($record->checkin_method === 'dynamic_qr' || $record->checkin_method === 'screen_qr') {
+                    $source = 'Scan by Screen QR';
                 } elseif ($record->checkin_method === 'gps' || ($record->latitude && $record->longitude)) {
                     $source = 'GPS Check-In';
                 } elseif ($record->checkin_method === 'face') {
