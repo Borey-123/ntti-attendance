@@ -370,15 +370,10 @@
             </div>
 
             {{-- Global Search Center --}}
-            <div class="topbar-search hide-mobile">
+            <div class="topbar-search hide-mobile" onclick="openCommandPalette()" style="cursor: pointer;">
                 <i class="ph ph-magnifying-glass"></i>
-                <input type="text" id="globalSearchInput" placeholder="{{ __('Search anything...') }}">
-                <div class="search-kbd">⌘K</div>
-
-                {{-- Search Results Dropdown --}}
-                <div id="searchDropdown" style="display: none; position: absolute; top: 110%; left: 0; right: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: 1rem; box-shadow: 0 15px 45px rgba(0,0,0,0.5); z-index: 1000; max-height: 450px; overflow-y: auto; padding: 0.5rem; backdrop-filter: blur(20px);">
-                    <div id="searchResults" style="display: flex; flex-direction: column; gap: 0.25rem;"></div>
-                </div>
+                <input type="text" id="globalSearchInput" placeholder="{{ __('Search anything... (Ctrl + K)') }}" readonly onclick="openCommandPalette()" style="cursor: pointer;">
+                <div class="search-kbd" onclick="openCommandPalette()">⌘K</div>
             </div>
 
             <div class="user-profile" style="gap: 0.5rem;">
@@ -1117,14 +1112,329 @@
             });
         }
 
-        // Global Search Shortcut (Cmd+K or Ctrl+K)
+        // ── Spotlight Command Palette System (Ctrl+K / Cmd+K) ──
+        const cpModal = document.getElementById('commandPaletteModal');
+        const cpInput = document.getElementById('commandPaletteInput');
+        const cpBody  = document.getElementById('commandPaletteBody');
+        let cpSelectedIndex = 0;
+        let cpItems = [];
+        let cpSearchTimeout = null;
+
+        const cpDefaultActions = [
+            {
+                type: 'action',
+                category: '{{ __("Quick Actions") }}',
+                title: '{{ __("Toggle Dark / Light Theme") }}',
+                subtitle: '{{ __("Switch between dark and light appearance") }}',
+                icon: 'ph-sun-dim',
+                badge: 'Theme',
+                handler: () => {
+                    const currentTheme = document.documentElement.getAttribute('data-theme');
+                    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                    if (newTheme === 'light') {
+                        document.documentElement.setAttribute('data-theme', 'light');
+                        localStorage.setItem('theme', 'light');
+                    } else {
+                        document.documentElement.removeAttribute('data-theme');
+                        localStorage.setItem('theme', 'dark');
+                    }
+                    closeCommandPalette();
+                }
+            },
+            {
+                type: 'nav',
+                category: '{{ __("Quick Actions") }}',
+                title: '{{ __("Export Today\'s Attendance PDF") }}',
+                subtitle: '{{ __("Download formatted PDF report for today") }}',
+                icon: 'ph-file-pdf',
+                badge: 'PDF',
+                url: '{{ route("reports.pdf", ["date" => now()->toDateString()]) }}',
+                newTab: true
+            },
+            {
+                type: 'nav',
+                category: '{{ __("Quick Actions") }}',
+                title: '{{ __("Download Database Backup (.sql)") }}',
+                subtitle: '{{ __("Export MySQL SQL dump of entire system") }}',
+                icon: 'ph-database',
+                badge: 'Backup',
+                url: '{{ route("settings.database.export") }}'
+            },
+            {
+                type: 'action',
+                category: '{{ __("Quick Actions") }}',
+                title: '{{ __("Clear System Cache") }}',
+                subtitle: '{{ __("Flush application and view cache") }}',
+                icon: 'ph-broom',
+                badge: 'System',
+                handler: async () => {
+                    try {
+                        await fetch('{{ route("security.clear-cache") }}', {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                        });
+                        alert('{{ __("System cache cleared successfully!") }}');
+                    } catch(e) {
+                        console.error(e);
+                    }
+                    closeCommandPalette();
+                }
+            },
+            {
+                type: 'nav',
+                category: '{{ __("Quick Actions") }}',
+                title: '{{ __("Open Live Monitor TV") }}',
+                subtitle: '{{ __("Open full-screen lobby attendance monitor") }}',
+                icon: 'ph-desktop',
+                badge: 'Live',
+                url: '{{ route("live.monitor") }}',
+                newTab: true
+            },
+            {
+                type: 'nav',
+                category: '{{ __("Quick Actions") }}',
+                title: '{{ __("Open Teacher Portal") }}',
+                subtitle: '{{ __("Public teacher self-service portal") }}',
+                icon: 'ph-identification-card',
+                badge: 'Portal',
+                url: '{{ route("portal.index") }}',
+                newTab: true
+            }
+        ];
+
+        const cpPages = [
+            { title: '{{ __("Dashboard") }}', url: '{{ route("dashboard") }}', icon: 'ph-squares-four', keywords: 'home stats pulse overview' },
+            { title: '{{ __("Scan Station") }}', url: '{{ route("scan.index") }}', icon: 'ph-scan', keywords: 'scan rfid face qr checkin checkout' },
+            { title: '{{ __("Teacher Directory") }}', url: '{{ route("teachers.index") }}', icon: 'ph-users', keywords: 'staff faculty add teacher' },
+            { title: '{{ __("RFID Management") }}', url: '{{ route("rfid.index") }}', icon: 'ph-identification-badge', keywords: 'cards tags uids scanner' },
+            { title: '{{ __("Departments") }}', url: '{{ route("departments.index") }}', icon: 'ph-buildings', keywords: 'faculty branches divisions' },
+            { title: '{{ __("Leave Requests") }}', url: '{{ route("leave-requests.index") }}', icon: 'ph-calendar-plus', keywords: 'absence sick annual vacation substitutes' },
+            { title: '{{ __("Teaching Schedules") }}', url: '{{ route("schedules.index") }}', icon: 'ph-clock-afternoon', keywords: 'timetable periods slots classes' },
+            { title: '{{ __("Analytics & Trends") }}', url: '{{ route("analytics.index") }}', icon: 'ph-chart-donut', keywords: 'charts graphs rates insights' },
+            { title: '{{ __("Reports & Exports") }}', url: '{{ route("reports.index") }}', icon: 'ph-chart-bar', keywords: 'excel pdf monthly records' },
+            { title: '{{ __("Announcements") }}', url: '{{ route("announcements.index") }}', icon: 'ph-megaphone', keywords: 'notices broadcast alerts news' },
+            { title: '{{ __("Audit Logs") }}', url: '{{ route("security.audit_logs") }}', icon: 'ph-receipt', keywords: 'admin trail history events' },
+            { title: '{{ __("Security & Cache") }}', url: '{{ route("security.index") }}', icon: 'ph-shield-checkered', keywords: 'integrity cache logs' },
+            { title: '{{ __("System Settings") }}', url: '{{ route("settings.index") }}', icon: 'ph-gear', keywords: 'shifts gps 2fa telegram theme logo' },
+        ];
+
+        window.openCommandPalette = function() {
+            if (!cpModal) return;
+            cpModal.style.display = 'flex';
+            cpInput.value = '';
+            cpSelectedIndex = 0;
+            renderCommandPalette('');
+            setTimeout(() => cpInput.focus(), 50);
+        };
+
+        window.closeCommandPalette = function() {
+            if (!cpModal) return;
+            cpModal.style.display = 'none';
+        };
+
+        function renderCommandPalette(query) {
+            query = (query || '').toLowerCase().trim();
+            cpItems = [];
+            let html = '';
+
+            // Filter actions
+            const matchedActions = cpDefaultActions.filter(a => 
+                !query || a.title.toLowerCase().includes(query) || a.subtitle.toLowerCase().includes(query)
+            );
+
+            if (matchedActions.length > 0) {
+                html += `<div style="padding: 0.5rem 0.75rem 0.25rem; font-size: 0.65rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;"><i class="ph ph-lightning"></i> {{ __("Quick Actions") }}</div>`;
+                matchedActions.forEach(a => {
+                    const idx = cpItems.length;
+                    cpItems.push(a);
+                    html += buildPaletteItemHtml(a, idx);
+                });
+            }
+
+            // Filter navigation pages
+            const matchedPages = cpPages.filter(p => 
+                !query || p.title.toLowerCase().includes(query) || p.keywords.toLowerCase().includes(query)
+            );
+
+            if (matchedPages.length > 0) {
+                html += `<div style="padding: 0.85rem 0.75rem 0.25rem; font-size: 0.65rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;"><i class="ph ph-compass"></i> {{ __("Navigation") }}</div>`;
+                matchedPages.forEach(p => {
+                    const item = {
+                        type: 'nav',
+                        title: p.title,
+                        subtitle: '{{ __("System Page") }}',
+                        icon: p.icon,
+                        url: p.url,
+                        badge: 'Page'
+                    };
+                    const idx = cpItems.length;
+                    cpItems.push(item);
+                    html += buildPaletteItemHtml(item, idx);
+                });
+            }
+
+            if (cpItems.length === 0 && !query) {
+                html = `<div style="padding: 2.5rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">{{ __("No matching commands") }}</div>`;
+            }
+
+            cpBody.innerHTML = html;
+            highlightPaletteItem(0);
+
+            // If user is searching a teacher name/ID, query teachers API
+            if (query.length >= 1) {
+                clearTimeout(cpSearchTimeout);
+                cpSearchTimeout = setTimeout(async () => {
+                    try {
+                        const teachers = await window.fetchApi(`/api-web/teachers?search=${encodeURIComponent(query)}`);
+                        if (teachers && teachers.length > 0) {
+                            let teacherHtml = `<div style="padding: 0.85rem 0.75rem 0.25rem; font-size: 0.65rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;"><i class="ph ph-users"></i> {{ __("Teachers & Staff") }}</div>`;
+                            teachers.slice(0, 6).forEach(t => {
+                                const teacherItem = {
+                                    type: 'teacher',
+                                    title: (t.name_kh ? t.name_kh + ' (' + t.name + ')' : t.name),
+                                    subtitle: `${t.employee_id} • ${t.department || '{{ __("No Dept") }}'}`,
+                                    icon: 'ph-user',
+                                    teacherId: t.id,
+                                    photo: t.photo,
+                                    badge: t.department || 'Staff',
+                                    handler: () => {
+                                        closeCommandPalette();
+                                        if (typeof openTeacherInsights === 'function') {
+                                            openTeacherInsights(t.id);
+                                        } else {
+                                            window.location.href = `/teachers?search=${encodeURIComponent(t.employee_id)}`;
+                                        }
+                                    }
+                                };
+                                const idx = cpItems.length;
+                                cpItems.push(teacherItem);
+                                teacherHtml += buildPaletteItemHtml(teacherItem, idx);
+                            });
+                            cpBody.insertAdjacentHTML('beforeend', teacherHtml);
+                        }
+                    } catch(err) {
+                        console.error('Teacher search error in command palette:', err);
+                    }
+                }, 250);
+            }
+        }
+
+        function buildPaletteItemHtml(item, idx) {
+            return `
+                <div class="cp-item" data-idx="${idx}" onclick="executePaletteItem(${idx})" 
+                     style="display: flex; align-items: center; gap: 0.85rem; padding: 0.65rem 0.85rem; border-radius: 0.85rem; cursor: pointer; transition: all 0.15s ease; border: 1px solid transparent; margin-bottom: 2px;">
+                    <div style="width: 36px; height: 36px; border-radius: 0.6rem; background: rgba(var(--primary-rgb), 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;">
+                        ${item.photo ? `<img src="${item.photo}" style="width:100%;height:100%;object-fit:cover;">` : `<i class="ph ${item.icon}" style="font-size: 1.25rem;"></i>`}
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.title}</div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.subtitle}</div>
+                    </div>
+                    ${item.badge ? `<span style="font-size: 0.68rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 0.4rem; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text-secondary); text-transform: uppercase;">${item.badge}</span>` : ''}
+                    <i class="ph ph-arrow-right cp-arrow" style="font-size: 0.9rem; color: var(--text-muted); opacity: 0; transition: all 0.15s;"></i>
+                </div>
+            `;
+        }
+
+        function highlightPaletteItem(idx) {
+            const all = cpBody.querySelectorAll('.cp-item');
+            if (!all.length) return;
+            if (idx < 0) idx = all.length - 1;
+            if (idx >= all.length) idx = 0;
+            cpSelectedIndex = idx;
+
+            all.forEach((el, i) => {
+                const arrow = el.querySelector('.cp-arrow');
+                if (i === idx) {
+                    el.style.background = 'rgba(var(--primary-rgb), 0.12)';
+                    el.style.borderColor = 'rgba(var(--primary-rgb), 0.3)';
+                    if (arrow) { arrow.style.opacity = '1'; arrow.style.color = 'var(--primary)'; arrow.style.transform = 'translateX(3px)'; }
+                    el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                } else {
+                    el.style.background = 'transparent';
+                    el.style.borderColor = 'transparent';
+                    if (arrow) { arrow.style.opacity = '0'; arrow.style.transform = 'translateX(0)'; }
+                }
+            });
+        }
+
+        window.executePaletteItem = function(idx) {
+            const item = cpItems[idx];
+            if (!item) return;
+            if (item.handler) {
+                item.handler();
+            } else if (item.url) {
+                closeCommandPalette();
+                if (item.newTab) {
+                    window.open(item.url, '_blank');
+                } else {
+                    window.location.href = item.url;
+                }
+            }
+        };
+
+        if (cpInput) {
+            cpInput.addEventListener('input', (e) => {
+                renderCommandPalette(e.target.value);
+            });
+
+            cpInput.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    highlightPaletteItem(cpSelectedIndex + 1);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    highlightPaletteItem(cpSelectedIndex - 1);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    executePaletteItem(cpSelectedIndex);
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closeCommandPalette();
+                }
+            });
+        }
+
+        // Global Shortcut: Ctrl+K or Cmd+K
         document.addEventListener('keydown', (e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
                 e.preventDefault();
-                document.getElementById('globalSearchInput').focus();
+                if (cpModal.style.display === 'flex') {
+                    closeCommandPalette();
+                } else {
+                    openCommandPalette();
+                }
+            } else if (e.key === 'Escape' && cpModal && cpModal.style.display === 'flex') {
+                closeCommandPalette();
             }
         });
     </script>
+
+    {{-- Global Spotlight Command Palette Modal Element --}}
+    <div id="commandPaletteModal" class="modal-overlay" style="z-index: 99999; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background: rgba(0,0,0,0.7); display: none; align-items: flex-start; justify-content: center; padding-top: 10vh;" onclick="if(event.target===this) closeCommandPalette()">
+        <div class="command-palette-card" style="width: 95%; max-width: 680px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 1.5rem; box-shadow: 0 35px 80px rgba(0,0,0,0.6); overflow: hidden; animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
+            <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 1rem; position: relative;">
+                <i class="ph ph-magnifying-glass" style="font-size: 1.5rem; color: var(--primary);"></i>
+                <input type="text" id="commandPaletteInput" placeholder="{{ __('Type a command, teacher name, or page... (↑↓ to select, ↵ to run)') }}" style="flex: 1; background: transparent; border: none; outline: none; font-size: 1.05rem; font-weight: 600; color: var(--text-primary); font-family: var(--font-family);">
+                <div style="display: flex; gap: 0.35rem; align-items: center;">
+                    <span style="font-size: 0.7rem; font-weight: 800; background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-muted); padding: 0.2rem 0.5rem; border-radius: 0.4rem; cursor: pointer;" onclick="closeCommandPalette()">ESC</span>
+                </div>
+            </div>
+            <div id="commandPaletteBody" style="max-height: 420px; overflow-y: auto; padding: 0.75rem 0.85rem;">
+                {{-- Results rendered dynamically --}}
+            </div>
+            <div style="padding: 0.75rem 1.5rem; background: rgba(0,0,0,0.15); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <span><kbd style="padding: 0.15rem 0.4rem; background: rgba(255,255,255,0.08); border-radius: 0.3rem;">↑</kbd> <kbd style="padding: 0.15rem 0.4rem; background: rgba(255,255,255,0.08); border-radius: 0.3rem;">↓</kbd> {{ __('Navigate') }}</span>
+                    <span><kbd style="padding: 0.15rem 0.4rem; background: rgba(255,255,255,0.08); border-radius: 0.3rem;">↵</kbd> {{ __('Select') }}</span>
+                    <span><kbd style="padding: 0.15rem 0.4rem; background: rgba(255,255,255,0.08); border-radius: 0.3rem;">ESC</kbd> {{ __('Close') }}</span>
+                </div>
+                <div style="color: var(--primary); font-weight: 800; display: flex; align-items: center; gap: 0.4rem;">
+                    <i class="ph ph-lightning"></i> {{ __('NTTI Command Center') }}
+                </div>
+            </div>
+        </div>
+    </div>
     {{-- Telegram Chats Modal --}}
     <div class="modal-overlay" id="telegramChatsModal" onclick="if(event.target===this) closeTelegramChatsModal()">
         <div class="modal-content" style="max-width: 600px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 1.5rem; padding: 2rem;">

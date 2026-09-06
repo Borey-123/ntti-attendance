@@ -7,6 +7,7 @@ use App\Models\Attendance;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\AttendanceCorrection;
+use App\Services\DynamicQrService;
 use Illuminate\Support\Facades\Validator;
 
 class PortalController extends Controller
@@ -501,6 +502,55 @@ class PortalController extends Controller
             'longitude' => $lng,
             'record' => $attendance
         ]);
+    }
+
+    /**
+     * Process attendance from scanned Dynamic Rotating QR code via Teacher Portal.
+     */
+    public function dynamicQrCheckin(Request $request)
+    {
+        $teacherId = session('portal_teacher_id');
+        if (!$teacherId) {
+            return response()->json(['success' => false, 'message' => __('Unauthorized. Please log in first.')], 401);
+        }
+
+        $request->validate([
+            'token' => 'required|string',
+        ]);
+
+        if (!DynamicQrService::validateToken($request->token)) {
+            return response()->json([
+                'success' => false,
+                'message' => __('Invalid or expired QR code. Please scan the current live screen.')
+            ], 422);
+        }
+
+        $teacher = Teacher::find($teacherId);
+        if (!$teacher || $teacher->status !== 'active') {
+            return response()->json(['success' => false, 'message' => __('Teacher invalid or inactive.')], 403);
+        }
+
+        $scanRequest = new Request([
+            'teacher_id'     => $teacher->id,
+            'checkin_method' => 'dynamic_qr',
+        ]);
+
+        $response = app(AttendanceController::class)->adminScan($scanRequest);
+        $data = $response->getData(true);
+
+        if (($data['status'] ?? '') === 'success' || in_array($data['action'] ?? '', ['check-in', 'check-out'])) {
+            return response()->json([
+                'success' => true,
+                'action'  => $data['action'] ?? 'check-in',
+                'message' => $data['message'] ?? __('Attendance recorded successfully via Dynamic QR.'),
+                'data'    => $data,
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => $data['message'] ?? __('Attendance could not be recorded at this time.')
+        ], 400);
     }
 
     public function export(Request $request)

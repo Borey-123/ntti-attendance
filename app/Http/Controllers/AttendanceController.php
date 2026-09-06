@@ -9,6 +9,7 @@ use App\Models\Department;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Models\SecurityLog;
+use App\Services\DynamicQrService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -802,6 +803,58 @@ class AttendanceController extends Controller
         }
 
         $request->merge(['teacher_id' => $teacher->id, 'checkin_method' => 'face']);
+        return $this->adminScan($request);
+    }
+
+    /**
+     * Generate dynamic rotating anti-proxy QR code token.
+     */
+    public function getDynamicQrToken(): JsonResponse
+    {
+        return response()->json(DynamicQrService::generateToken());
+    }
+
+    /**
+     * Process attendance from scanned Dynamic QR code.
+     */
+    public function dynamicQrScan(Request $request): JsonResponse
+    {
+        $request->validate([
+            'token' => 'required|string',
+            'employee_id' => 'nullable|string',
+            'teacher_id' => 'nullable|integer',
+        ]);
+
+        if (!DynamicQrService::validateToken($request->token)) {
+            return response()->json([
+                'status'  => 'error',
+                'action'  => 'error',
+                'message' => 'QR Code expired or invalid. Please scan the current live screen.',
+            ], 422);
+        }
+
+        $teacher = null;
+        if ($request->filled('teacher_id')) {
+            $teacher = Teacher::find($request->teacher_id);
+        } elseif ($request->filled('employee_id')) {
+            $teacher = Teacher::where('employee_id', $request->employee_id)->first();
+        } elseif (session()->has('portal_teacher_id')) {
+            $teacher = Teacher::find(session('portal_teacher_id'));
+        }
+
+        if (!$teacher || $teacher->status !== 'active') {
+            return response()->json([
+                'status'  => 'error',
+                'action'  => 'error',
+                'message' => 'Active teacher account not found or not logged in.',
+            ], 404);
+        }
+
+        $request->merge([
+            'teacher_id'     => $teacher->id,
+            'checkin_method' => 'dynamic_qr'
+        ]);
+
         return $this->adminScan($request);
     }
 

@@ -56,6 +56,9 @@ Route::get('/api-live/latest', [AttendanceController::class, 'latest'])->name('a
 Route::get('/portal/export', [PortalController::class, 'export'])->name('portal.export');
 Route::post('/portal/correction', [PortalController::class, 'storeCorrection'])->name('portal.correction.store');
 Route::post('/portal/gps-checkin', [PortalController::class, 'gpsCheckin'])->name('portal.gps-checkin');
+Route::post('/portal/dynamic-qr-checkin', [PortalController::class, 'dynamicQrCheckin'])->name('portal.dynamic-qr-checkin');
+Route::get('/api-web/attendance/dynamic-qr-token', [AttendanceController::class, 'getDynamicQrToken'])->name('api.attendance.dynamic-qr-token');
+Route::post('/api-web/attendance/dynamic-qr-scan', [AttendanceController::class, 'dynamicQrScan'])->name('api.attendance.dynamic-qr-scan');
 Route::post('/settings/attendance-corrections/{correction}', [SettingController::class, 'handleCorrection'])->name('settings.attendance_corrections.handle');
 
 Route::get('/portal', [PortalController::class, 'index'])->name('portal.index');
@@ -99,6 +102,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index');
     Route::get('/leave-requests', [LeaveRequestController::class, 'index'])->name('leave-requests.index');
     Route::put('/leave-requests/{id}/status', [LeaveRequestController::class, 'updateStatus'])->name('leave-requests.status.update');
+    Route::get('/leave-requests/{id}/substitutes', [LeaveRequestController::class, 'getSubstituteSuggestions'])->name('leave-requests.substitutes');
+    Route::post('/leave-requests/{id}/substitute', [LeaveRequestController::class, 'assignSubstitute'])->name('leave-requests.substitute.assign');
     Route::post('/portal/leave', [LeaveRequestController::class, 'store'])->name('portal.leave.store');
     Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules.index');
     Route::post('/schedules', [ScheduleController::class, 'store'])->name('schedules.store');

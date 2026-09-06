@@ -340,6 +340,9 @@
                 <button id="modeQrBtn" class="mode-tab-btn" onclick="switchScanMode('qr')" style="flex: 1; border: none; padding: 0.75rem 0.5rem; border-radius: 0.9rem; font-weight: 800; font-size: 0.85rem; cursor: pointer; background: transparent; color: var(--text-secondary); transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;">
                     <i class="ph ph-qr-code" style="font-size: 1.2rem; color: var(--info);"></i> <span>QR Scan</span>
                 </button>
+                <button id="modeDynamicQrBtn" class="mode-tab-btn" onclick="switchScanMode('dynamic_qr')" style="flex: 1; border: none; padding: 0.75rem 0.5rem; border-radius: 0.9rem; font-weight: 800; font-size: 0.85rem; cursor: pointer; background: transparent; color: var(--text-secondary); transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                    <i class="ph ph-broadcast" style="font-size: 1.2rem; color: #10b981;"></i> <span>{{ __('Live Kiosk QR') }}</span>
+                </button>
             </div>
 
             <div class="scanner-hologram" id="scannerRing">
@@ -428,6 +431,37 @@
             <button id="closeFaceBtn" class="btn btn-secondary mt-2" style="width: 100%; border-radius: 1.25rem; display: none;" onclick="switchScanMode('rfid')">
                 {{ __('Close Scanner') }}
             </button>
+
+            {{-- ── Dynamic Live Rotating Anti-Proxy QR Kiosk ── --}}
+            <div id="dynamicQrContainer" style="display: none; width: 100%; text-align: center; margin-top: 1rem; padding: 1.5rem 1rem; background: rgba(0,0,0,0.25); border-radius: 1.5rem; border: 1px solid var(--border);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; padding: 0 0.5rem;">
+                    <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 800; font-size: 0.75rem; padding: 0.3rem 0.75rem; border-radius: 2rem;">
+                        <i class="ph ph-shield-check"></i> {{ __('Anti-Proxy Active') }}
+                    </span>
+                    <span id="dynamicQrTimerBadge" style="font-size: 0.85rem; font-weight: 800; color: var(--primary); font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 0.3rem;">
+                        <i class="ph ph-timer"></i> <span id="dynamicQrCountdown">20</span>s
+                    </span>
+                </div>
+
+                {{-- Progress Bar --}}
+                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; margin-bottom: 1.25rem;">
+                    <div id="dynamicQrProgressBar" style="height: 100%; width: 100%; background: linear-gradient(90deg, #10b981, var(--primary)); transition: width 1s linear;"></div>
+                </div>
+
+                {{-- QR Code Display Canvas Wrapper --}}
+                <div style="display: inline-block; padding: 1rem; background: #ffffff; border-radius: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.5); margin: 0 auto; border: 4px solid rgba(var(--primary-rgb), 0.2);">
+                    <div id="dynamicQrCanvasWrapper" style="width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                        <i class="ph ph-spinner-gap animate-spin" style="font-size: 2.5rem; color: #000;"></i>
+                    </div>
+                </div>
+
+                <p style="color: var(--text-primary); font-size: 0.85rem; margin: 1.25rem 0 0.25rem; font-weight: 700;">
+                    <i class="ph ph-device-mobile"></i> {{ __('Scan with Teacher Portal Camera') }}
+                </p>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">
+                    {{ __('One-time token refreshed every 20 seconds. Screenshots and proxy check-ins are blocked.') }}
+                </div>
+            </div>
 
             {{-- Selected Teacher Identity Card --}}
             <div class="identity-preview" id="idPreview">
@@ -534,6 +568,7 @@
 @push('scripts')
 <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 <script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
 <style>
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
@@ -562,6 +597,32 @@ const audioError = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2
 function playSound(type) {
     if (type === 'success') audioSuccess.play().catch(e => console.log('Audio disabled by browser'));
     else audioError.play().catch(e => console.log('Audio disabled by browser'));
+}
+
+function speakGreeting(name, action, shift) {
+    if (!('speechSynthesis' in window) || !name) return;
+    try {
+        window.speechSynthesis.cancel();
+        const isKm = '{{ app()->getLocale() }}' === 'km';
+        let text = '';
+        if (isKm) {
+            text = (action === 'check-out')
+                ? `សូមអរគុណលោកគ្រូ ${name}។ ជោគជ័យក្នុងការចេញ។`
+                : `សូមស្វាគមន៍លោកគ្រូ ${name}។ វត្តមានត្រូវបានកត់ត្រា។`;
+        } else {
+            text = (action === 'check-out')
+                ? `Thank you ${name}. Check-out recorded.`
+                : `Welcome ${name}! Check-in recorded successfully.`;
+        }
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.95;
+        utterance.pitch = 1.0;
+        if (isKm) utterance.lang = 'km-KH';
+        else utterance.lang = 'en-US';
+        window.speechSynthesis.speak(utterance);
+    } catch(e) {
+        console.log('Speech error:', e);
+    }
 }
 
 // ── Attendance Rules from Settings ───────────────
@@ -706,6 +767,9 @@ async function doAdminScan() {
         addLogEntry(res);
         updateStats(res);
         playSound(res.status === 'success' ? 'success' : 'error');
+        if (res.status === 'success') {
+            speakGreeting(res.teacher_name || res.teacher_name_kh, res.action, res.shift);
+        }
     } catch (e) {
         showResult({ status: 'error', message: e.message, action: 'error' });
         addLogEntry({ status: 'error', message: e.message, teacher_name: '—', action: 'error' });
@@ -897,22 +961,104 @@ function switchScanMode(mode) {
     const rfidBtn = document.getElementById('modeRfidBtn');
     const faceBtn = document.getElementById('modeFaceBtn');
     const qrBtn = document.getElementById('modeQrBtn');
+    const dynamicQrBtn = document.getElementById('modeDynamicQrBtn');
     const ring = document.getElementById('scannerRing');
+    const dynamicQrContainer = document.getElementById('dynamicQrContainer');
 
     closeQrScanner();
     closeFaceScanner();
+    stopDynamicQr();
 
     if (mode === 'rfid') {
         if (rfidBtn) { rfidBtn.style.background = 'var(--primary)'; rfidBtn.style.color = '#000'; rfidBtn.classList.add('active'); }
         if (ring) ring.style.display = 'flex';
+        if (dynamicQrContainer) dynamicQrContainer.style.display = 'none';
     } else if (mode === 'face') {
         if (faceBtn) { faceBtn.style.background = '#ec4899'; faceBtn.style.color = '#fff'; faceBtn.classList.add('active'); }
         if (ring) ring.style.display = 'none';
+        if (dynamicQrContainer) dynamicQrContainer.style.display = 'none';
         openFaceScanner();
     } else if (mode === 'qr') {
         if (qrBtn) { qrBtn.style.background = 'var(--info)'; qrBtn.style.color = '#fff'; qrBtn.classList.add('active'); }
         if (ring) ring.style.display = 'none';
+        if (dynamicQrContainer) dynamicQrContainer.style.display = 'none';
         openQrScanner();
+    } else if (mode === 'dynamic_qr') {
+        if (dynamicQrBtn) { dynamicQrBtn.style.background = '#10b981'; dynamicQrBtn.style.color = '#fff'; dynamicQrBtn.classList.add('active'); }
+        if (ring) ring.style.display = 'none';
+        if (dynamicQrContainer) dynamicQrContainer.style.display = 'block';
+        startDynamicQr();
+    }
+}
+
+// ── Dynamic Rotating Kiosk QR Code Logic ──────────
+let dynamicQrTimer = null;
+let dynamicQrCountdownInterval = null;
+let dynamicQrSecondsLeft = 20;
+
+function startDynamicQr() {
+    fetchAndRenderDynamicQr();
+}
+
+function stopDynamicQr() {
+    if (dynamicQrTimer) {
+        clearTimeout(dynamicQrTimer);
+        dynamicQrTimer = null;
+    }
+    if (dynamicQrCountdownInterval) {
+        clearInterval(dynamicQrCountdownInterval);
+        dynamicQrCountdownInterval = null;
+    }
+}
+
+async function fetchAndRenderDynamicQr() {
+    stopDynamicQr();
+    const wrapper = document.getElementById('dynamicQrCanvasWrapper');
+    const countdownEl = document.getElementById('dynamicQrCountdown');
+    const progressBar = document.getElementById('dynamicQrProgressBar');
+
+    try {
+        const res = await fetch('{{ route("api.attendance.dynamic-qr-token") }}');
+        const data = await res.json();
+        
+        if (!data || !data.token) {
+            if (wrapper) wrapper.innerHTML = `<span style="color:var(--danger);font-size:0.8rem;">Failed to load QR</span>`;
+            return;
+        }
+
+        if (wrapper) {
+            wrapper.innerHTML = '';
+            new QRCode(wrapper, {
+                text: data.token,
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        dynamicQrSecondsLeft = data.expires_in || 20;
+        const totalInterval = data.interval || 20;
+
+        if (countdownEl) countdownEl.textContent = dynamicQrSecondsLeft;
+        if (progressBar) progressBar.style.width = `${(dynamicQrSecondsLeft / totalInterval) * 100}%`;
+
+        dynamicQrCountdownInterval = setInterval(() => {
+            dynamicQrSecondsLeft--;
+            if (countdownEl) countdownEl.textContent = Math.max(0, dynamicQrSecondsLeft);
+            if (progressBar) progressBar.style.width = `${Math.max(0, (dynamicQrSecondsLeft / totalInterval) * 100)}%`;
+
+            if (dynamicQrSecondsLeft <= 0) {
+                clearInterval(dynamicQrCountdownInterval);
+                fetchAndRenderDynamicQr();
+            }
+        }, 1000);
+
+    } catch (err) {
+        console.error('Dynamic QR fetch error:', err);
+        if (wrapper) wrapper.innerHTML = `<span style="color:var(--danger);font-size:0.8rem;">Connection error</span>`;
+        dynamicQrTimer = setTimeout(fetchAndRenderDynamicQr, 4000);
     }
 }
 
@@ -957,6 +1103,9 @@ async function onScanSuccess(decodedText, decodedResult) {
         addLogEntry(res);
         updateStats(res);
         playSound(res.status === 'success' ? 'success' : 'error');
+        if (res.status === 'success') {
+            speakGreeting(res.teacher_name || res.teacher_name_kh, res.action, res.shift);
+        }
     } catch (e) {
         showResult({ status: 'error', message: e.message, action: 'error' });
         addLogEntry({ status: 'error', message: e.message, teacher_name: '—', action: 'error' });
@@ -1101,6 +1250,9 @@ async function handleFaceMatch(employeeId) {
         addLogEntry(res);
         updateStats(res);
         playSound(res.status === 'success' ? 'success' : 'error');
+        if (res.status === 'success') {
+            speakGreeting(res.teacher_name || res.teacher_name_kh, res.action, res.shift);
+        }
     } catch (e) {
         showResult({ status: 'error', message: e.message, action: 'error' });
         addLogEntry({ status: 'error', message: e.message, teacher_name: '—', action: 'error' });

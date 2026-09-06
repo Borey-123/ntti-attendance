@@ -17,6 +17,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     
     <style>
         :root {
@@ -864,6 +865,15 @@
                         </div>
                         <div class="action-tile-label">{{ __('GPS Check-In') }}</div>
                         <div class="action-tile-sub">{{ __('Location Check') }}</div>
+                    </button>
+
+                    {{-- 2. Scan Screen Live QR --}}
+                    <button onclick="openDynamicQrScannerModal()" class="action-tile-btn" style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.25); color: var(--text-main);">
+                        <div class="action-tile-icon" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9;">
+                            <i class="ph ph-qr-code"></i>
+                        </div>
+                        <div class="action-tile-label">{{ __('Scan Screen QR') }}</div>
+                        <div class="action-tile-sub">{{ __('Live Anti-Proxy') }}</div>
                     </button>
 
                     {{-- 2. My QR Code --}}
@@ -2504,5 +2514,139 @@ async function submitLeaveForm(e) {
             }
         }
     }
+
+    // ── Live Screen Dynamic QR Code Camera Scanner ──
+    let portalQrScanner = null;
+    let isProcessingQr = false;
+
+    window.openDynamicQrScannerModal = function() {
+        const modal = document.getElementById('portalDynamicQrModal');
+        const feedback = document.getElementById('portalQrScanFeedback');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        if (feedback) { feedback.style.display = 'none'; feedback.innerHTML = ''; }
+        isProcessingQr = false;
+
+        setTimeout(() => {
+            try {
+                portalQrScanner = new Html5Qrcode("portal-qr-reader");
+                portalQrScanner.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 220, height: 220 } },
+                    onDynamicQrSuccess,
+                    (err) => {}
+                ).catch(err => {
+                    console.error("Camera start error:", err);
+                    if (feedback) {
+                        feedback.style.display = 'block';
+                        feedback.style.background = 'rgba(239, 68, 68, 0.15)';
+                        feedback.style.color = '#ef4444';
+                        feedback.innerHTML = '{{ __("Camera access required or not available.") }}';
+                    }
+                });
+            } catch(e) {
+                console.error(e);
+            }
+        }, 150);
+    };
+
+    window.closeDynamicQrScannerModal = function() {
+        const modal = document.getElementById('portalDynamicQrModal');
+        if (portalQrScanner) {
+            portalQrScanner.stop().then(() => {
+                portalQrScanner.clear();
+                portalQrScanner = null;
+            }).catch(() => {
+                portalQrScanner = null;
+            });
+        }
+        if (modal) modal.style.display = 'none';
+        isProcessingQr = false;
+    };
+
+    async function onDynamicQrSuccess(decodedText) {
+        if (isProcessingQr) return;
+        isProcessingQr = true;
+
+        const feedback = document.getElementById('portalQrScanFeedback');
+        if (feedback) {
+            feedback.style.display = 'block';
+            feedback.style.background = 'rgba(14, 165, 233, 0.15)';
+            feedback.style.color = '#0ea5e9';
+            feedback.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> {{ __("Verifying screen token...") }}';
+        }
+
+        try {
+            const res = await fetch("{{ route('portal.dynamic-qr-checkin') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ token: decodedText })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                if (feedback) {
+                    feedback.style.background = 'rgba(16, 185, 129, 0.15)';
+                    feedback.style.color = '#10b981';
+                    feedback.innerHTML = `<i class="ph ph-check-circle"></i> ${data.message || '{{ __("Attendance recorded successfully!") }}'}`;
+                }
+                setTimeout(() => {
+                    closeDynamicQrScannerModal();
+                    alert(data.message || '{{ __("Attendance recorded successfully!") }}');
+                    location.reload();
+                }, 1200);
+            } else {
+                if (feedback) {
+                    feedback.style.background = 'rgba(239, 68, 68, 0.15)';
+                    feedback.style.color = '#ef4444';
+                    feedback.innerHTML = `<i class="ph ph-warning-circle"></i> ${data.message || '{{ __("Failed to verify QR code.") }}'}`;
+                }
+                setTimeout(() => { isProcessingQr = false; }, 2500);
+            }
+        } catch(err) {
+            console.error(err);
+            if (feedback) {
+                feedback.style.background = 'rgba(239, 68, 68, 0.15)';
+                feedback.style.color = '#ef4444';
+                feedback.innerHTML = '{{ __("Network error. Please try again.") }}';
+            }
+            setTimeout(() => { isProcessingQr = false; }, 2500);
+        }
+    }
 </script>
+
+{{-- Interactive Dynamic Screen QR Scanner Modal --}}
+<div id="portalDynamicQrModal" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 9999;" onclick="if(event.target===this) closeDynamicQrScannerModal()">
+    <div class="modal-content" style="max-width: 440px; padding: 2rem; border-radius: 1.75rem; text-align: center; border: 1px solid var(--border); background: var(--card); backdrop-filter: blur(20px);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <h3 style="margin: 0; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 0.6rem; font-size: 1.2rem;">
+                <i class="ph ph-qr-code" style="color: #0ea5e9; font-size: 1.4rem;"></i>
+                {{ __('Scan Live Screen QR') }}
+            </h3>
+            <button onclick="closeDynamicQrScannerModal()" style="background: none; border: none; color: var(--text-sub); font-size: 1.5rem; cursor: pointer;">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+
+        <p style="color: var(--text-sub); font-size: 0.85rem; margin-bottom: 1.25rem; line-height: 1.4;">
+            {{ __('Point camera at the rotating QR code displayed on the Kiosk / Live TV screen to confirm attendance.') }}
+        </p>
+
+        {{-- Scanner Viewport Box --}}
+        <div style="position: relative; width: 100%; border-radius: 1.25rem; overflow: hidden; border: 2px solid #0ea5e9; background: #000; aspect-ratio: 1; max-width: 280px; margin: 0 auto 1.25rem; box-shadow: 0 10px 30px rgba(14, 165, 233, 0.2);">
+            <div id="portal-qr-reader" style="width: 100%; height: 100%;"></div>
+        </div>
+
+        <div id="portalQrScanFeedback" style="display: none; padding: 0.75rem 1rem; border-radius: 0.75rem; font-weight: 700; font-size: 0.85rem; margin-bottom: 1rem;"></div>
+
+        <button type="button" onclick="closeDynamicQrScannerModal()" class="btn btn-secondary" style="width: 100%; border-radius: 1rem; padding: 0.85rem; font-weight: 800;">
+            {{ __('Cancel') }}
+        </button>
+    </div>
+</div>
 </html>

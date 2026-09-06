@@ -182,6 +182,12 @@
                                 <div>
                                     <div style="font-weight: 800; color: var(--text-primary); font-size: 0.95rem; line-height: 1.2;">{{ $teacherName }}</div>
                                     <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">{{ $req->teacher->department ?? '—' }}</div>
+                                    @if($req->substituteTeacher)
+                                        <div style="margin-top: 5px; display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; background: rgba(59, 130, 246, 0.12); color: #3b82f6; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(59, 130, 246, 0.25);">
+                                            <i class="ph ph-user-switch"></i>
+                                            <span>{{ __('Sub:') }} {{ app()->getLocale() == 'km' ? ($req->substituteTeacher->name_kh ?: $req->substituteTeacher->name) : $req->substituteTeacher->name }}</span>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </td>
@@ -218,21 +224,33 @@
                             @endif
                         </td>
                         <td>
-                            <div style="display: flex; gap: 0.4rem; justify-content: center;">
+                            <div style="display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap;">
                                 @if($req->status === 'pending')
                                     <button class="btn btn-sm btn-success"
                                         onclick="confirmLeaveAction({{ $req->id }}, 'approved', '{{ addslashes($teacherName) }}')"
                                         title="{{ __('Approve') }}"
-                                        style="border-radius: 0.6rem; padding: 0.4rem 0.8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                        style="border-radius: 0.6rem; padding: 0.4rem 0.7rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
                                         <i class="ph ph-check-bold"></i> {{ __('Approve') }}
                                     </button>
                                     <button class="btn btn-sm btn-danger"
                                         onclick="confirmLeaveAction({{ $req->id }}, 'rejected', '{{ addslashes($teacherName) }}')"
                                         title="{{ __('Reject') }}"
-                                        style="border-radius: 0.6rem; padding: 0.4rem 0.8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                        style="border-radius: 0.6rem; padding: 0.4rem 0.7rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
                                         <i class="ph ph-x-bold"></i> {{ __('Reject') }}
                                     </button>
-                                @else
+                                @endif
+
+                                @if($req->status !== 'rejected')
+                                    <button class="btn btn-sm"
+                                        onclick="openSubstituteModal({{ $req->id }}, '{{ addslashes($teacherName) }}', '{{ $req->start_date }}', '{{ $req->end_date }}')"
+                                        title="{{ __('Assign / Change Substitute Teacher') }}"
+                                        style="background: rgba(59, 130, 246, 0.12); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 0.6rem; padding: 0.4rem 0.7rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                        <i class="ph ph-user-switch"></i>
+                                        <span>{{ $req->substitute_teacher_id ? __('Sub') : __('Sub') }}</span>
+                                    </button>
+                                @endif
+
+                                @if($req->status === 'rejected')
                                     <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">{{ __('Completed') }}</span>
                                 @endif
                             </div>
@@ -274,6 +292,82 @@
     </div>
 </div>
 
+{{-- ── Smart Substitute Teacher Recommender Modal ── --}}
+<div id="substituteModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:1rem;">
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:1.75rem; max-width:680px; width:100%; max-height:88vh; display:flex; flex-direction:column; box-shadow:0 25px 70px rgba(0,0,0,0.5); overflow:hidden; animation:modalPop 0.25s cubic-bezier(0.16,1,0.3,1);">
+        {{-- Header --}}
+        <div style="padding:1.25rem 1.75rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.02);">
+            <div style="display:flex; align-items:center; gap:0.85rem;">
+                <div style="width:42px; height:42px; border-radius:12px; background:rgba(59,130,246,0.15); color:#3b82f6; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;">
+                    <i class="ph ph-user-switch"></i>
+                </div>
+                <div>
+                    <h3 style="margin:0; font-size:1.15rem; font-weight:800; color:var(--text-primary);">{{ __('Smart Substitute Matcher') }}</h3>
+                    <p id="subModalSubtitle" style="margin:2px 0 0; font-size:0.8rem; color:var(--text-secondary);"></p>
+                </div>
+            </div>
+            <button onclick="closeSubstituteModal()" type="button" style="background:none; border:none; color:var(--text-secondary); font-size:1.35rem; cursor:pointer; padding:0.4rem; border-radius:0.5rem; transition:color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+
+        {{-- Body --}}
+        <div id="subModalBody" style="overflow-y:auto; padding:1.5rem 1.75rem; flex:1;">
+            {{-- Loading State --}}
+            <div id="subModalLoading" style="text-align:center; padding:3rem 1rem;">
+                <div style="display:inline-block; width:36px; height:36px; border:3px solid rgba(59,130,246,0.2); border-top-color:#3b82f6; border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:1rem;"></div>
+                <div style="font-weight:700; color:var(--text-primary); font-size:0.95rem;">{{ __('Analyzing Timetables...') }}</div>
+                <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.35rem;">{{ __('Checking department schedules for conflict-free availability') }}</div>
+            </div>
+
+            {{-- Content Container --}}
+            <div id="subModalContent" style="display:none;"></div>
+        </div>
+
+        {{-- Footer --}}
+        <div style="padding:1rem 1.75rem; border-top:1px solid var(--border); background:rgba(255,255,255,0.015); display:flex; justify-content:flex-end; gap:0.75rem;">
+            <button onclick="closeSubstituteModal()" class="btn btn-secondary" style="border-radius:0.85rem; padding:0.55rem 1.35rem; font-weight:700; font-size:0.88rem;">{{ __('Close') }}</button>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes modalPop {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+.cand-card {
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    border-radius: 1.15rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    transition: all 0.2s ease;
+}
+.cand-card:hover {
+    border-color: rgba(59,130,246,0.4);
+    background: rgba(59,130,246,0.03);
+}
+.cand-card.free-cand {
+    border-color: rgba(16,185,129,0.3);
+}
+.cand-card.free-cand:hover {
+    border-color: #10b981;
+    background: rgba(16,185,129,0.04);
+}
+.cand-card.assigned-cand {
+    border-color: #3b82f6;
+    background: rgba(59,130,246,0.08);
+}
+</style>
+
 <script>
 function closeLeaveConfirm() {
     document.getElementById('leaveConfirmModal').style.display = 'none';
@@ -313,6 +407,194 @@ async function doLeaveStatusUpdate(id, status) {
         window.location.reload();
     } catch(e) {
         alert(e.message);
+    }
+}
+
+// ── Smart Substitute Matcher Logic ──
+let currentLeaveIdForSub = null;
+
+function closeSubstituteModal() {
+    document.getElementById('substituteModal').style.display = 'none';
+    currentLeaveIdForSub = null;
+}
+
+document.getElementById('substituteModal').addEventListener('click', function(e) {
+    if (e.target === this) closeSubstituteModal();
+});
+
+async function openSubstituteModal(leaveId, teacherName, startDate, endDate) {
+    currentLeaveIdForSub = leaveId;
+    const modal = document.getElementById('substituteModal');
+    const subtitle = document.getElementById('subModalSubtitle');
+    const loading = document.getElementById('subModalLoading');
+    const content = document.getElementById('subModalContent');
+
+    subtitle.textContent = `${teacherName} • ${startDate} → ${endDate}`;
+    loading.style.display = 'block';
+    content.style.display = 'none';
+    content.innerHTML = '';
+    modal.style.display = 'flex';
+
+    try {
+        const res = await window.fetchApi(`{{ url('/leave-requests') }}/${leaveId}/substitutes`);
+        renderSubstituteModal(res, leaveId);
+    } catch(err) {
+        loading.style.display = 'none';
+        content.style.display = 'block';
+        content.innerHTML = `
+            <div style="text-align:center; padding:2rem 1rem; color:#ef4444;">
+                <i class="ph ph-warning-circle" style="font-size:2.5rem; margin-bottom:0.5rem; display:block;"></i>
+                <div style="font-weight:700;">{{ __('Failed to load suggestions') }}</div>
+                <div style="font-size:0.85rem; margin-top:0.35rem;">${err.message || 'Server error'}</div>
+            </div>
+        `;
+    }
+}
+
+function getDayName(dow) {
+    const days = ['', '{{ __("Monday") }}', '{{ __("Tuesday") }}', '{{ __("Wednesday") }}', '{{ __("Thursday") }}', '{{ __("Friday") }}', '{{ __("Saturday") }}', '{{ __("Sunday") }}'];
+    return days[dow] || `Day ${dow}`;
+}
+
+function renderSubstituteModal(data, leaveId) {
+    const loading = document.getElementById('subModalLoading');
+    const content = document.getElementById('subModalContent');
+    loading.style.display = 'none';
+    content.style.display = 'block';
+
+    const slots = data.slots_to_cover || [];
+    const candidates = data.candidates || [];
+
+    let html = '';
+
+    // 1. Slots to cover
+    html += `
+        <div style="margin-bottom:1.5rem; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:1.15rem; padding:1rem 1.25rem;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+                <span style="font-size:0.8rem; font-weight:800; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">
+                    <i class="ph ph-calendar-check" style="color:var(--primary); margin-right:4px;"></i>
+                    {{ __('Classes Requiring Coverage') }} (${slots.length})
+                </span>
+            </div>
+    `;
+
+    if (slots.length === 0) {
+        html += `
+            <div style="font-size:0.85rem; color:var(--text-secondary); font-style:italic; padding:0.25rem 0;">
+                <i class="ph ph-info me-1"></i> {{ __('No weekly recurring classes scheduled on these days.') }}
+            </div>
+        `;
+    } else {
+        html += `<div style="display:flex; flex-wrap:wrap; gap:0.5rem;">`;
+        slots.forEach(s => {
+            const timeRange = (s.start_time || '').substr(0, 5) + ' - ' + (s.end_time || '').substr(0, 5);
+            html += `
+                <div style="background:rgba(var(--primary-rgb),0.08); border:1px solid rgba(var(--primary-rgb),0.25); border-radius:0.75rem; padding:0.4rem 0.75rem; font-size:0.78rem;">
+                    <strong style="color:var(--primary);">${getDayName(s.day_of_week)}</strong>
+                    <span style="color:var(--text-primary); margin-left:4px; font-weight:700;">${timeRange}</span>
+                    <span style="color:var(--text-secondary); margin-left:4px;">• ${s.subject_name || 'Class'} (${s.room_number || 'Room'})</span>
+                </div>
+            `;
+        });
+        html += `</div>`;
+    }
+    html += `</div>`;
+
+    // 2. Candidate Teachers
+    html += `
+        <div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.85rem;">
+                <span style="font-size:0.8rem; font-weight:800; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">
+                    <i class="ph ph-users-three" style="color:#3b82f6; margin-right:4px;"></i>
+                    {{ __('Department Candidates') }} (${candidates.length})
+                </span>
+                <span style="font-size:0.75rem; color:var(--text-secondary);">
+                    {{ __('Ranked by timetable availability') }}
+                </span>
+            </div>
+    `;
+
+    if (candidates.length === 0) {
+        html += `
+            <div style="text-align:center; padding:2rem; color:var(--text-muted); background:rgba(255,255,255,0.02); border-radius:1rem; border:1px solid var(--border);">
+                <i class="ph ph-user-minus" style="font-size:2rem; opacity:0.4; display:block; margin-bottom:0.5rem;"></i>
+                <div>{{ __('No other active teachers in this department.') }}</div>
+            </div>
+        `;
+    } else {
+        candidates.forEach(cand => {
+            const cardClass = cand.is_assigned ? 'cand-card assigned-cand' : (cand.is_free ? 'cand-card free-cand' : 'cand-card');
+            const avatarLetter = (cand.name || 'T').charAt(0).toUpperCase();
+
+            html += `
+                <div class="${cardClass}">
+                    <div style="display:flex; align-items:center; gap:0.85rem; min-width:0; flex:1;">
+                        <div style="width:44px; height:44px; border-radius:50%; background:var(--primary); color:#000; font-weight:800; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
+                            ${cand.photo ? `<img src="${cand.photo}" style="width:100%; height:100%; object-fit:cover;">` : avatarLetter}
+                        </div>
+                        <div style="min-width:0;">
+                            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                                <span style="font-weight:800; font-size:0.95rem; color:var(--text-primary);">${cand.name}</span>
+                                ${cand.name_kh ? `<span style="font-size:0.8rem; color:var(--text-secondary);">(${cand.name_kh})</span>` : ''}
+                                ${cand.is_assigned ? `<span class="badge" style="background:#3b82f6; color:#fff; font-size:0.7rem; padding:2px 7px;"><i class="ph ph-check-circle me-1"></i>{{ __('Current Sub') }}</span>` : ''}
+                            </div>
+                            <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:2px; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                                <span>${cand.employee_id || 'ID'}</span>
+                                ${cand.phone ? `<span>• <i class="ph ph-phone"></i> ${cand.phone}</span>` : ''}
+                            </div>
+                            <div style="margin-top:4px;">
+                                ${cand.is_free
+                                    ? `<span style="display:inline-flex; align-items:center; gap:4px; font-size:0.73rem; color:#10b981; font-weight:800;"><i class="ph ph-check-circle-fill"></i> {{ __('100% Conflict-Free') }}</span>`
+                                    : `<span style="display:inline-flex; align-items:center; gap:4px; font-size:0.73rem; color:#f59e0b; font-weight:800;"><i class="ph ph-warning"></i> ${cand.conflict_count} {{ __('timetable conflict(s)') }}</span>`
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="flex-shrink:0;">
+                        ${cand.is_assigned ? `
+                            <button disabled class="btn btn-sm" style="background:rgba(59,130,246,0.2); color:#3b82f6; border:1px solid rgba(59,130,246,0.4); border-radius:0.75rem; padding:0.45rem 0.9rem; font-weight:800; cursor:default;">
+                                <i class="ph ph-check"></i> {{ __('Assigned') }}
+                            </button>
+                        ` : `
+                            <button onclick="doAssignSubstitute(${leaveId}, ${cand.id}, '${escapeJsString(cand.name)}', ${cand.is_free})"
+                                class="btn btn-sm ${cand.is_free ? 'btn-primary' : 'btn-secondary'}"
+                                style="border-radius:0.75rem; padding:0.45rem 1rem; font-weight:800; display:inline-flex; align-items:center; gap:0.35rem; font-size:0.82rem;">
+                                <i class="ph ph-user-switch"></i>
+                                <span>${cand.is_free ? '{{ __("Assign") }}' : '{{ __("Assign Anyway") }}'}</span>
+                            </button>
+                        `}
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    html += `</div>`;
+    content.innerHTML = html;
+}
+
+function escapeJsString(str) {
+    return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+async function doAssignSubstitute(leaveId, subId, subName, isFree) {
+    if (!isFree) {
+        if (!confirm(`{{ __("Warning: This teacher has conflicting classes during this period. Assign") }} ${subName} {{ __("anyway?") }}`)) {
+            return;
+        }
+    }
+
+    try {
+        const res = await window.fetchApi(`{{ url('/leave-requests') }}/${leaveId}/substitute`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ substitute_teacher_id: subId })
+        });
+        alert(res.message || 'Substitute assigned successfully!');
+        window.location.reload();
+    } catch(err) {
+        alert(err.message || 'Failed to assign substitute.');
     }
 }
 </script>

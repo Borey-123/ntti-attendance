@@ -11,6 +11,7 @@ class LeaveRequest extends Model
 
     protected $fillable = [
         'teacher_id',
+        'substitute_teacher_id',
         'leave_type',
         'start_date',
         'end_date',
@@ -23,5 +24,10 @@ class LeaveRequest extends Model
     public function teacher()
     {
         return $this->belongsTo(Teacher::class);
+    }
+
+    public function substituteTeacher()
+    {
+        return $this->belongsTo(Teacher::class, 'substitute_teacher_id');
     }
 }
