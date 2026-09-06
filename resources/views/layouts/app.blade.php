@@ -991,134 +991,14 @@
         
         fetchTelegramChatsCount();
 
-        // Global Search Logic
-        let searchTimeout;
-        const searchInput = document.getElementById('globalSearchInput');
-        const searchDropdown = document.getElementById('searchDropdown');
-        const searchResults = document.getElementById('searchResults');
-
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
-                const query = e.target.value.trim();
-                clearTimeout(searchTimeout);
-                
-                if (query.length < 2) {
-                    searchDropdown.style.display = 'none';
-                    return;
-                }
-                
-                searchTimeout = setTimeout(async () => {
-                    try {
-                        const data = await window.fetchApi(`/api-web/teachers?search=${encodeURIComponent(query)}`);
-                        renderSearchResults(data);
-                    } catch (err) {
-                        console.error('Search error:', err);
-                    }
-                }, 300);
-            });
-
-            function renderSearchResults(data) {
-                const query = searchInput.value.toLowerCase().trim();
-                const pages = [
-                    { title: '{{ __("Dashboard") }}', url: '{{ route("dashboard") }}', icon: 'ph-house', keywords: 'home' },
-                    { title: '{{ __("Teachers List") }}', url: '{{ route("teachers.index") }}', icon: 'ph-users', keywords: 'staff register' },
-                    { title: '{{ __("RFID Management") }}', url: '{{ route("rfid.index") }}', icon: 'ph-identification-card', keywords: 'cards tags' },
-                    { title: '{{ __("Attendance Scan") }}', url: '{{ route("scan.index") }}', icon: 'ph-scan', keywords: 'checkin checkout' },
-                    { title: '{{ __("Daily Reports") }}', url: '{{ route("reports.index") }}', icon: 'ph-file-pdf', keywords: 'logs export' },
-                    { title: '{{ __("Departments") }}', url: '{{ route("departments.index") }}', icon: 'ph-buildings', keywords: 'org groups' },
-                    { title: '{{ __("Security & Audit") }}', url: '{{ route("security.index") }}', icon: 'ph-shield-check', keywords: 'logs cache integrity' },
-                    { title: '{{ __("System Settings") }}', url: '{{ route("settings.index") }}', icon: 'ph-gear', keywords: 'config appearance backup' },
-                    { title: '{{ __("Live Monitor") }}', url: '{{ route("live.monitor") }}', icon: 'ph-desktop', keywords: 'tv screen monitor' },
-                ];
-
-                const matchedPages = pages.filter(p => 
-                    p.title.toLowerCase().includes(query) || p.keywords.includes(query)
-                );
-
-                if (!data.length && !matchedPages.length) {
-                    searchResults.innerHTML = `<div style="padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">{{ __('No results found') }}</div>`;
-                } else {
-                    let html = '';
-
-                    if (matchedPages.length) {
-                        html += `<div style="padding: 0.5rem 0.75rem 0.25rem; font-size: 0.65rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;">{{ __('Navigation') }}</div>`;
-                        matchedPages.forEach(p => {
-                            html += `
-                                <a href="${p.url}" class="search-result-item" style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border-radius: 0.75rem; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; text-decoration: none;">
-                                    <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(var(--primary-rgb), 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                        <i class="ph ${p.icon}" style="font-size: 1.25rem;"></i>
-                                    </div>
-                                    <div style="flex: 1;">
-                                        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.85rem;">${p.title}</div>
-                                        <div style="font-size: 0.7rem; color: var(--text-muted);">{{ __('System Page') }}</div>
-                                    </div>
-                                    <i class="ph ph-arrow-right" style="color: var(--text-secondary); font-size: 0.9rem; margin-right: 0.5rem; transition: transform 0.2s ease, color 0.2s ease;"></i>
-                                </a>
-                            `;
-                        });
-                    }
-
-                    if (data.length) {
-                        html += `<div style="padding: 1rem 0.75rem 0.25rem; font-size: 0.65rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;">{{ __('Teachers & Staff') }}</div>`;
-                        data.slice(0, 6).forEach(teacher => {
-                            html += `
-                                <div class="search-result-item teacher-result" onclick="openTeacherInsights(${teacher.id})" style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border-radius: 0.75rem; cursor: pointer; transition: all 0.2s; border: 1px solid transparent;">
-                                    <div style="width: 38px; height: 38px; border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.05); flex-shrink: 0; border: 1px solid var(--border);">
-                                        ${teacher.photo ? `<img src="${teacher.photo}" style="width:100%; height:100%; object-fit:cover;">` : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--primary); font-weight:800; font-size:0.9rem;">${teacher.name.charAt(0)}</div>`}
-                                    </div>
-                                    <div style="flex: 1;">
-                                        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.85rem; line-height: 1.2;">${teacher.name_kh || ''}</div>
-                                        <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.8rem;">${teacher.name}</div>
-                                        <div style="font-size: 0.65rem; color: var(--primary); text-transform: uppercase; font-weight: 800; margin-top: 2px;">${teacher.department}</div>
-                                    </div>
-                                    <i class="ph ph-caret-right" style="color: var(--text-secondary); font-size: 1rem; margin-right: 0.5rem; transition: transform 0.2s ease, color 0.2s ease;"></i>
-                                </div>
-                            `;
-                        });
-                    }
-
-                    searchResults.innerHTML = html;
-
-                    // Re-apply hover effects
-                    document.querySelectorAll('.search-result-item').forEach(item => {
-                        item.addEventListener('mouseover', () => {
-                            item.style.background = 'rgba(var(--primary-rgb), 0.08)';
-                            item.style.borderColor = 'rgba(var(--primary-rgb), 0.2)';
-                            const icon = item.querySelector('.ph-arrow-right, .ph-caret-right');
-                            if (icon) {
-                                icon.style.transform = 'translateX(4px)';
-                                icon.style.color = 'var(--primary)';
-                            }
-                        });
-                        item.addEventListener('mouseout', () => {
-                            item.style.background = 'transparent';
-                            item.style.borderColor = 'transparent';
-                            const icon = item.querySelector('.ph-arrow-right, .ph-caret-right');
-                            if (icon) {
-                                icon.style.transform = 'translateX(0)';
-                                icon.style.color = 'var(--text-secondary)';
-                            }
-                        });
-                    });
-                }
-                searchDropdown.style.display = 'block';
-            }
-
-            // Close dropdown on click outside
-            document.addEventListener('click', (e) => {
-                if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
-                    searchDropdown.style.display = 'none';
-                }
-            });
-        }
-
-        // ── Spotlight Command Palette System (Ctrl+K / Cmd+K) ──
-        const cpModal = document.getElementById('commandPaletteModal');
-        const cpInput = document.getElementById('commandPaletteInput');
-        const cpBody  = document.getElementById('commandPaletteBody');
+        // ── Global Spotlight Command Palette System (Ctrl+K / Cmd+K) ──
         let cpSelectedIndex = 0;
         let cpItems = [];
         let cpSearchTimeout = null;
+
+        function getCpModal() { return document.getElementById('commandPaletteModal'); }
+        function getCpInput() { return document.getElementById('commandPaletteInput'); }
+        function getCpBody()  { return document.getElementById('commandPaletteBody'); }
 
         const cpDefaultActions = [
             {
@@ -1219,20 +1099,28 @@
         ];
 
         window.openCommandPalette = function() {
-            if (!cpModal) return;
-            cpModal.style.display = 'flex';
-            cpInput.value = '';
+            const modal = getCpModal();
+            const input = getCpInput();
+            if (!modal) return;
+            modal.style.display = 'flex';
+            if (input) {
+                input.value = '';
+                setTimeout(() => input.focus(), 60);
+            }
             cpSelectedIndex = 0;
             renderCommandPalette('');
-            setTimeout(() => cpInput.focus(), 50);
         };
 
         window.closeCommandPalette = function() {
-            if (!cpModal) return;
-            cpModal.style.display = 'none';
+            const modal = getCpModal();
+            if (!modal) return;
+            modal.style.display = 'none';
         };
 
         function renderCommandPalette(query) {
+            const cpBody = getCpBody();
+            if (!cpBody) return;
+
             query = (query || '').toLowerCase().trim();
             cpItems = [];
             let html = '';
@@ -1315,7 +1203,7 @@
                     } catch(err) {
                         console.error('Teacher search error in command palette:', err);
                     }
-                }, 250);
+                }, 200);
             }
         }
 
@@ -1337,6 +1225,8 @@
         }
 
         function highlightPaletteItem(idx) {
+            const cpBody = getCpBody();
+            if (!cpBody) return;
             const all = cpBody.querySelectorAll('.cp-item');
             if (!all.length) return;
             if (idx < 0) idx = all.length - 1;
@@ -1373,39 +1263,48 @@
             }
         };
 
-        if (cpInput) {
-            cpInput.addEventListener('input', (e) => {
-                renderCommandPalette(e.target.value);
-            });
+        // Wire input events
+        document.addEventListener('DOMContentLoaded', () => {
+            const cpInput = getCpInput();
+            if (cpInput) {
+                cpInput.addEventListener('input', (e) => {
+                    renderCommandPalette(e.target.value);
+                });
 
-            cpInput.addEventListener('keydown', (e) => {
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    highlightPaletteItem(cpSelectedIndex + 1);
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    highlightPaletteItem(cpSelectedIndex - 1);
-                } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    executePaletteItem(cpSelectedIndex);
-                } else if (e.key === 'Escape') {
-                    e.preventDefault();
-                    closeCommandPalette();
-                }
-            });
-        }
+                cpInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        highlightPaletteItem(cpSelectedIndex + 1);
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        highlightPaletteItem(cpSelectedIndex - 1);
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        executePaletteItem(cpSelectedIndex);
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        closeCommandPalette();
+                    }
+                });
+            }
+        });
 
         // Global Shortcut: Ctrl+K or Cmd+K
         document.addEventListener('keydown', (e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+            if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
                 e.preventDefault();
-                if (cpModal.style.display === 'flex') {
+                e.stopPropagation();
+                const modal = getCpModal();
+                if (modal && modal.style.display === 'flex') {
                     closeCommandPalette();
                 } else {
                     openCommandPalette();
                 }
-            } else if (e.key === 'Escape' && cpModal && cpModal.style.display === 'flex') {
-                closeCommandPalette();
+            } else if (e.key === 'Escape') {
+                const modal = getCpModal();
+                if (modal && modal.style.display === 'flex') {
+                    closeCommandPalette();
+                }
             }
         });
     </script>

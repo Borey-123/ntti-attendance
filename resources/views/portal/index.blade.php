@@ -983,65 +983,128 @@
                         $present = $stats['present'];
                         $rate = round(($present / $total) * 100);
                         $offset = 283 - (283 * $rate / 100);
+                        $kpiHoursDecimal = number_format(($totalWorkedMinutes ?? 0) / 60, 1);
                     @endphp
 
-                    <div class="stats-summary">
-                        <div class="progress-ring-container">
-                            <svg width="100" height="100">
-                                <circle cx="50" cy="50" r="45" fill="transparent" stroke="rgba(255,255,255,0.1)" stroke-width="8" />
-                                <circle cx="50" cy="50" r="45" fill="transparent" stroke="var(--primary)" stroke-width="8" 
-                                        stroke-dasharray="283" stroke-dashoffset="{{ $offset }}" stroke-linecap="round" 
-                                        style="transition: stroke-dashoffset 1.5s ease-out;" />
-                            </svg>
-                            <div class="progress-ring-text">
-                                <span class="percent">{{ $rate }}%</span>
-                                <span class="label">{{ __('Rate') }}</span>
-                            </div>
-                        </div>
-                        <div class="stat-badges">
-                            <div class="s-badge">
-                                <i class="ph ph-calendar-check" style="color: var(--success);"></i>
-                                <div>
-                                    <div class="val">{{ $stats['present'] }}</div>
-                                    <div class="lab">{{ __('Present') }}</div>
-                                </div>
-                            </div>
-                            <div class="s-badge">
-                                <i class="ph ph-clock-user" style="color: var(--warning);"></i>
-                                <div>
-                                    <div class="val">{{ $stats['late'] }}</div>
-                                    <div class="lab">{{ __('Late') }}</div>
-                                </div>
-                            </div>
-                            <div class="s-badge">
-                                <i class="ph ph-x-circle" style="color: var(--danger);"></i>
-                                <div>
-                                    <div class="val">{{ $stats['absent'] }}</div>
-                                    <div class="lab">{{ __('Absent') }}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {{-- ── Ultra-Premium Attendance Performance & Health Dashboard Card ── --}}
+                    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 1.75rem; padding: 1.5rem 1.35rem; margin-bottom: 2rem; box-shadow: 0 15px 35px rgba(0,0,0,0.06); backdrop-filter: blur(20px); position: relative; overflow: hidden;">
+                        {{-- Ambient background gradient glow --}}
+                        <div style="position: absolute; top: -40px; right: -40px; width: 140px; height: 140px; border-radius: 50%; background: radial-gradient(circle, rgba(var(--primary-rgb), 0.18), transparent 70%); pointer-events: none;"></div>
 
-                    {{-- 2. KPI Metrics Grid (Worked Hours, Avg Arrival, Punctual Streak) --}}
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 2rem;">
-                        <div style="background: rgba(0,0,0,0.02); border: 1px solid var(--border); padding: 0.85rem 0.5rem; border-radius: 1.25rem; text-align: center;">
-                            @php
-                                $kpiHoursDecimal = number_format(($totalWorkedMinutes ?? 0) / 60, 2);
-                            @endphp
-                            <i class="ph ph-clock" style="font-size: 1.3rem; color: var(--primary); margin-bottom: 0.2rem; display: block;"></i>
-                            <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-main);">{{ $kpiHoursDecimal }}h</div>
-                            <div style="font-size: 0.65rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; margin-top: 2px;">{{ __('Worked Hours') }}</div>
+                        {{-- Card Header --}}
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 0.45rem;">
+                                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 10px #10b981; display: inline-block;"></span>
+                                    <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.01em;">
+                                        {{ __('Attendance Health') }}
+                                    </h4>
+                                </div>
+                                <div style="font-size: 0.72rem; color: var(--text-sub); margin-top: 2px; font-weight: 600;">
+                                    {{ __('Last 30 Calendar Days Evaluation') }}
+                                </div>
+                            </div>
+                            
+                            {{-- Punctuality Standing Badge --}}
+                            @if($rate >= 90)
+                                <span style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.72rem; font-weight: 800; padding: 0.3rem 0.75rem; border-radius: 0.75rem; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                    <i class="ph ph-seal-check" style="font-size: 0.9rem;"></i> {{ __('Excellent Standing') }}
+                                </span>
+                            @elseif($rate >= 75)
+                                <span style="background: rgba(14, 165, 233, 0.12); color: #0ea5e9; border: 1px solid rgba(14, 165, 233, 0.3); font-size: 0.72rem; font-weight: 800; padding: 0.3rem 0.75rem; border-radius: 0.75rem; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                    <i class="ph ph-thumbs-up" style="font-size: 0.9rem;"></i> {{ __('Good Standing') }}
+                                </span>
+                            @else
+                                <span style="background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.72rem; font-weight: 800; padding: 0.3rem 0.75rem; border-radius: 0.75rem; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                    <i class="ph ph-warning-circle" style="font-size: 0.9rem;"></i> {{ __('Review Needed') }}
+                                </span>
+                            @endif
                         </div>
-                        <div style="background: rgba(0,0,0,0.02); border: 1px solid var(--border); padding: 0.85rem 0.5rem; border-radius: 1.25rem; text-align: center;">
-                            <i class="ph ph-sun-horizon" style="font-size: 1.3rem; color: #f59e0b; margin-bottom: 0.2rem; display: block;"></i>
-                            <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-main);">{{ $avgArrivalTime ?? '—' }}</div>
-                            <div style="font-size: 0.65rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; margin-top: 2px;">{{ __('Avg Arrival') }}</div>
+
+                        {{-- Hero Analytics Row: Ring + 3 Micro Status Cards --}}
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem;">
+                            {{-- Circular Gauge --}}
+                            <div style="position: relative; width: 104px; height: 104px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg width="104" height="104" style="transform: rotate(-90deg);">
+                                    <circle cx="52" cy="52" r="44" fill="transparent" stroke="rgba(255,255,255,0.06)" stroke-width="8" />
+                                    <circle cx="52" cy="52" r="44" fill="transparent" stroke="url(#portalRateGrad)" stroke-width="8" 
+                                            stroke-dasharray="276" stroke-dashoffset="{{ 276 - (276 * $rate / 100) }}" stroke-linecap="round" 
+                                            style="transition: stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1);" />
+                                    <defs>
+                                        <linearGradient id="portalRateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stop-color="var(--primary)" />
+                                            <stop offset="100%" stop-color="#0ea5e9" />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div style="position: absolute; text-align: center; display: flex; flex-direction: column; align-items: center;">
+                                    <span style="font-size: 1.35rem; font-weight: 900; color: var(--text-main); line-height: 1; letter-spacing: -0.02em;">{{ $rate }}%</span>
+                                    <span style="font-size: 0.62rem; font-weight: 800; color: var(--text-sub); text-transform: uppercase; margin-top: 2px;">{{ __('Rate') }}</span>
+                                </div>
+                            </div>
+
+                            {{-- 3 Micro Status Chips --}}
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-width: 0;">
+                                {{-- Present --}}
+                                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 0.85rem; padding: 0.4rem 0.85rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <i class="ph ph-check-circle" style="color: #10b981; font-size: 1.1rem;"></i>
+                                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-main);">{{ __('Present') }}</span>
+                                    </div>
+                                    <span style="font-weight: 800; font-size: 0.95rem; color: #10b981;">{{ $stats['present'] }}</span>
+                                </div>
+
+                                {{-- Late --}}
+                                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 0.85rem; padding: 0.4rem 0.85rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <i class="ph ph-clock-user" style="color: #f59e0b; font-size: 1.1rem;"></i>
+                                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-main);">{{ __('Late') }}</span>
+                                    </div>
+                                    <span style="font-weight: 800; font-size: 0.95rem; color: #f59e0b;">{{ $stats['late'] }}</span>
+                                </div>
+
+                                {{-- Absent --}}
+                                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 0.85rem; padding: 0.4rem 0.85rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <i class="ph ph-x-circle" style="color: #ef4444; font-size: 1.1rem;"></i>
+                                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-main);">{{ __('Absent') }}</span>
+                                    </div>
+                                    <span style="font-weight: 800; font-size: 0.95rem; color: #ef4444;">{{ $stats['absent'] }}</span>
+                                </div>
+                            </div>
                         </div>
-                        <div style="background: rgba(0,0,0,0.02); border: 1px solid var(--border); padding: 0.85rem 0.5rem; border-radius: 1.25rem; text-align: center;">
-                            <i class="ph ph-fire" style="font-size: 1.3rem; color: #ef4444; margin-bottom: 0.2rem; display: block;"></i>
-                            <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-main);">{{ $onTimeStreak ?? 0 }} {{ __('Days') }}</div>
-                            <div style="font-size: 0.65rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; margin-top: 2px;">{{ __('Punctual Streak') }}</div>
+
+                        {{-- Subtle Divider --}}
+                        <div style="height: 1px; background: var(--border); margin-bottom: 1.15rem; opacity: 0.6;"></div>
+
+                        {{-- Bottom 3 KPI Metric Cards --}}
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.65rem;">
+                            {{-- Worked Hours --}}
+                            <div style="background: rgba(var(--primary-rgb), 0.05); border: 1px solid rgba(var(--primary-rgb), 0.18); padding: 0.75rem 0.4rem; border-radius: 1.15rem; text-align: center; transition: all 0.2s;">
+                                <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(var(--primary-rgb), 0.12); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; margin-bottom: 0.35rem;">
+                                    <i class="ph ph-hourglass-medium"></i>
+                                </div>
+                                <div style="font-weight: 900; font-size: 1.05rem; color: var(--text-main); line-height: 1.1;">{{ $kpiHoursDecimal }}<span style="font-size: 0.75rem; font-weight: 700; color: var(--text-sub); margin-left: 1px;">h</span></div>
+                                <div style="font-size: 0.62rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; margin-top: 3px; letter-spacing: 0.3px;">{{ __('Worked') }}</div>
+                            </div>
+
+                            {{-- Avg Arrival --}}
+                            <div style="background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.18); padding: 0.75rem 0.4rem; border-radius: 1.15rem; text-align: center; transition: all 0.2s;">
+                                <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(245, 158, 11, 0.12); color: #f59e0b; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; margin-bottom: 0.35rem;">
+                                    <i class="ph ph-sun-horizon"></i>
+                                </div>
+                                <div style="font-weight: 900; font-size: 0.95rem; color: var(--text-main); line-height: 1.1;">{{ $avgArrivalTime ?? '—' }}</div>
+                                <div style="font-size: 0.62rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; margin-top: 3px; letter-spacing: 0.3px;">{{ __('Arrival') }}</div>
+                            </div>
+
+                            {{-- Punctual Streak --}}
+                            <div style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.18); padding: 0.75rem 0.4rem; border-radius: 1.15rem; text-align: center; transition: all 0.2s;">
+                                <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); color: #ef4444; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; margin-bottom: 0.35rem;">
+                                    <i class="ph ph-fire"></i>
+                                </div>
+                                <div style="font-weight: 900; font-size: 1.05rem; color: var(--text-main); line-height: 1.1;">{{ $onTimeStreak ?? 0 }}<span style="font-size: 0.75rem; font-weight: 700; color: var(--text-sub); margin-left: 1px;">d</span></div>
+                                <div style="font-size: 0.62rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; margin-top: 3px; letter-spacing: 0.3px;">{{ __('Streak') }}</div>
+                            </div>
                         </div>
                     </div>
 

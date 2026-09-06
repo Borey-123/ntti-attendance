@@ -45,6 +45,73 @@
         color: #000;
         box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.2);
     }
+    .leave-actions-bar {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        white-space: nowrap;
+        background: rgba(255, 255, 255, 0.03);
+        padding: 0.25rem 0.35rem;
+        border-radius: 0.85rem;
+        border: 1px solid var(--border);
+    }
+    .btn-leave-action {
+        height: 32px;
+        padding: 0 0.65rem;
+        border-radius: 0.6rem;
+        font-size: 0.76rem;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        text-decoration: none;
+    }
+    .btn-leave-action.btn-approve {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+        border-color: rgba(16, 185, 129, 0.3);
+    }
+    .btn-leave-action.btn-approve:hover {
+        background: #10b981;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        transform: translateY(-1px);
+    }
+    .btn-leave-action.btn-reject {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.3);
+    }
+    .btn-leave-action.btn-reject:hover {
+        background: #ef4444;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+        transform: translateY(-1px);
+    }
+    .btn-leave-action.btn-sub {
+        background: rgba(59, 130, 246, 0.12);
+        color: #3b82f6;
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+    .btn-leave-action.btn-sub:hover {
+        background: #3b82f6;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+        transform: translateY(-1px);
+    }
+    .btn-leave-action.btn-sub.has-sub {
+        background: rgba(139, 92, 246, 0.14);
+        color: #a855f7;
+        border-color: rgba(139, 92, 246, 0.35);
+    }
+    .btn-leave-action.btn-sub.has-sub:hover {
+        background: #8b5cf6;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+    }
 </style>
 @endpush
 
@@ -145,7 +212,7 @@
                         <th>{{ __('Period / Duration') }}</th>
                         <th>{{ __('Reason') }}</th>
                         <th style="text-align: center; width: 120px;">{{ __('Status') }}</th>
-                        <th style="width: 140px; text-align: center;">{{ __('Actions') }}</th>
+                        <th style="width: 220px; text-align: center;">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -223,35 +290,35 @@
                                 <span class="badge badge-warning" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);"><i class="ph ph-clock me-1"></i>{{ __('Pending') }}</span>
                             @endif
                         </td>
-                        <td>
-                            <div style="display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap;">
+                        <td style="text-align: center;">
+                            <div class="leave-actions-bar">
                                 @if($req->status === 'pending')
-                                    <button class="btn btn-sm btn-success"
+                                    <button class="btn-leave-action btn-approve"
                                         onclick="confirmLeaveAction({{ $req->id }}, 'approved', '{{ addslashes($teacherName) }}')"
-                                        title="{{ __('Approve') }}"
-                                        style="border-radius: 0.6rem; padding: 0.4rem 0.7rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
-                                        <i class="ph ph-check-bold"></i> {{ __('Approve') }}
+                                        title="{{ __('Approve Leave Request') }}">
+                                        <i class="ph ph-check-bold"></i>
+                                        <span>{{ __('Approve') }}</span>
                                     </button>
-                                    <button class="btn btn-sm btn-danger"
+
+                                    <button class="btn-leave-action btn-reject"
                                         onclick="confirmLeaveAction({{ $req->id }}, 'rejected', '{{ addslashes($teacherName) }}')"
-                                        title="{{ __('Reject') }}"
-                                        style="border-radius: 0.6rem; padding: 0.4rem 0.7rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
-                                        <i class="ph ph-x-bold"></i> {{ __('Reject') }}
+                                        title="{{ __('Reject Leave Request') }}">
+                                        <i class="ph ph-x-bold"></i>
+                                        <span>{{ __('Reject') }}</span>
                                     </button>
                                 @endif
 
                                 @if($req->status !== 'rejected')
-                                    <button class="btn btn-sm"
+                                    <button class="btn-leave-action btn-sub {{ $req->substitute_teacher_id ? 'has-sub' : '' }}"
                                         onclick="openSubstituteModal({{ $req->id }}, '{{ addslashes($teacherName) }}', '{{ $req->start_date }}', '{{ $req->end_date }}')"
-                                        title="{{ __('Assign / Change Substitute Teacher') }}"
-                                        style="background: rgba(59, 130, 246, 0.12); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 0.6rem; padding: 0.4rem 0.7rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                        title="{{ $req->substitute_teacher_id ? __('Change Substitute Teacher') : __('Assign Substitute Teacher') }}">
                                         <i class="ph ph-user-switch"></i>
                                         <span>{{ $req->substitute_teacher_id ? __('Sub') : __('Sub') }}</span>
                                     </button>
                                 @endif
 
                                 @if($req->status === 'rejected')
-                                    <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">{{ __('Completed') }}</span>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; padding: 0 0.5rem;">{{ __('Completed') }}</span>
                                 @endif
                             </div>
                         </td>
