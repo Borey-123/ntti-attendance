@@ -2,7 +2,11 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#020617">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ __('Teacher Portal') }} | {{ __(\App\Models\Setting::getValue('university_name', 'National Technical Training Institute')) }}</title>
     
@@ -689,6 +693,175 @@
         .form-control:hover {
             border-color: rgba(var(--primary-rgb), 0.5);
         }
+
+        /* ── Action Grid Default ── */
+        .portal-quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+            gap: 0.85rem;
+        }
+
+        /* ── Smartphone Native App Responsive Architecture (<= 576px) ── */
+        @media (max-width: 576px) {
+            body {
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+            .container {
+                padding: max(0.75rem, env(safe-area-inset-top)) 0.75rem max(2rem, env(safe-area-inset-bottom)) 0.75rem !important;
+                max-width: 100% !important;
+            }
+            header {
+                margin-bottom: 1.25rem !important;
+            }
+            .campus-widget {
+                padding: 0.35rem 0.75rem !important;
+                font-size: 0.75rem !important;
+            }
+            .logo-wrapper {
+                width: 62px !important;
+                height: 62px !important;
+                margin-bottom: 0.75rem !important;
+            }
+            #liveClock {
+                font-size: 2.2rem !important;
+                margin-bottom: 0.25rem !important;
+                letter-spacing: 1px !important;
+            }
+            h1#greetingText {
+                font-size: 1.2rem !important;
+                margin-bottom: 0.25rem !important;
+            }
+            p.subtitle {
+                font-size: 0.82rem !important;
+            }
+            .search-card {
+                padding: 1.25rem 0.85rem !important;
+                border-radius: 1.6rem !important;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.12) !important;
+            }
+            .teacher-header {
+                margin-bottom: 1.15rem !important;
+            }
+            .teacher-photo {
+                width: 76px !important;
+                height: 76px !important;
+                border-width: 3px !important;
+            }
+            .teacher-meta h2 {
+                font-size: 1.25rem !important;
+                margin-bottom: 0.15rem !important;
+            }
+            .teacher-meta h3 {
+                font-size: 0.98rem !important;
+            }
+            
+            /* Grid Actions 2-Column Mobile App Touch Layout */
+            .portal-quick-actions-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.55rem !important;
+            }
+            .portal-quick-actions-grid form {
+                grid-column: span 2 !important;
+            }
+            .action-tile-btn {
+                padding: 0.85rem 0.45rem !important;
+                border-radius: 1.1rem !important;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+            .action-tile-btn:active {
+                transform: scale(0.96) !important;
+                filter: brightness(0.95);
+            }
+            .action-tile-icon {
+                width: 40px !important;
+                height: 40px !important;
+                border-radius: 0.85rem !important;
+                font-size: 1.25rem !important;
+                margin-bottom: 0.4rem !important;
+            }
+            .action-tile-label {
+                font-size: 0.8rem !important;
+                line-height: 1.15 !important;
+            }
+            .action-tile-sub {
+                font-size: 0.65rem !important;
+            }
+
+            /* Modal Bottom-Sheet Slide on Phones */
+            .modal-overlay {
+                align-items: flex-end !important;
+                padding: 0 !important;
+                backdrop-filter: blur(12px) !important;
+                -webkit-backdrop-filter: blur(12px) !important;
+            }
+            .modal-content {
+                max-width: 100% !important;
+                width: 100% !important;
+                border-radius: 2rem 2rem 0 0 !important;
+                padding: 1.5rem 1.25rem max(1.75rem, env(safe-area-inset-bottom)) 1.25rem !important;
+                max-height: 90vh !important;
+                overflow-y: auto !important;
+                box-shadow: 0 -10px 40px rgba(0,0,0,0.5) !important;
+                animation: mobileSheetUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            }
+            @keyframes mobileSheetUp {
+                from { transform: translateY(100%); opacity: 0.8; }
+                to   { transform: translateY(0); opacity: 1; }
+            }
+
+            /* Action Buttons (CSV, Print, Dispute) */
+            .action-buttons {
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 0.45rem !important;
+                margin-bottom: 1.75rem !important;
+            }
+            .btn-secondary {
+                padding: 0.65rem 0.35rem !important;
+                font-size: 0.75rem !important;
+                border-radius: 0.9rem !important;
+            }
+            .btn-secondary i {
+                font-size: 1.25rem !important;
+            }
+
+            /* Shift Info & History */
+            .shift-info-card {
+                padding: 1rem 0.75rem !important;
+                border-radius: 1.15rem !important;
+                margin-bottom: 1.5rem !important;
+            }
+            .shift-info-item h4 {
+                font-size: 0.7rem !important;
+            }
+            .shift-info-item p {
+                font-size: 0.95rem !important;
+            }
+            .history-card {
+                padding: 1rem !important;
+                border-radius: 1.15rem !important;
+            }
+            .hist-date {
+                font-size: 0.9rem !important;
+            }
+            .session-box {
+                padding: 0.65rem 0.5rem !important;
+                border-radius: 0.75rem !important;
+            }
+            .session-box .time {
+                font-size: 0.85rem !important;
+            }
+
+            /* Calendar Grid on Small Phones */
+            .calendar-grid {
+                gap: 3px !important;
+            }
+            .calendar-cell {
+                font-size: 0.78rem !important;
+                border-radius: 0.5rem !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -857,7 +1030,7 @@
                     {{ __('Quick Actions & Services') }}
                 </div>
                 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 0.85rem;">
+                <div class="portal-quick-actions-grid">
                     {{-- 1. Mobile GPS Check-In --}}
                     <button onclick="triggerGpsCheckin()" class="action-tile-btn" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: var(--text-main);">
                         <div class="action-tile-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">

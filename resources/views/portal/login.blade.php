@@ -2,7 +2,11 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#020617">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ __('Teacher Portal Login') }} | {{ __(\App\Models\Setting::getValue('university_name', 'National Technical Training Institute')) }}</title>
     
@@ -236,9 +240,24 @@
         }
         .campus-widget i { font-size: 1rem; color: var(--primary); }
 
-        @media (max-width: 480px) {
-            .container { padding: 2rem 1rem; }
-            .search-card { padding: 1.75rem; border-radius: 2rem; }
+        @media (max-width: 576px) {
+            .container {
+                padding: max(1.5rem, env(safe-area-inset-top)) 1rem max(2rem, env(safe-area-inset-bottom)) 1rem !important;
+                max-width: 100% !important;
+            }
+            .search-card {
+                padding: 1.75rem 1.25rem !important;
+                border-radius: 1.75rem !important;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+            }
+            .logo-wrapper {
+                width: 68px !important;
+                height: 68px !important;
+                margin-bottom: 1rem !important;
+            }
+            .form-control {
+                font-size: 16px !important; /* Prevents auto-zoom on iOS Safari */
+            }
         }
     </style>
 </head>
