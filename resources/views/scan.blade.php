@@ -603,6 +603,18 @@ function playSound(type) {
 }
 
 let currentGreetingAudio = null;
+let lastGreetingTimestamp = 0;
+let lastGreetingText = '';
+
+function markScanProcessed(res) {
+    if (!window._recentLocalScans) window._recentLocalScans = new Set();
+    if (res.teacher_name) window._recentLocalScans.add(`${res.teacher_name}_${res.action}_${res.time}`);
+    if (res.teacher_name_kh) window._recentLocalScans.add(`${res.teacher_name_kh}_${res.action}_${res.time}`);
+    if (window._recentLocalScans.size > 50) {
+        const first = window._recentLocalScans.values().next().value;
+        window._recentLocalScans.delete(first);
+    }
+}
 
 function speakGreeting(teacher, action, shift) {
     let nameKh = '';
@@ -643,6 +655,14 @@ function speakGreeting(teacher, action, shift) {
         }
     }
 
+    // Debounce duplicate greetings within 3 seconds
+    const now = Date.now();
+    if (text === lastGreetingText && (now - lastGreetingTimestamp) < 3000) {
+        return;
+    }
+    lastGreetingTimestamp = now;
+    lastGreetingText = text;
+
     // Cancel any previous greeting audio
     if (currentGreetingAudio) {
         try {
@@ -660,6 +680,9 @@ function speakGreeting(teacher, action, shift) {
             const playPromise = currentGreetingAudio.play();
             if (playPromise !== undefined) {
                 playPromise.catch(err => {
+                    if (err && err.name === 'AbortError') {
+                        return; // Audio intentionally interrupted; do not fallback
+                    }
                     console.log('Proxy Khmer audio stream failed, fallback to WebSpeech:', err);
                     fallbackWebSpeech(text, 'km-KH');
                 });
@@ -678,12 +701,22 @@ function fallbackWebSpeech(text, lang) {
     if (!('speechSynthesis' in window)) return;
     try {
         window.speechSynthesis.cancel();
+        const voices = window.speechSynthesis.getVoices() || [];
+        const isKhmer = lang.startsWith('km');
+
+        if (isKhmer) {
+            const kmVoice = voices.find(v => v.lang.startsWith('km') || v.name.toLowerCase().includes('khmer'));
+            if (!kmVoice) {
+                // If the browser does not have a genuine Khmer voice, do not let English voice read Khmer text
+                return;
+            }
+        }
+
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.rate = 0.95;
         utterance.pitch = 1.0;
         utterance.lang = lang;
-        const voices = window.speechSynthesis.getVoices();
-        if (voices && voices.length > 0) {
+        if (isKhmer) {
             const kmVoice = voices.find(v => v.lang.startsWith('km') || v.name.toLowerCase().includes('khmer'));
             if (kmVoice) utterance.voice = kmVoice;
         }
@@ -852,6 +885,7 @@ async function doAdminScan() {
         updateStats(res);
         playSound(res.status === 'success' ? 'success' : 'error');
         if (res.status === 'success') {
+            markScanProcessed(res);
             speakGreeting(res, res.action, res.shift);
         }
     } catch (e) {
@@ -1018,6 +1052,13 @@ async function pollLatestScans() {
         if (data.scans && data.scans.length > 0) {
             // New scans found!
             data.scans.reverse().forEach(scan => {
+                // Ignore if already triggered and announced locally on this page
+                const k1 = `${scan.teacher_name}_${scan.type}_${scan.time}`;
+                const k2 = `${scan.teacher_name_kh}_${scan.type}_${scan.time}`;
+                if (window._recentLocalScans && (window._recentLocalScans.has(k1) || window._recentLocalScans.has(k2))) {
+                    return;
+                }
+
                 // Map to format expected by local functions
                 const res = {
                     status: 'success',
@@ -1206,6 +1247,7 @@ async function onScanSuccess(decodedText, decodedResult) {
         updateStats(res);
         playSound(res.status === 'success' ? 'success' : 'error');
         if (res.status === 'success') {
+            markScanProcessed(res);
             speakGreeting(res, res.action, res.shift);
         }
     } catch (e) {
@@ -1353,6 +1395,7 @@ async function handleFaceMatch(employeeId) {
         updateStats(res);
         playSound(res.status === 'success' ? 'success' : 'error');
         if (res.status === 'success') {
+            markScanProcessed(res);
             speakGreeting(res, res.action, res.shift);
         }
     } catch (e) {
