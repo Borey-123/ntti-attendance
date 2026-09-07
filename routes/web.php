@@ -53,6 +53,11 @@ Route::get('/live', [AttendanceController::class, 'liveMonitor'])->name('live.mo
 Route::get('/api-live/latest', [AttendanceController::class, 'latest'])->name('api.live.latest');
 Route::get('/api-live/tts', [AttendanceController::class, 'tts'])->name('api.live.tts');
 
+// Smart Kiosk Station (Entrance Terminal & Tablet)
+Route::get('/kiosk', [AttendanceController::class, 'kioskView'])->name('kiosk.index');
+Route::post('/api/kiosk/scan', [AttendanceController::class, 'kioskScan'])->name('api.kiosk.scan');
+Route::post('/api/kiosk/sync-offline', [AttendanceController::class, 'kioskSyncOffline'])->name('api.kiosk.sync-offline');
+
 // Teacher Portal Enhancements
 Route::get('/portal/export', [PortalController::class, 'export'])->name('portal.export');
 Route::post('/portal/correction', [PortalController::class, 'storeCorrection'])->name('portal.correction.store');

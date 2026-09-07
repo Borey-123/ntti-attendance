@@ -300,6 +300,10 @@
             <a href="{{ route('scan.index') }}" data-title="{{ __('Scan Station') }}" class="nav-item {{ request()->routeIs('scan.*') ? 'active' : '' }}">
                 <i class="ph ph-scan nav-icon"></i> <span class="nav-text">{{ __('Scan Station') }}</span>
             </a>
+            <a href="{{ route('kiosk.index') }}" target="_blank" data-title="{{ __('Smart Kiosk Station') }}" class="nav-item">
+                <i class="ph ph-desktop nav-icon" style="color: #10b981;"></i> <span class="nav-text">{{ __('Smart Kiosk') }}</span>
+                <span class="badge" style="background: rgba(16,185,129,0.15); color: #10b981; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-left: auto;">NEW</span>
+            </a>
             <a href="{{ route('teachers.index') }}" data-title="{{ __('Teacher Directory') }}" class="nav-item {{ request()->routeIs('teachers.*') ? 'active' : '' }}">
                 <i class="ph ph-users nav-icon"></i> <span class="nav-text">{{ __('Teacher Directory') }}</span>
             </a>
@@ -339,6 +343,9 @@
         <div class="hide-desktop" style="padding: 1.5rem 1rem 1rem; border-top: 1px solid var(--border); display:flex; flex-direction:column; gap:0.75rem; margin-top: auto;">
             <a href="{{ route('live.monitor') }}" target="_blank" class="btn btn-secondary" style="border-color: rgba(239,68,68,0.5); color: var(--danger); justify-content: center; gap: 0.5rem; background: rgba(239,68,68,0.05);">
                 <span style="width:6px;height:6px;border-radius:50%;background:var(--danger);animation:livePulse 1.2s ease-in-out infinite;"></span> {{ __('LIVE MONITOR') }}
+            </a>
+            <a href="{{ route('kiosk.index') }}" target="_blank" class="btn btn-secondary" style="border-color: rgba(16,185,129,0.5); color: #10b981; justify-content: center; gap: 0.5rem; background: rgba(16,185,129,0.05);">
+                <i class="ph ph-desktop"></i> {{ __('SMART KIOSK') }}
             </a>
             <a href="{{ route('portal.index') }}" target="_blank" class="btn btn-secondary" style="border-color: rgba(var(--primary-rgb),0.5); color: var(--primary); justify-content: center; gap: 0.5rem; background: rgba(var(--primary-rgb),0.05);">
                 <i class="ph ph-identification-card"></i> {{ __('TEACHER PORTAL') }}
@@ -394,6 +401,16 @@
                    data-title="{{ __('Open Live Monitor') }}">
                     <span style="width:6px;height:6px;border-radius:50%;background:var(--danger);animation:livePulse 1.2s ease-in-out infinite;display:inline-block;"></span>
                     {{ __('LIVE') }}
+                </a>
+
+                {{-- Smart Kiosk Station Button --}}
+                <a href="{{ route('kiosk.index') }}" target="_blank" class="hide-mobile"
+                   style="display:flex; align-items:center; gap:0.3rem; padding:0.3rem 0.6rem; background:rgba(16,185,129,0.12); border:1px solid #10b981; color:#10b981; text-decoration:none; font-size:0.75rem; font-weight:800; letter-spacing:0.02em; transition:all 0.15s;"
+                   onmouseover="this.style.background='#10b981';this.style.color='#000';"
+                   onmouseout="this.style.background='rgba(16,185,129,0.12)';this.style.color='#10b981';"
+                   data-title="{{ __('Open Smart Kiosk Station') }}">
+                    <i class="ph ph-desktop" style="font-size:0.9rem;"></i>
+                    {{ __('KIOSK') }}
                 </a>
 
                 {{-- Teacher Portal Button --}}

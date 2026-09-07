@@ -629,6 +629,8 @@ class AttendanceController extends Controller
                     'working_hours' => "{$workHrs}h {$workRem}m",
                     'message'       => "Morning Check-out recorded for {$teacher->name}",
                     'telegram_sent' => $tgSent,
+                    'audio_text_kh' => "សូមជម្រាបលា " . ($teacher->name_kh ?: $teacher->name) . " ចេញពីបង្រៀន",
+                    'audio_text_en' => "Goodbye {$teacher->name}, check-out recorded.",
                 ]);
             } catch (\Throwable $e) {
                 \Log::error('Checkout Error (morning/adminScan): ' . $e->getMessage());
@@ -660,6 +662,8 @@ class AttendanceController extends Controller
                     'working_hours' => "{$workHrs}h {$workRem}m",
                     'message'       => "Afternoon Check-out recorded for {$teacher->name}",
                     'telegram_sent' => $tgSent,
+                    'audio_text_kh' => "សូមជម្រាបលា " . ($teacher->name_kh ?: $teacher->name) . " ចេញពីបង្រៀន",
+                    'audio_text_en' => "Goodbye {$teacher->name}, check-out recorded.",
                 ]);
             } catch (\Throwable $e) {
                 \Log::error('Checkout Error (afternoon/adminScan): ' . $e->getMessage());
@@ -765,6 +769,8 @@ class AttendanceController extends Controller
             'attendance_status'=> $status,
             'message'          => "{$shiftType} Check-in recorded for {$teacher->name}",
             'telegram_sent'    => $tgSent,
+            'audio_text_kh'    => "សូមស្វាគមន៍ " . ($teacher->name_kh ?: $teacher->name) . " ចូលបង្រៀន" . ($status === 'late' ? 'យឺត' : 'ទាន់ពេល'),
+            'audio_text_en'    => "Welcome {$teacher->name}, check-in recorded " . ($status === 'late' ? 'late' : 'on time') . ".",
         ]);
     }
 
@@ -858,6 +864,197 @@ class AttendanceController extends Controller
         ]);
 
         return $this->adminScan($request);
+    }
+
+    /**
+     * Display the Fullscreen Modern Smart Kiosk Station.
+     */
+    public function kioskView(Request $request)
+    {
+        $today = today()->toDateString();
+        
+        $totalTeachers = Teacher::where(function($q) {
+            $q->where('status', 'active')->orWhereNull('status');
+        })->count();
+
+        $presentCount = Attendance::whereDate('date', $today)->count();
+        $lateCount = Attendance::whereDate('date', $today)
+            ->where(function($q) {
+                $q->where('morning_status', 'late')->orWhere('afternoon_status', 'late');
+            })->count();
+
+        $rate = $totalTeachers > 0 ? round(($presentCount / $totalTeachers) * 100) : 0;
+
+        $recentScans = Attendance::with('teacher')
+            ->whereDate('date', $today)
+            ->orderBy('updated_at', 'desc')
+            ->take(12)
+            ->get();
+
+        $systemOpen    = Setting::getValue('system_open_time', '06:30');
+        $systemClose   = Setting::getValue('system_close_time', '18:30');
+        $morningLate   = Setting::getValue('morning_late_cutoff', '07:45');
+        $afternoonLate = Setting::getValue('afternoon_late_cutoff', '14:15');
+
+        return view('kiosk', compact(
+            'totalTeachers', 'presentCount', 'lateCount', 'rate',
+            'recentScans', 'systemOpen', 'systemClose', 'morningLate', 'afternoonLate'
+        ));
+    }
+
+    /**
+     * Unified High-Speed Kiosk Scanner endpoint.
+     */
+    public function kioskScan(Request $request): JsonResponse
+    {
+        $uid = $request->rfid_uid ? strtoupper(trim($request->rfid_uid)) : null;
+        $qrData = $request->qr_data ? trim($request->qr_data) : null;
+        $token = $request->token ? trim($request->token) : null;
+        $method = $request->method ?? ($uid ? 'rfid' : ($token ? 'dynamic_qr' : 'qr'));
+
+        $teacher = null;
+
+        if ($token) {
+            if (!DynamicQrService::validateToken($token)) {
+                return response()->json([
+                    'status'  => 'error',
+                    'action'  => 'error',
+                    'message' => __('QR Code expired or invalid. Please scan live screen.'),
+                ], 422);
+            }
+            if ($request->filled('teacher_id')) {
+                $teacher = Teacher::find($request->teacher_id);
+            } elseif ($request->filled('employee_id')) {
+                $teacher = Teacher::where('employee_id', $request->employee_id)->first();
+            }
+        } elseif ($qrData) {
+            $teacher = Teacher::where('employee_id', $qrData)->first();
+            if (!$teacher && preg_match('/[A-Z0-9_-]{3,20}/i', $qrData, $m)) {
+                $teacher = Teacher::where('employee_id', $m[0])->first();
+            }
+        } elseif ($uid) {
+            $teacher = Teacher::whereHas('rfidCard', function ($query) use ($uid) {
+                $query->where('uid', $uid);
+            })->first();
+
+            \Illuminate\Support\Facades\Cache::put('pending_rfid_uid', [
+                'uid' => $uid,
+                'scanned_at' => now()->toDateTimeString()
+            ], 60);
+        }
+
+        if (!$teacher) {
+            return response()->json([
+                'status'  => 'error',
+                'action'  => 'unknown',
+                'message' => __('Teacher or Card not recognized.'),
+            ], 404);
+        }
+
+        if ($teacher->status !== 'active' && !is_null($teacher->status)) {
+            return response()->json([
+                'status'  => 'error',
+                'action'  => 'inactive',
+                'message' => __('Teacher account is inactive.'),
+                'teacher_name' => $teacher->name,
+                'teacher_name_kh' => $teacher->name_kh,
+            ], 403);
+        }
+
+        // Pass to adminScan with selected method
+        $request->merge([
+            'teacher_id'     => $teacher->id,
+            'checkin_method' => $method
+        ]);
+
+        return $this->adminScan($request);
+    }
+
+    /**
+     * Process batched offline buffered scans from client IndexedDB.
+     */
+    public function kioskSyncOffline(Request $request): JsonResponse
+    {
+        $scans = $request->input('scans', []);
+        if (empty($scans) || !is_array($scans)) {
+            return response()->json(['success' => false, 'message' => 'No scans to sync.'], 400);
+        }
+
+        $processed = 0;
+        $results = [];
+
+        foreach ($scans as $scan) {
+            $uid = !empty($scan['rfid_uid']) ? strtoupper(trim($scan['rfid_uid'])) : null;
+            $qrData = !empty($scan['qr_data']) ? trim($scan['qr_data']) : null;
+            $scannedAt = !empty($scan['scanned_at']) ? Carbon::parse($scan['scanned_at']) : now();
+            $method = $scan['method'] ?? 'kiosk_offline';
+
+            $teacher = null;
+            if ($qrData) {
+                $teacher = Teacher::where('employee_id', $qrData)->first();
+            } elseif ($uid) {
+                $teacher = Teacher::whereHas('rfidCard', fn($q) => $q->where('uid', $uid))->first();
+            }
+
+            if (!$teacher) {
+                $results[] = ['local_id' => $scan['local_id'] ?? null, 'status' => 'failed', 'reason' => 'Teacher not found'];
+                continue;
+            }
+
+            $date = $scannedAt->toDateString();
+            $timeString = $scannedAt->format('H:i:s');
+            $hourFloat = $scannedAt->hour + ($scannedAt->minute / 60);
+
+            $record = Attendance::firstOrCreate(
+                ['teacher_id' => $teacher->id, 'date' => $date]
+            );
+
+            if ($hourFloat < 12.0) {
+                if (empty($record->morning_in)) {
+                    $record->update([
+                        'morning_in' => $timeString,
+                        'morning_status' => ($hourFloat > 7.75) ? 'late' : 'present',
+                        'checkin_method' => $method
+                    ]);
+                    $action = 'check-in';
+                } else {
+                    $record->update(['morning_out' => $timeString]);
+                    $action = 'check-out';
+                }
+            } else {
+                if (empty($record->afternoon_in)) {
+                    $record->update([
+                        'afternoon_in' => $timeString,
+                        'afternoon_status' => ($hourFloat > 14.25) ? 'late' : 'present',
+                        'checkin_method' => $method
+                    ]);
+                    $action = 'check-in';
+                } else {
+                    $record->update(['afternoon_out' => $timeString]);
+                    $action = 'check-out';
+                }
+            }
+
+            \App\Models\SecurityLog::record(
+                'Kiosk Offline Sync',
+                $teacher->name,
+                "Synced offline scan from {$scannedAt->toDateTimeString()} ({$action})"
+            );
+
+            $processed++;
+            $results[] = [
+                'local_id' => $scan['local_id'] ?? null,
+                'status' => 'synced',
+                'teacher_name' => $teacher->name,
+                'action' => $action
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'processed_count' => $processed,
+            'results' => $results,
+        ]);
     }
 
     public function scanPage()
