@@ -49,6 +49,14 @@ class LeaveRequestController extends Controller
             'reason' => $request->reason,
             'status' => 'pending',
         ]);
+        $leave->load('teacher');
+
+        // Dispatch 1-tap interactive approval card to Admin Telegram
+        try {
+            \App\Services\TelegramService::sendAdminLeaveAlert($leave);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Telegram sendAdminLeaveAlert error: ' . $e->getMessage());
+        }
 
         $teacher = Teacher::find($request->teacher_id);
         $teacherName = $teacher ? $teacher->name : "ID #{$request->teacher_id}";

@@ -407,7 +407,7 @@ class AttendanceController extends Controller
                 $workHrs  = floor($workMins / 60);
                 $workRem  = $workMins % 60;
 
-                $tgSent = $this->sendTelegramNotification($teacher, 'check-out', 'Morning', $now->format('h:i:s A'));
+                $tgSent = $this->sendTelegramNotification($teacher, 'check-out', 'Morning', $now->format('h:i:s A'), 'present', 'rfid');
 
                 return response()->json([
                     'status'        => 'success',
@@ -438,7 +438,7 @@ class AttendanceController extends Controller
                 $workHrs  = floor($workMins / 60);
                 $workRem  = $workMins % 60;
 
-                $tgSent = $this->sendTelegramNotification($teacher, 'check-out', 'Afternoon', $now->format('h:i:s A'));
+                $tgSent = $this->sendTelegramNotification($teacher, 'check-out', 'Afternoon', $now->format('h:i:s A'), 'present', 'rfid');
 
                 return response()->json([
                     'status'        => 'success',
@@ -553,7 +553,7 @@ class AttendanceController extends Controller
             'checkin_method' => 'card',
         ]);
 
-        $tgSent = $this->sendTelegramNotification($teacher, 'check-in', $shiftType, $now->format('h:i:s A'), $status);
+        $tgSent = $this->sendTelegramNotification($teacher, 'check-in', $shiftType, $now->format('h:i:s A'), $status, 'rfid');
 
         return response()->json([
             'status'           => 'success',
@@ -614,7 +614,7 @@ class AttendanceController extends Controller
                 $workHrs  = floor($workMins / 60);
                 $workRem  = $workMins % 60;
 
-                $tgSent = $this->sendTelegramNotification($teacher, 'check-out', 'Morning', $now->format('h:i:s A'));
+                $tgSent = $this->sendTelegramNotification($teacher, 'check-out', 'Morning', $now->format('h:i:s A'), 'present', $request->checkin_method ?? 'manual');
 
                 return response()->json([
                     'status'        => 'success',
@@ -645,7 +645,7 @@ class AttendanceController extends Controller
                 $workHrs  = floor($workMins / 60);
                 $workRem  = $workMins % 60;
 
-                $tgSent = $this->sendTelegramNotification($teacher, 'check-out', 'Afternoon', $now->format('h:i:s A'));
+                $tgSent = $this->sendTelegramNotification($teacher, 'check-out', 'Afternoon', $now->format('h:i:s A'), 'present', $request->checkin_method ?? 'manual');
 
                 return response()->json([
                     'status'        => 'success',
@@ -750,7 +750,7 @@ class AttendanceController extends Controller
             'checkin_method' => $request->checkin_method ?? 'manual',
         ]);
 
-        $tgSent = $this->sendTelegramNotification($teacher, 'check-in', $shiftType, $now->format('h:i:s A'), $status);
+        $tgSent = $this->sendTelegramNotification($teacher, 'check-in', $shiftType, $now->format('h:i:s A'), $status, $request->checkin_method ?? 'manual');
 
         return response()->json([
             'status'           => 'success',
@@ -1241,45 +1241,33 @@ class AttendanceController extends Controller
 
         return response()->json(['status' => 'success', 'message' => 'Attendance record adjusted manually.']);
     }
-    private function sendTelegramNotification($teacher, $action, $shift, $time, $status = 'present'): bool
+    private function sendTelegramNotification($teacher, $action, $shift, $time, $status = 'present', $method = null): bool
     {
-        if (empty($teacher->telegram_chat_id)) return false;
-        
-        $token = Setting::getValue('telegram_bot_token');
-        if (empty($token)) return false;
-
-        $icon = $action === 'check-in' ? '✅' : '👋';
-        $lateIcon = $status === 'late' ? ' (⚠️ Late)' : '';
-        $message = "{$icon} *{$teacher->name}*\n{$shift} {$action} recorded at {$time}{$lateIcon}";
+        if (empty($teacher->telegram_chat_id) && empty(Setting::getValue('telegram_chat_id'))) {
+            return false;
+        }
 
         try {
-            $response = \Illuminate\Support\Facades\Http::timeout(5)->post("https://api.telegram.org/bot{$token}/sendMessage", [
-                'chat_id'    => $teacher->telegram_chat_id,
-                'text'       => $message,
-                'parse_mode' => 'Markdown'
-            ]);
-
-            $sent = $response->successful();
+            $sent = \App\Services\TelegramService::sendAttendanceSlip($teacher, $action, $shift, $time, $status, $method);
 
             // Log the telegram send result to security_logs so admin can audit
             \Illuminate\Support\Facades\DB::table('security_logs')->insert([
-                'action'    => $sent ? 'telegram_sent' : 'telegram_failed',
-                'target'    => $teacher->name,
-                'details'   => ($sent ? 'Telegram notification sent' : 'Telegram notification FAILED') .
-                               " [{$shift} {$action} at {$time}]" .
-                               (!$sent ? ' HTTP ' . $response->status() : ''),
-                'ip_address' => '127.0.0.1',
+                'action'     => $sent ? 'telegram_sent' : 'telegram_failed',
+                'target'     => $teacher->name,
+                'details'    => ($sent ? 'Telegram slip sent' : 'Telegram slip FAILED') .
+                               " [{$shift} {$action} at {$time} via " . ($method ?? 'manual') . ']',
+                'ip_address' => request()->ip() ?? '127.0.0.1',
                 'timestamp'  => now(),
             ]);
 
             return $sent;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Log::error('Telegram Notification Error: ' . $e->getMessage());
             \Illuminate\Support\Facades\DB::table('security_logs')->insert([
-                'action'    => 'telegram_failed',
-                'target'    => $teacher->name,
-                'details'   => 'Telegram notification EXCEPTION: ' . $e->getMessage() . " [{$shift} {$action} at {$time}]",
-                'ip_address' => '127.0.0.1',
+                'action'     => 'telegram_failed',
+                'target'     => $teacher->name,
+                'details'    => 'Telegram notification EXCEPTION: ' . $e->getMessage() . " [{$shift} {$action} at {$time}]",
+                'ip_address' => request()->ip() ?? '127.0.0.1',
                 'timestamp'  => now(),
             ]);
             return false;

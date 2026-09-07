@@ -199,6 +199,68 @@ class TelegramWebhookController extends Controller
 
         if (!$chatId) return;
 
+        // ---------------------------------------------------------------------
+        // 1-TAP ADMIN LEAVE APPROVAL / REJECTION
+        // ---------------------------------------------------------------------
+        if (str_starts_with($data, 'leave_approve_') || str_starts_with($data, 'leave_reject_')) {
+            $isApprove = str_starts_with($data, 'leave_approve_');
+            $leaveId   = (int) str_replace($isApprove ? 'leave_approve_' : 'leave_reject_', '', $data);
+            $fromName  = trim(($callbackQuery['from']['first_name'] ?? 'Admin') . ' ' . ($callbackQuery['from']['last_name'] ?? ''));
+
+            $leave = LeaveRequest::with('teacher')->find($leaveId);
+            if (!$leave) {
+                $this->answerCallbackQuery($queryId, '⚠️ រកមិនឃើញពាក្យស្នើសុំនេះទេ (Leave request not found).', true);
+                return;
+            }
+
+            if ($leave->status !== 'pending') {
+                $this->answerCallbackQuery($queryId, "⚠️ ពាក្យស្នើនេះត្រូវបាន {$leave->status} រួចហើយ (Already processed).", true);
+                return;
+            }
+
+            $newStatus = $isApprove ? 'approved' : 'rejected';
+            $note      = $isApprove 
+                ? "យល់ព្រមតាម Telegram ដោយ {$fromName}" 
+                : "បដិសេធតាម Telegram ដោយ {$fromName}";
+
+            $leave->update([
+                'status'     => $newStatus,
+                'admin_note' => $note,
+            ]);
+
+            \App\Models\SecurityLog::record(
+                ($isApprove ? 'Approve' : 'Reject') . ' Leave Request (Telegram)',
+                $leave->teacher ? $leave->teacher->name : "Teacher #{$leave->teacher_id}",
+                "Leave request #{$leaveId} status set to {$newStatus} via 1-Tap Telegram by {$fromName}"
+            );
+
+            // Pop up immediate confirmation on Telegram
+            $alertMsg = $isApprove 
+                ? "✅ បានយល់ព្រមច្បាប់ជោគជ័យ! (Approved successfully)" 
+                : "❌ បានបដិសេធពាក្យសុំច្បាប់! (Rejected)";
+            $this->answerCallbackQuery($queryId, $alertMsg, true);
+
+            // Edit original message to remove buttons and show confirmation banner
+            $statusEmoji = $isApprove ? '✅ យល់ព្រម (APPROVED)' : '❌ បដិសេធ (REJECTED)';
+            $timestamp   = now()->format('h:i A, d M Y');
+
+            $origText = $callbackQuery['message']['text'] ?? '';
+            $origText = str_replace("👇 សូមជ្រើសរើសសកម្មភាពខាងក្រោម (Please choose action):", "", $origText);
+            $origText = str_replace("👇 _សូមជ្រើសរើសសកម្មភាពខាងក្រោម (Please choose action):_", "", $origText);
+
+            $updatedText = rtrim($origText) . "\n\n"
+                         . "━━━━━━━━━━━━━━━━━━━━\n"
+                         . "📌 *ស្ថានភាពចុងក្រោយ / Decision:* *{$statusEmoji}*\n"
+                         . "👤 *អនុម័តដោយ / Handled By:* *{$fromName}*\n"
+                         . "🕒 *កាលបរិច្ឆេទ / Time:* `{$timestamp}`";
+
+            \App\Services\TelegramService::editMessageText($chatId, $msgId, $updatedText, []);
+
+            // Dispatch instant notification to the teacher
+            \App\Services\TelegramService::sendLeaveNotification($leave);
+            return;
+        }
+
         // Acknowledge the tap immediately (removes loading spinner)
         $this->answerCallbackQuery($queryId);
 
