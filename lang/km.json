@@ -1085,5 +1085,7 @@
     "Attendance recorded successfully via Dynamic QR.": "បានកត់ត្រាវត្តមានដោយជោគជ័យតាមរយៈកូដ QR លើអេក្រង់ផ្ទាល់។",
     "Attendance could not be recorded at this time.": "មិនអាចកត់ត្រាវត្តមានបានទេនៅពេលនេះ។",
     "Scan by Screen QR": "ស្កេនតាមអេក្រង់ QR",
-    "Screen QR": "ស្កេន QR លើអេក្រង់"
+    "Screen QR": "ស្កេន QR លើអេក្រង់",
+    "Voice Test": "សាកល្បងសំឡេង",
+    "Test Audio Voice": "សាកល្បងសំឡេងប្រកាស"
 }

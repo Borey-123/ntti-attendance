@@ -343,6 +343,9 @@
                 <button id="modeDynamicQrBtn" class="mode-tab-btn" onclick="switchScanMode('dynamic_qr')" style="flex: 1; border: none; padding: 0.75rem 0.5rem; border-radius: 0.9rem; font-weight: 800; font-size: 0.85rem; cursor: pointer; background: transparent; color: var(--text-secondary); transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;">
                     <i class="ph ph-broadcast" style="font-size: 1.2rem; color: #10b981;"></i> <span>{{ __('Live Kiosk QR') }}</span>
                 </button>
+                <button type="button" id="btnTestVoice" onclick="testGreetingVoice()" title="{{ __('Test Audio Voice') }}" style="border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: var(--text-secondary); border-radius: 0.9rem; padding: 0.75rem 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; font-weight: 700; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(var(--primary-rgb),0.15)'; this.style.color='var(--primary)';" onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.color='var(--text-secondary)';">
+                    <i class="ph ph-speaker-high" style="color: var(--primary); font-size: 1.25rem;"></i>
+                </button>
             </div>
 
             <div class="scanner-hologram" id="scannerRing">
@@ -471,7 +474,7 @@
                         <div id="idPhotoPlaceholder" class="id-photo" style="display:none; align-items:center; justify-content:center; background:var(--primary); color:#000; font-weight:800; font-size:1.5rem;">?</div>
                     </div>
                     <div class="id-meta">
-                        <h4 id="idNameKh" style="color:var(--primary); margin:0; line-height:1.1; font-weight: 800;" translate="no" class="notranslate"></h4>
+                        <h4 id="idNameKh" style="color:var(--primary); margin:0; line-height:1.2; font-weight: 800; font-size: 1.25rem; font-family: 'Kantumruy Pro', 'Battambang', sans-serif;" translate="no" class="notranslate"></h4>
                         <h5 id="idName" style="margin:0; font-size:1.1rem; font-weight: 700; opacity:0.8;">Teacher Name</h5>
                         <p id="idDept" style="margin-top: 0.25rem;">Department Name</p>
                         <div id="idBadge" class="badge badge-primary mt-1" style="font-size:0.6rem;">{{ __('READY TO SCAN') }}</div>
@@ -599,29 +602,103 @@ function playSound(type) {
     else audioError.play().catch(e => console.log('Audio disabled by browser'));
 }
 
-function speakGreeting(name, action, shift) {
-    if (!('speechSynthesis' in window) || !name) return;
+let currentGreetingAudio = null;
+
+function speakGreeting(teacher, action, shift) {
+    let nameKh = '';
+    let nameEn = '';
+    
+    if (typeof teacher === 'object' && teacher !== null) {
+        nameKh = (teacher.teacher_name_kh || '').trim();
+        nameEn = (teacher.teacher_name || teacher.name || '').trim();
+    } else if (typeof teacher === 'string') {
+        nameKh = teacher.trim();
+        nameEn = teacher.trim();
+    }
+
+    const isKm = '{{ app()->getLocale() }}' === 'km';
+    // Prioritize Khmer name when locale is Khmer; otherwise English name
+    const chosenName = isKm ? (nameKh || nameEn) : (nameEn || nameKh);
+
+    let text = '';
+    if (isKm) {
+        if (action === 'check-out') {
+            text = chosenName 
+                ? `សូមអរគុណ ${chosenName}។ ការចេញត្រូវបានកត់ត្រាជោគជ័យ។` 
+                : `សូមអរគុណ។ ការចេញត្រូវបានកត់ត្រាជោគជ័យ។`;
+        } else {
+            text = chosenName 
+                ? `សូមស្វាគមន៍ ${chosenName}។ វត្តមានត្រូវបានកត់ត្រាជោគជ័យ។` 
+                : `សូមស្វាគមន៍។ វត្តមានត្រូវបានកត់ត្រាជោគជ័យ។`;
+        }
+    } else {
+        if (action === 'check-out') {
+            text = chosenName 
+                ? `Thank you, ${chosenName}. Check-out recorded.` 
+                : `Thank you. Check-out recorded.`;
+        } else {
+            text = chosenName 
+                ? `Welcome, ${chosenName}! Check-in recorded successfully.` 
+                : `Welcome! Check-in recorded successfully.`;
+        }
+    }
+
+    // Cancel any previous greeting audio
+    if (currentGreetingAudio) {
+        try {
+            currentGreetingAudio.pause();
+            currentGreetingAudio.currentTime = 0;
+        } catch(e) {}
+    }
+
+    // 1. Natural High-Fidelity Khmer Speech Streaming (Google Translate TTS API)
+    if (isKm) {
+        try {
+            const googleTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=km&client=tw-ob&q=${encodeURIComponent(text)}`;
+            currentGreetingAudio = new Audio(googleTtsUrl);
+            currentGreetingAudio.playbackRate = 1.0;
+            const playPromise = currentGreetingAudio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(err => {
+                    console.log('Khmer audio stream fallback to WebSpeech:', err);
+                    fallbackWebSpeech(text, 'km-KH');
+                });
+            }
+            return;
+        } catch (err) {
+            console.warn('Audio stream init error:', err);
+        }
+    }
+
+    // 2. Fallback to Web Speech API
+    fallbackWebSpeech(text, isKm ? 'km-KH' : 'en-US');
+}
+
+function fallbackWebSpeech(text, lang) {
+    if (!('speechSynthesis' in window)) return;
     try {
         window.speechSynthesis.cancel();
-        const isKm = '{{ app()->getLocale() }}' === 'km';
-        let text = '';
-        if (isKm) {
-            text = (action === 'check-out')
-                ? `សូមអរគុណលោកគ្រូ ${name}។ ជោគជ័យក្នុងការចេញ។`
-                : `សូមស្វាគមន៍លោកគ្រូ ${name}។ វត្តមានត្រូវបានកត់ត្រា។`;
-        } else {
-            text = (action === 'check-out')
-                ? `Thank you ${name}. Check-out recorded.`
-                : `Welcome ${name}! Check-in recorded successfully.`;
-        }
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.rate = 0.95;
         utterance.pitch = 1.0;
-        if (isKm) utterance.lang = 'km-KH';
-        else utterance.lang = 'en-US';
+        utterance.lang = lang;
+        const voices = window.speechSynthesis.getVoices();
+        if (voices && voices.length > 0) {
+            const kmVoice = voices.find(v => v.lang.startsWith('km') || v.name.toLowerCase().includes('khmer'));
+            if (kmVoice) utterance.voice = kmVoice;
+        }
         window.speechSynthesis.speak(utterance);
     } catch(e) {
-        console.log('Speech error:', e);
+        console.log('Web Speech error:', e);
+    }
+}
+
+function testGreetingVoice() {
+    const isKm = '{{ app()->getLocale() }}' === 'km';
+    if (isKm) {
+        speakGreeting({ teacher_name_kh: 'លោកគ្រូ អ្នកគ្រូ' }, 'check-in', 'Morning');
+    } else {
+        speakGreeting({ teacher_name: 'Professor' }, 'check-in', 'Morning');
     }
 }
 
@@ -768,7 +845,7 @@ async function doAdminScan() {
         updateStats(res);
         playSound(res.status === 'success' ? 'success' : 'error');
         if (res.status === 'success') {
-            speakGreeting(res.teacher_name || res.teacher_name_kh, res.action, res.shift);
+            speakGreeting(res, res.action, res.shift);
         }
     } catch (e) {
         showResult({ status: 'error', message: e.message, action: 'error' });
@@ -813,8 +890,8 @@ function showResult(res) {
     const icon = res.action === 'check-in' ? '✅' : res.action === 'check-out' ? '🔵' : res.status === 'info' ? '⚠️' : '❌';
     const nameKh = res.teacher_name_kh || '';
     nameEl.innerHTML = `
-        <div style="font-size: 1.4rem; font-weight: 800; color: var(--primary);">${icon} ${nameKh}</div>
-        <div style="font-size: 1rem; font-weight: 600; opacity: 0.8;">${res.teacher_name || ''}</div>
+        <div style="font-size: 1.45rem; font-weight: 800; color: var(--primary); font-family: 'Kantumruy Pro', 'Battambang', sans-serif; letter-spacing: -0.01em;">${icon} ${nameKh}</div>
+        <div style="font-size: 1rem; font-weight: 600; opacity: 0.85; margin-top: 2px;">${res.teacher_name || ''}</div>
     `;
 
     let meta = res.message || '';
@@ -924,6 +1001,7 @@ async function pollLatestScans() {
                     status: 'success',
                     action: scan.type,
                     teacher_name: scan.teacher_name,
+                    teacher_name_kh: scan.teacher_name_kh,
                     message: `${scan.shift_label} {{ __('recorded') }}`,
                     time: scan.time,
                     working_hours: null // working hours not in latest yet
@@ -933,6 +1011,8 @@ async function pollLatestScans() {
                 showResult(res);
                 addLogEntry(res);
                 updateStats(res);
+                playSound('success');
+                speakGreeting(res, res.action, scan.shift_label);
             });
         }
     } catch (e) {
@@ -1104,7 +1184,7 @@ async function onScanSuccess(decodedText, decodedResult) {
         updateStats(res);
         playSound(res.status === 'success' ? 'success' : 'error');
         if (res.status === 'success') {
-            speakGreeting(res.teacher_name || res.teacher_name_kh, res.action, res.shift);
+            speakGreeting(res, res.action, res.shift);
         }
     } catch (e) {
         showResult({ status: 'error', message: e.message, action: 'error' });
@@ -1251,7 +1331,7 @@ async function handleFaceMatch(employeeId) {
         updateStats(res);
         playSound(res.status === 'success' ? 'success' : 'error');
         if (res.status === 'success') {
-            speakGreeting(res.teacher_name || res.teacher_name_kh, res.action, res.shift);
+            speakGreeting(res, res.action, res.shift);
         }
     } catch (e) {
         showResult({ status: 'error', message: e.message, action: 'error' });
