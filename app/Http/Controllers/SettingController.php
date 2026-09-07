@@ -51,6 +51,35 @@ class SettingController extends Controller
         $glassNoise         = Setting::getValue('glass_noise', 'on');
         $liveRadarSize      = Setting::getValue('live_radar_size', '360');
 
+        // Smart Kiosk Settings
+        $kioskStationName      = Setting::getValue('kiosk_station_name', 'SMART ATTENDANCE KIOSK STATION · ស្ថានីយស្កេនវៃឆ្លាត');
+        $kioskDefaultTab        = Setting::getValue('kiosk_default_tab', 'camera');
+        $kioskQrRotation        = Setting::getValue('kiosk_qr_rotation', '20');
+        $kioskVoiceEnabled      = Setting::getValue('kiosk_voice_enabled', 'on');
+        $kioskVoiceSpeed        = Setting::getValue('kiosk_voice_speed', '1.0');
+        $kioskConfetti          = Setting::getValue('kiosk_confetti', 'on');
+        $kioskShowAnnouncements = Setting::getValue('kiosk_show_announcements', 'on');
+
+        // GPS Geofencing Settings
+        $campusLatitude         = Setting::getValue('campus_latitude', '11.5564');
+        $campusLongitude        = Setting::getValue('campus_longitude', '104.8885');
+        $campusGpsRadius        = Setting::getValue('campus_gps_radius', '300');
+        $enforceGpsGeofence     = Setting::getValue('enforce_gps_geofence', 'false');
+
+        // Telegram Ecosystem & Triggers
+        $telegramChatId         = Setting::getValue('telegram_chat_id', '');
+        $telegramChannelId      = Setting::getValue('telegram_channel_id', '');
+        $telegramNotifyCheckin  = Setting::getValue('telegram_notify_checkin', 'on');
+        $telegramNotifyCheckout = Setting::getValue('telegram_notify_checkout', 'on');
+        $telegramNotifyLate     = Setting::getValue('telegram_notify_late', 'on');
+        $telegramNotifyLeave    = Setting::getValue('telegram_notify_leave', 'on');
+
+        // Academic Term & Shift Grace Period
+        $academicYear           = Setting::getValue('academic_year', '2025-2026');
+        $academicSemester       = Setting::getValue('academic_semester', 'Semester 1');
+        $lateGracePeriod        = Setting::getValue('late_grace_period', '5');
+        $earlyCheckinWindow     = Setting::getValue('early_checkin_window', '30');
+
         return view('settings.index', compact(
             'universityName', 'universityLogo', 'primaryColor', 'defaultTheme', 
             'admins', 'morningLate', 'afternoonLate', 'workingDays', 'maintenanceMode', 'authorizedIp',
@@ -60,7 +89,11 @@ class SettingController extends Controller
             'glassBlur', 'glassOpacity', 'glassBorder', 'glassNoise',
             'universityWebsite', 'universityFacebook', 'corrections',
             'enableAutoCheckout', 'autoCheckoutDelay', 'telegramBotToken', 'holidays',
-            'liveRadarSize'
+            'liveRadarSize',
+            'kioskStationName', 'kioskDefaultTab', 'kioskQrRotation', 'kioskVoiceEnabled', 'kioskVoiceSpeed', 'kioskConfetti', 'kioskShowAnnouncements',
+            'campusLatitude', 'campusLongitude', 'campusGpsRadius', 'enforceGpsGeofence',
+            'telegramChatId', 'telegramChannelId', 'telegramNotifyCheckin', 'telegramNotifyCheckout', 'telegramNotifyLate', 'telegramNotifyLeave',
+            'academicYear', 'academicSemester', 'lateGracePeriod', 'earlyCheckinWindow'
         ));
     }
 
@@ -152,10 +185,53 @@ class SettingController extends Controller
             if ($request->has('campus_latitude')) {
                 Setting::updateOrCreate(['key' => 'campus_latitude'], ['value' => $request->campus_latitude]);
                 Setting::updateOrCreate(['key' => 'campus_longitude'], ['value' => $request->campus_longitude ?? '104.8885']);
-                Setting::updateOrCreate(['key' => 'campus_gps_radius'], ['value' => $request->campus_gps_radius ?? '1000']);
+                Setting::updateOrCreate(['key' => 'campus_gps_radius'], ['value' => $request->campus_gps_radius ?? '300']);
                 
                 $enforceGps = ($request->has('enforce_gps_geofence') && in_array($request->enforce_gps_geofence, ['true', '1', 'on'])) ? 'true' : 'false';
                 Setting::updateOrCreate(['key' => 'enforce_gps_geofence'], ['value' => $enforceGps]);
+            }
+
+            // Kiosk Settings Save
+            if ($request->has('kiosk_station_name')) {
+                Setting::updateOrCreate(['key' => 'kiosk_station_name'], ['value' => $request->kiosk_station_name]);
+            }
+            if ($request->has('kiosk_default_tab')) {
+                Setting::updateOrCreate(['key' => 'kiosk_default_tab'], ['value' => $request->kiosk_default_tab]);
+            }
+            if ($request->has('kiosk_qr_rotation')) {
+                Setting::updateOrCreate(['key' => 'kiosk_qr_rotation'], ['value' => $request->kiosk_qr_rotation]);
+            }
+            if ($request->has('kiosk_voice_speed')) {
+                Setting::updateOrCreate(['key' => 'kiosk_voice_speed'], ['value' => $request->kiosk_voice_speed]);
+            }
+            Setting::updateOrCreate(['key' => 'kiosk_voice_enabled'], ['value' => $request->has('kiosk_voice_enabled') ? 'on' : 'off']);
+            Setting::updateOrCreate(['key' => 'kiosk_confetti'], ['value' => $request->has('kiosk_confetti') ? 'on' : 'off']);
+            Setting::updateOrCreate(['key' => 'kiosk_show_announcements'], ['value' => $request->has('kiosk_show_announcements') ? 'on' : 'off']);
+
+            // Telegram Broadcast Settings Save
+            if ($request->has('telegram_chat_id')) {
+                Setting::updateOrCreate(['key' => 'telegram_chat_id'], ['value' => $request->telegram_chat_id ?? '']);
+            }
+            if ($request->has('telegram_channel_id')) {
+                Setting::updateOrCreate(['key' => 'telegram_channel_id'], ['value' => $request->telegram_channel_id ?? '']);
+            }
+            Setting::updateOrCreate(['key' => 'telegram_notify_checkin'], ['value' => $request->has('telegram_notify_checkin') ? 'on' : 'off']);
+            Setting::updateOrCreate(['key' => 'telegram_notify_checkout'], ['value' => $request->has('telegram_notify_checkout') ? 'on' : 'off']);
+            Setting::updateOrCreate(['key' => 'telegram_notify_late'], ['value' => $request->has('telegram_notify_late') ? 'on' : 'off']);
+            Setting::updateOrCreate(['key' => 'telegram_notify_leave'], ['value' => $request->has('telegram_notify_leave') ? 'on' : 'off']);
+
+            // Academic Term & Grace Period Save
+            if ($request->has('academic_year')) {
+                Setting::updateOrCreate(['key' => 'academic_year'], ['value' => $request->academic_year]);
+            }
+            if ($request->has('academic_semester')) {
+                Setting::updateOrCreate(['key' => 'academic_semester'], ['value' => $request->academic_semester]);
+            }
+            if ($request->has('late_grace_period')) {
+                Setting::updateOrCreate(['key' => 'late_grace_period'], ['value' => $request->late_grace_period]);
+            }
+            if ($request->has('early_checkin_window')) {
+                Setting::updateOrCreate(['key' => 'early_checkin_window'], ['value' => $request->early_checkin_window]);
             }
 
             if ($request->has('telegram_bot_token')) {
@@ -570,7 +646,7 @@ class SettingController extends Controller
         $dateStr = now()->format('Y-m-d_H-i-s');
 
         if ($driver === 'mysql') {
-            $tables = ['users', 'teachers', 'attendances', 'departments', 'rfid_cards', 'security_logs', 'attendance_corrections', 'holidays', 'settings', 'migrations'];
+            $tables = ['users', 'teachers', 'attendance', 'departments', 'rfid_cards', 'schedules', 'leave_requests', 'security_logs', 'attendance_corrections', 'holidays', 'settings', 'migrations'];
             $sqlDump = "-- NTTI Attendance Database Backup\n";
             $sqlDump .= "-- Generated: " . now()->toDateTimeString() . "\n";
             $sqlDump .= "-- Database Driver: MySQL\n\n";
@@ -639,5 +715,52 @@ class SettingController extends Controller
         return response()->download($dbPath, $filename);
     }
 
+    /**
+     * Send a test message via Telegram to verify bot configuration.
+     */
+    public function sendTelegramTestMessage(Request $request)
+    {
+        $targetChat = $request->input('chat_id') ?: Setting::getValue('telegram_channel_id') ?: Setting::getValue('telegram_chat_id');
+        if (empty($targetChat)) {
+            return response()->json(['status' => 'error', 'message' => 'No Telegram Chat ID or Channel ID provided.'], 400);
+        }
 
+        $botToken = Setting::getValue('telegram_bot_token');
+        if (empty($botToken)) {
+            return response()->json(['status' => 'error', 'message' => 'Telegram Bot Token is not configured.'], 400);
+        }
+
+        $text = "🔔 *NTTI Attendance — System Test Message*\n\n"
+              . "✅ Telegram Bot integration is connected and working successfully!\n"
+              . "⏰ Server Time: `" . now()->format('Y-m-d h:i:s A') . "`\n"
+              . "🏫 Institution: *" . Setting::getValue('university_name', 'NTTI') . "*\n"
+              . "🚀 Host: `66.42.61.106`";
+
+        $sent = \App\Services\TelegramService::sendMessage($targetChat, $text);
+
+        if ($sent) {
+            return response()->json(['status' => 'success', 'message' => "Test message sent successfully to Chat ID: {$targetChat}!"]);
+        } else {
+            return response()->json(['status' => 'error', 'message' => 'Failed to send message. Please verify your Bot Token and Chat ID.'], 500);
+        }
+    }
+
+    /**
+     * One-click clear application and view caches.
+     */
+    public function clearSystemCache()
+    {
+        try {
+            \Illuminate\Support\Facades\Artisan::call('view:clear');
+            \Illuminate\Support\Facades\Artisan::call('cache:clear');
+            \Illuminate\Support\Facades\Artisan::call('route:clear');
+            \Illuminate\Support\Facades\Artisan::call('config:clear');
+
+            SecurityLog::record('System Cache Cleared', 'Settings Hub');
+
+            return response()->json(['success' => true, 'message' => 'All system caches (views, application cache, routes) have been cleared successfully.']);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => 'Cache clearing error: ' . $e->getMessage()], 500);
+        }
+    }
 }

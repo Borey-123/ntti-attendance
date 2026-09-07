@@ -181,6 +181,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings/database/export', [SettingController::class, 'downloadDatabaseSqlite'])->name('settings.database.export');
     Route::post('/settings/system-cleanup', [SettingController::class, 'runSystemCleanup'])->name('settings.cleanup');
     Route::get('/settings/telegram-chats', [SettingController::class, 'fetchTelegramChats'])->name('settings.telegram.chats');
+    Route::post('/settings/telegram-test', [SettingController::class, 'sendTelegramTestMessage'])->name('settings.telegram.test');
+    Route::post('/settings/clear-cache', [SettingController::class, 'clearSystemCache'])->name('settings.clear-cache');
     Route::post('/settings/appearance', [SettingController::class, 'updateAppearance'])->name('settings.appearance.update');
     Route::post('/settings/admin', [SettingController::class, 'storeAdmin'])->name('settings.admin.store');
     Route::put('/settings/admin/{user}', [SettingController::class, 'updateAdmin'])->name('settings.admin.update');

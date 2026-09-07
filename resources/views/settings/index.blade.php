@@ -396,23 +396,32 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
             <i class="ph ph-buildings"></i> {{ __('System Identity') }}
         </div>
         <div class="settings-nav-item" data-target="section-rules">
-            <i class="ph ph-clock"></i> {{ __('Attendance Rules') }}
+            <i class="ph ph-clock"></i> {{ __('Attendance & Terms') }}
+        </div>
+        <div class="settings-nav-item" data-target="section-kiosk">
+            <i class="ph ph-monitor"></i> {{ __('Smart Kiosk Terminal') }}
+        </div>
+        <div class="settings-nav-item" data-target="section-geofence">
+            <i class="ph ph-map-pin"></i> {{ __('Campus GPS Geofence') }}
+        </div>
+        <div class="settings-nav-item" data-target="section-telegram">
+            <i class="ph ph-telegram-logo"></i> {{ __('Telegram & Alerts') }}
         </div>
         <div class="settings-nav-item" data-target="section-security">
             <i class="ph ph-shield-check"></i> {{ __('Security & Hardware') }}
         </div>
+        <div class="settings-nav-item" data-target="section-backup">
+            <i class="ph ph-database"></i> {{ __('Backup & Maintenance') }}
+        </div>
         <div class="settings-nav-item" data-target="section-appearance">
             <i class="ph ph-palette"></i> {{ __('System Appearance') }}
         </div>
-
         <div class="settings-nav-item" data-target="section-admins">
             <i class="ph ph-users-four"></i> {{ __('Team Management') }}
         </div>
-
         <div class="settings-nav-item" data-target="section-corrections">
             <i class="ph ph-shield-warning"></i> {{ __('Correction Requests') }}
         </div>
-        
         <div class="settings-nav-item" data-target="section-holidays">
             <i class="ph ph-calendar-star"></i> {{ __('Calendar & Holidays') }}
         </div>
@@ -486,6 +495,36 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                     @csrf
                     <input type="hidden" name="university_name" value="{{ $universityName }}">
                     
+                    <h3 style="font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 1.5rem;"><i class="ph ph-graduation-cap" style="margin-right:0.4rem;"></i>{{ __('Academic Term & Grace Period') }}</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>{{ __('Academic Year') }}</label>
+                            <input type="text" name="academic_year" class="form-control" value="{{ $academicYear ?? '2025-2026' }}" placeholder="2025-2026" required>
+                        </div>
+                        <div class="form-group">
+                            <label>{{ __('Current Semester / Term') }}</label>
+                            <select name="academic_semester" class="form-control">
+                                <option value="Semester 1" {{ ($academicSemester ?? 'Semester 1') === 'Semester 1' ? 'selected' : '' }}>{{ __('Semester 1') }}</option>
+                                <option value="Semester 2" {{ ($academicSemester ?? 'Semester 1') === 'Semester 2' ? 'selected' : '' }}>{{ __('Semester 2') }}</option>
+                                <option value="Summer / Short Term" {{ ($academicSemester ?? 'Semester 1') === 'Summer / Short Term' ? 'selected' : '' }}>{{ __('Summer / Short Term') }}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>{{ __('Late Grace Period (Minutes)') }}</label>
+                            <input type="number" name="late_grace_period" class="form-control" value="{{ $lateGracePeriod ?? 0 }}" min="0" max="60" placeholder="0">
+                            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">{{ __('Minutes allowed past cutoff before marking arrival as Late.') }}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>{{ __('Early Check-In Window (Minutes)') }}</label>
+                            <input type="number" name="early_checkin_window" class="form-control" value="{{ $earlyCheckinWindow ?? 60 }}" min="0" max="180" placeholder="60">
+                            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">{{ __('Minutes before shift start teachers are permitted to scan in.') }}</p>
+                        </div>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
                     <h3 style="font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 1.5rem;"><i class="ph ph-sun-horizon" style="margin-right:0.4rem;"></i>{{ __('Morning Shift') }}</h3>
                     <div class="form-grid">
                         <div class="form-group">
@@ -565,32 +604,118 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
             </div>
         </div>
 
-        {{-- ══ SECTION 3: Security ══ --}}
-        <div id="section-security" class="settings-section">
+        {{-- ══ SECTION 3: Smart Kiosk Terminal ══ --}}
+        <div id="section-kiosk" class="settings-section">
             <div class="glass-panel">
-                <div class="panel-header">
-                    <h2><i class="ph ph-shield-check" style="margin-right:0.5rem; color:var(--primary);"></i>{{ __('Security & Hardware') }}</h2>
-                    <p>{{ __('Scanner restrictions and operating schedules.') }}</p>
+                <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h2><i class="ph ph-monitor" style="margin-right:0.5rem; color:var(--primary);"></i>{{ __('Smart Kiosk Terminal') }}</h2>
+                        <p>{{ __('Configure campus entrance terminal, scanner defaults, voice greetings, and animations.') }}</p>
+                    </div>
+                    <a href="{{ route('kiosk.index') }}" target="_blank" class="btn-secondary" style="color: var(--primary); border-color: rgba(var(--primary-rgb), 0.4); display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+                        <i class="ph ph-arrow-square-out" style="font-size: 1.1rem;"></i> {{ __('Launch Kiosk Display') }}
+                    </a>
                 </div>
                 <form action="{{ route('settings.update') }}" method="POST">
                     @csrf
                     <input type="hidden" name="university_name" value="{{ $universityName }}">
-                    
-                    <h3 style="font-size: 0.9rem; font-weight: 800; color: #a855f7; margin-bottom: 1.5rem;"><i class="ph ph-shield-check" style="margin-right:0.4rem;"></i> {{ __('Two-Factor Authentication (2FA)') }}</h3>
-                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(168, 85, 247, 0.05); padding: 1.5rem; border-radius: 1rem; border: 1px solid rgba(168, 85, 247, 0.2); margin-bottom: 2rem;">
-                        <div>
-                            <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">{{ __('Require 2FA for Admin Account') }}</h4>
-                            <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Enforce time-based OTP passcode verification on administrator login.') }}</p>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>{{ __('Kiosk Station Name') }}</label>
+                            <input type="text" name="kiosk_station_name" class="form-control" value="{{ $kioskStationName ?? 'NTTI Main Gate Terminal' }}" placeholder="NTTI Main Gate Terminal" required>
+                            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">{{ __('Displayed at the header of the Kiosk Station screen.') }}</p>
                         </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" name="admin_2fa_enabled" value="true" {{ auth()->user() && auth()->user()->two_factor_enabled ? 'checked' : '' }} onchange="toggle2fa(this.checked)">
-                            <span class="slider"></span>
-                        </label>
+                        <div class="form-group">
+                            <label>{{ __('Default Active Scanner Tab') }}</label>
+                            <select name="kiosk_default_tab" class="form-control">
+                                <option value="camera" {{ ($kioskDefaultTab ?? 'camera') === 'camera' ? 'selected' : '' }}>📷 {{ __('AI Camera Scanner (Face & QR)') }}</option>
+                                <option value="rfid" {{ ($kioskDefaultTab ?? 'camera') === 'rfid' ? 'selected' : '' }}>💳 {{ __('RFID Card Tap Scanner') }}</option>
+                                <option value="screen_qr" {{ ($kioskDefaultTab ?? 'camera') === 'screen_qr' ? 'selected' : '' }}>📱 {{ __('Anti-Proxy Dynamic QR Screen') }}</option>
+                            </select>
+                            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">{{ __('Tab initially selected when Kiosk boots up.') }}</p>
+                        </div>
                     </div>
 
-                    <hr style="border: 0; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>{{ __('Dynamic QR Code Rotation (Seconds)') }}</label>
+                            <select name="kiosk_qr_rotation" class="form-control">
+                                <option value="10" {{ ($kioskQrRotation ?? 20) == 10 ? 'selected' : '' }}>10 {{ __('Seconds (Ultra-Secure)') }}</option>
+                                <option value="15" {{ ($kioskQrRotation ?? 20) == 15 ? 'selected' : '' }}>15 {{ __('Seconds') }}</option>
+                                <option value="20" {{ ($kioskQrRotation ?? 20) == 20 ? 'selected' : '' }}>20 {{ __('Seconds (Default & Recommended)') }}</option>
+                                <option value="30" {{ ($kioskQrRotation ?? 20) == 30 ? 'selected' : '' }}>30 {{ __('Seconds') }}</option>
+                                <option value="60" {{ ($kioskQrRotation ?? 20) == 60 ? 'selected' : '' }}>60 {{ __('Seconds') }}</option>
+                            </select>
+                            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">{{ __('How often the Dynamic QR changes to prevent photo/screenshot sharing.') }}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>{{ __('Khmer Voice Speed / Rate') }}</label>
+                            <select name="kiosk_voice_speed" class="form-control">
+                                <option value="0.85" {{ ($kioskVoiceSpeed ?? '1.0') == '0.85' ? 'selected' : '' }}>{{ __('Slower (0.85x - Clearer pronunciation)') }}</option>
+                                <option value="1.0" {{ ($kioskVoiceSpeed ?? '1.0') == '1.0' ? 'selected' : '' }}>{{ __('Normal (1.0x - Standard Khmer)') }}</option>
+                                <option value="1.15" {{ ($kioskVoiceSpeed ?? '1.0') == '1.15' ? 'selected' : '' }}>{{ __('Brisk (1.15x - Fast Queue)') }}</option>
+                            </select>
+                            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">{{ __('Speech synthesis speed for Khmer voice announcements.') }}</p>
+                        </div>
+                    </div>
 
-                    <h3 style="font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 1.5rem;"><i class="ph ph-map-pin" style="margin-right:0.4rem;"></i> {{ __('Campus GPS Geofencing') }}</h3>
+                    <hr style="border: 0; border-top: 1px solid var(--border); margin: 2rem 0;">
+
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(var(--primary-rgb), 0.04); padding: 1.25rem 1.5rem; border-radius: 1rem; border: 1px solid rgba(var(--primary-rgb), 0.15); margin: 0;">
+                            <div>
+                                <h4 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-primary);"><i class="ph ph-speaker-high" style="margin-right: 0.5rem; color: var(--primary);"></i>{{ __('Voice Greeting Announcements') }}</h4>
+                                <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Speak teacher name in Khmer and English upon successful scan.') }}</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="kiosk_voice_enabled" value="true" {{ ($kioskVoiceEnabled ?? 'true') === 'true' ? 'checked' : '' }}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(var(--primary-rgb), 0.04); padding: 1.25rem 1.5rem; border-radius: 1rem; border: 1px solid rgba(var(--primary-rgb), 0.15); margin: 0;">
+                            <div>
+                                <h4 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-primary);"><i class="ph ph-sparkle" style="margin-right: 0.5rem; color: #eab308;"></i>{{ __('Celebration Confetti Effect') }}</h4>
+                                <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Display celebratory particle confetti upon on-time attendance scans.') }}</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="kiosk_confetti" value="true" {{ ($kioskConfetti ?? 'true') === 'true' ? 'checked' : '' }}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(var(--primary-rgb), 0.04); padding: 1.25rem 1.5rem; border-radius: 1rem; border: 1px solid rgba(var(--primary-rgb), 0.15); margin: 0;">
+                            <div>
+                                <h4 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-primary);"><i class="ph ph-megaphone-simple" style="margin-right: 0.5rem; color: #3b82f6;"></i>{{ __('Campus Announcement Marquee Ticker') }}</h4>
+                                <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Show scrolling institutional alerts and news on the terminal bottom.') }}</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="kiosk_show_announcements" value="true" {{ ($kioskShowAnnouncements ?? 'true') === 'true' ? 'checked' : '' }}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 3rem; text-align: right;">
+                        <button type="submit" class="btn-premium">
+                            <i class="ph ph-check-circle"></i> {{ __('Save Kiosk Settings') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {{-- ══ SECTION 4: Campus GPS Geofence ══ --}}
+        <div id="section-geofence" class="settings-section">
+            <div class="glass-panel">
+                <div class="panel-header">
+                    <h2><i class="ph ph-map-pin" style="margin-right:0.5rem; color:var(--primary);"></i>{{ __('Campus GPS Geofencing') }}</h2>
+                    <p>{{ __('Define the institutional boundary to restrict mobile and portal self check-ins.') }}</p>
+                </div>
+                <form action="{{ route('settings.update') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="university_name" value="{{ $universityName }}">
                     
                     <div style="background: rgba(var(--primary-rgb), 0.04); border: 1px dashed rgba(var(--primary-rgb), 0.2); border-radius: 1rem; padding: 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
                         <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -612,17 +737,17 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                     <div class="form-grid">
                         <div class="form-group">
                             <label>{{ __('Campus Latitude') }}</label>
-                            <input type="text" id="campus_latitude" name="campus_latitude" class="form-control" value="{{ \App\Models\Setting::getValue('campus_latitude', '11.5621') }}" oninput="updateMapFromInputs()">
+                            <input type="text" id="campus_latitude" name="campus_latitude" class="form-control" value="{{ $campusLatitude ?? '11.5621' }}" oninput="updateMapFromInputs()">
                         </div>
                         <div class="form-group">
                             <label>{{ __('Campus Longitude') }}</label>
-                            <input type="text" id="campus_longitude" name="campus_longitude" class="form-control" value="{{ \App\Models\Setting::getValue('campus_longitude', '104.8885') }}" oninput="updateMapFromInputs()">
+                            <input type="text" id="campus_longitude" name="campus_longitude" class="form-control" value="{{ $campusLongitude ?? '104.8885' }}" oninput="updateMapFromInputs()">
                         </div>
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label>{{ __('Allowed Radius (Meters)') }}</label>
-                            <input type="number" id="campus_gps_radius" name="campus_gps_radius" class="form-control" value="{{ \App\Models\Setting::getValue('campus_gps_radius', '1000') }}" oninput="updateMapFromInputs()">
+                            <input type="number" id="campus_gps_radius" name="campus_gps_radius" class="form-control" value="{{ $campusGpsRadius ?? '1000' }}" oninput="updateMapFromInputs()">
                             <div style="display: flex; gap: 0.4rem; margin-top: 0.5rem; flex-wrap: wrap;">
                                 <button type="button" class="btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" onclick="setRadiusPreset(100)">100m</button>
                                 <button type="button" class="btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" onclick="setRadiusPreset(300)">300m</button>
@@ -637,7 +762,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                                 <p style="margin:0; font-size:0.75rem; color:var(--text-secondary);">{{ __('Block mobile check-ins outside radius.') }}</p>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="enforce_gps_geofence" value="true" {{ \App\Models\Setting::getValue('enforce_gps_geofence', 'true') === 'true' ? 'checked' : '' }}>
+                                <input type="checkbox" name="enforce_gps_geofence" value="true" {{ ($enforceGpsGeofence ?? 'true') === 'true' ? 'checked' : '' }}>
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -648,19 +773,137 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                         <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; display: block;">
                             <i class="ph ph-map-trifold" style="margin-right: 0.3rem;"></i> {{ __('Interactive Geofence Location Picker') }}
                         </label>
-                        <div id="geofenceMap" style="height: 320px; width: 100%; border-radius: 1rem; border: 1px solid var(--border); overflow: hidden; z-index: 1;"></div>
+                        <div id="geofenceMap" style="height: 340px; width: 100%; border-radius: 1rem; border: 1px solid var(--border); overflow: hidden; z-index: 1;"></div>
                         <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
                             <i class="ph ph-hand-tap" style="margin-right: 0.2rem;"></i> {{ __('Click anywhere on the map or drag the marker to instantly set the Campus Center.') }}
                         </p>
                     </div>
 
-                    <hr style="border: 0; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+                    <div style="margin-top: 3rem; text-align: right;">
+                        <button type="submit" class="btn-premium">
+                            <i class="ph ph-check-circle"></i> {{ __('Save Geofence Settings') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
-                    <h3 style="font-size: 0.9rem; font-weight: 800; color: #0088cc; margin-bottom: 1.5rem;"><i class="ph ph-telegram-logo"></i> {{ __('Telegram Bot Integration') }}</h3>
-                    <div class="form-group">
-                        <label>{{ __('Telegram Bot Token') }}</label>
-                        <input type="text" name="telegram_bot_token" class="form-control" value="{{ $telegramBotToken ?? '' }}" placeholder="e.g. 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11">
-                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">{{ __('Required to send check-in and check-out notifications to teachers. Create a bot using @BotFather on Telegram to get a token.') }}</p>
+        {{-- ══ SECTION 5: Telegram & Alerts ══ --}}
+        <div id="section-telegram" class="settings-section">
+            <div class="glass-panel">
+                <div class="panel-header">
+                    <h2><i class="ph ph-telegram-logo" style="margin-right:0.5rem; color:#0088cc;"></i>{{ __('Telegram Ecosystem & Alerts') }}</h2>
+                    <p>{{ __('Configure real-time automated notifications to teacher channels, group chats, and supervisors.') }}</p>
+                </div>
+                <form action="{{ route('settings.update') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="university_name" value="{{ $universityName }}">
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>{{ __('Telegram Bot Token') }}</label>
+                            <input type="text" id="telegram_bot_token" name="telegram_bot_token" class="form-control" value="{{ $telegramBotToken ?? '' }}" placeholder="e.g. 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11">
+                            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">{{ __('Create a bot using @BotFather on Telegram to get a token.') }}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>{{ __('Broadcast Channel / Group ID') }}</label>
+                            <input type="text" id="telegram_chat_id" name="telegram_chat_id" class="form-control" value="{{ $telegramChatId ?? '' }}" placeholder="e.g. -1001234567890">
+                            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">{{ __('Group ID or Channel ID where system broadcasts attendance alerts.') }}</p>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem; background: rgba(0, 136, 204, 0.05); padding: 1.5rem; border-radius: 1rem; border: 1px dashed rgba(0, 136, 204, 0.3); display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                        <div>
+                            <h4 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-primary);">{{ __('Test Bot Connectivity') }}</h4>
+                            <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Verify that your bot token and chat ID are functioning properly.') }}</p>
+                        </div>
+                        <button type="button" id="btnTestTelegram" class="btn-secondary" onclick="sendTelegramTest()" style="color: #0088cc; border-color: rgba(0, 136, 204, 0.4); background: rgba(0, 136, 204, 0.1);">
+                            <i class="ph ph-paper-plane-tilt"></i> {{ __('Send Test Message') }}
+                        </button>
+                    </div>
+
+                    <div id="telegramTestResult" style="display:none; margin-top: 1rem; padding: 1rem; border-radius: 0.75rem; font-size: 0.85rem;"></div>
+
+                    <hr style="border: 0; border-top: 1px solid var(--border); margin: 2rem 0;">
+
+                    <h3 style="font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 1.25rem;"><i class="ph ph-bell-ringing" style="margin-right:0.4rem;"></i>{{ __('Automated Alert Triggers') }}</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.02); padding: 1rem 1.25rem; border-radius: 0.85rem; border: 1px solid var(--border); margin: 0;">
+                            <div>
+                                <label style="margin: 0; font-size: 0.85rem; font-weight: 700;">{{ __('Check-In Alerts') }}</label>
+                                <p style="margin: 0.2rem 0 0; font-size: 0.75rem; color: var(--text-secondary);">{{ __('Notify when teacher checks in.') }}</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="telegram_notify_checkin" value="true" {{ ($telegramNotifyCheckin ?? 'true') === 'true' ? 'checked' : '' }}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.02); padding: 1rem 1.25rem; border-radius: 0.85rem; border: 1px solid var(--border); margin: 0;">
+                            <div>
+                                <label style="margin: 0; font-size: 0.85rem; font-weight: 700;">{{ __('Check-Out Alerts') }}</label>
+                                <p style="margin: 0.2rem 0 0; font-size: 0.75rem; color: var(--text-secondary);">{{ __('Notify when teacher checks out.') }}</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="telegram_notify_checkout" value="true" {{ ($telegramNotifyCheckout ?? 'true') === 'true' ? 'checked' : '' }}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.02); padding: 1rem 1.25rem; border-radius: 0.85rem; border: 1px solid var(--border); margin: 0;">
+                            <div>
+                                <label style="margin: 0; font-size: 0.85rem; font-weight: 700;">{{ __('Late Arrival Warnings') }}</label>
+                                <p style="margin: 0.2rem 0 0; font-size: 0.75rem; color: var(--text-secondary);">{{ __('Special alert when teacher arrives late.') }}</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="telegram_notify_late" value="true" {{ ($telegramNotifyLate ?? 'true') === 'true' ? 'checked' : '' }}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.02); padding: 1rem 1.25rem; border-radius: 0.85rem; border: 1px solid var(--border); margin: 0;">
+                            <div>
+                                <label style="margin: 0; font-size: 0.85rem; font-weight: 700;">{{ __('Leave Request Submissions') }}</label>
+                                <p style="margin: 0.2rem 0 0; font-size: 0.75rem; color: var(--text-secondary);">{{ __('Notify admins on teacher leave submission.') }}</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="telegram_notify_leave" value="true" {{ ($telegramNotifyLeave ?? 'true') === 'true' ? 'checked' : '' }}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 3rem; text-align: right;">
+                        <button type="submit" class="btn-premium">
+                            <i class="ph ph-check-circle"></i> {{ __('Save Telegram Settings') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {{-- ══ SECTION 6: Security ══ --}}
+        <div id="section-security" class="settings-section">
+            <div class="glass-panel">
+                <div class="panel-header">
+                    <h2><i class="ph ph-shield-check" style="margin-right:0.5rem; color:var(--primary);"></i>{{ __('Security & Hardware') }}</h2>
+                    <p>{{ __('Two-factor authentication and terminal operating schedule.') }}</p>
+                </div>
+                <form action="{{ route('settings.update') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="university_name" value="{{ $universityName }}">
+                    
+                    <h3 style="font-size: 0.9rem; font-weight: 800; color: #a855f7; margin-bottom: 1.5rem;"><i class="ph ph-shield-check" style="margin-right:0.4rem;"></i> {{ __('Two-Factor Authentication (2FA)') }}</h3>
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(168, 85, 247, 0.05); padding: 1.5rem; border-radius: 1rem; border: 1px solid rgba(168, 85, 247, 0.2); margin-bottom: 2rem;">
+                        <div>
+                            <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">{{ __('Require 2FA for Admin Account') }}</h4>
+                            <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Enforce time-based OTP passcode verification on administrator login.') }}</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="admin_2fa_enabled" value="true" {{ auth()->user() && auth()->user()->two_factor_enabled ? 'checked' : '' }} onchange="toggle2fa(this.checked)">
+                            <span class="slider"></span>
+                        </label>
                     </div>
 
                     <hr style="border: 0; border-top: 1px solid var(--border); margin: 2.5rem 0;">
@@ -683,55 +926,127 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                         <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">{{ __('How long the check-in/out popup stays visible on the Live Monitor and Dashboard.') }}</p>
                     </div>
 
-                    <div style="margin-top: 2rem; background: rgba(var(--primary-rgb), 0.03); padding: 1.5rem; border-radius: 1rem; border: 1px dashed var(--primary); display: flex; align-items: center; gap: 1.5rem;">
-                        <i class="ph ph-database" style="font-size: 2.5rem; color: var(--primary);"></i>
-                        <div style="flex: 1;">
-                            <h4 style="margin: 0; font-size: 1rem;">{{ __('Attendance Database Report (XLS)') }}</h4>
-                            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Download a formatted spreadsheet of all attendance logs.') }}</p>
-                        </div>
-                        <a href="{{ route('settings.backup') }}" class="btn-secondary">
-                            <i class="ph ph-download-simple"></i> {{ __('Export XLS') }}
-                        </a>
-                    </div>
-
-                    <div style="margin-top: 1.5rem; background: rgba(59, 130, 246, 0.03); padding: 1.5rem; border-radius: 1rem; border: 1px dashed rgba(59, 130, 246, 0.5); display: flex; align-items: center; gap: 1.5rem;">
-                        <i class="ph ph-hard-drives" style="font-size: 2.5rem; color: #3b82f6;"></i>
-                        <div style="flex: 1;">
-                            <h4 style="margin: 0; font-size: 1rem;">{{ __('Full Database Backup & Import (.sql / .sqlite)') }}</h4>
-                            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Export system database or restore from a local backup file.') }}</p>
-                        </div>
-                        <div style="display: flex; gap: 0.75rem;">
-                            <a href="{{ route('settings.database.export') }}" class="btn-secondary" style="color: #3b82f6; border-color: rgba(59, 130, 246, 0.5); background: rgba(59, 130, 246, 0.08);">
-                                <i class="ph ph-download"></i> {{ __('Export DB File') }}
-                            </a>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 1.5rem; background: rgba(239, 68, 68, 0.03); padding: 1.5rem; border-radius: 1rem; border: 1px dashed rgba(239, 68, 68, 0.5); display: flex; align-items: center; gap: 1.5rem;">
-                        <i class="ph ph-broom" style="font-size: 2.5rem; color: var(--danger);"></i>
-                        <div style="flex: 1;">
-                            <h4 style="margin: 0; font-size: 1rem;">{{ __('System Data Cleanup') }}</h4>
-                            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Archive attendances older than 1 year and purge logs older than 3 months.') }}</p>
-                        </div>
-                        <button type="button" onclick="event.preventDefault(); openModal('systemCleanupModal')" class="btn-secondary" style="color: var(--danger); border-color: var(--danger); background: rgba(239, 68, 68, 0.1);">
-                            <i class="ph ph-trash"></i> {{ __('Run Cleanup Now') }}
-                        </button>
-                    </div>
-
                     <div style="margin-top: 3rem; text-align: right;">
                         <button type="submit" class="btn-premium">
                             <i class="ph ph-check-circle"></i> {{ __('Save Security Settings') }}
                         </button>
                     </div>
                 </form>
-                
-
-                {{-- Hidden Form for System Cleanup --}}
-                <form id="systemCleanupForm" action="{{ route('settings.cleanup') }}" method="POST" style="display: none;">
-                    @csrf
-                </form>
             </div>
         </div>
+
+        {{-- ══ SECTION 7: Backup & Maintenance ══ --}}
+        <div id="section-backup" class="settings-section">
+            <div class="glass-panel">
+                <div class="panel-header">
+                    <h2><i class="ph ph-database" style="margin-right:0.5rem; color:var(--primary);"></i>{{ __('Backup & System Maintenance') }}</h2>
+                    <p>{{ __('Database export, spreadsheet reporting, log cleanup, and system caches.') }}</p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    <!-- SQL Database Dump -->
+                    <div style="background: rgba(59, 130, 246, 0.04); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 1.25rem; padding: 1.75rem; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                                <i class="ph ph-file-sql" style="font-size: 2rem; color: #3b82f6;"></i>
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">{{ __('SQL Database Dump') }}</h3>
+                            </div>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                {{ __('Export complete raw SQL dump including teachers, attendance logs, RFID cards, and system settings.') }}
+                            </p>
+                        </div>
+                        <div style="margin-top: 1.5rem;">
+                            <a href="{{ route('settings.database.export') }}" class="btn-secondary" style="color: #3b82f6; border-color: rgba(59, 130, 246, 0.4); background: rgba(59, 130, 246, 0.1); width: 100%; justify-content: center; text-decoration: none;">
+                                <i class="ph ph-download"></i> {{ __('Download .SQL Backup') }}
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Attendance Spreadsheet Report -->
+                    <div style="background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 1.25rem; padding: 1.75rem; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                                <i class="ph ph-file-xls" style="font-size: 2rem; color: #10b981;"></i>
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">{{ __('Spreadsheet Report') }}</h3>
+                            </div>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                {{ __('Download formatted Excel/CSV spreadsheet report of all attendance records for offline audits.') }}
+                            </p>
+                        </div>
+                        <div style="margin-top: 1.5rem;">
+                            <a href="{{ route('settings.backup') }}" class="btn-secondary" style="color: #10b981; border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.1); width: 100%; justify-content: center; text-decoration: none;">
+                                <i class="ph ph-file-arrow-down"></i> {{ __('Export XLS Report') }}
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Clear Application Cache -->
+                    <div style="background: rgba(245, 158, 11, 0.04); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 1.25rem; padding: 1.75rem; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                                <i class="ph ph-lightning" style="font-size: 2rem; color: #f59e0b;"></i>
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">{{ __('Clear System Cache') }}</h3>
+                            </div>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                {{ __('Flush compiled views, application cache, and configuration states to refresh settings instantly.') }}
+                            </p>
+                        </div>
+                        <div style="margin-top: 1.5rem;">
+                            <button type="button" onclick="clearSystemCacheAction()" id="btnClearCache" class="btn-secondary" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.1); width: 100%; justify-content: center;">
+                                <i class="ph ph-arrows-clockwise"></i> {{ __('Clear Cache Now') }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- System Data Cleanup -->
+                    <div style="background: rgba(239, 68, 68, 0.04); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 1.25rem; padding: 1.75rem; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                                <i class="ph ph-broom" style="font-size: 2rem; color: var(--danger);"></i>
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">{{ __('Data Cleanup & Purge') }}</h3>
+                            </div>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                {{ __('Archive attendances older than 1 year and purge security audit logs older than 3 months.') }}
+                            </p>
+                        </div>
+                        <div style="margin-top: 1.5rem;">
+                            <button type="button" onclick="event.preventDefault(); openModal('systemCleanupModal')" class="btn-secondary" style="color: var(--danger); border-color: var(--danger); background: rgba(239, 68, 68, 0.1); width: 100%; justify-content: center;">
+                                <i class="ph ph-trash"></i> {{ __('Run Cleanup Now') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Environment & Server Diagnostics -->
+                <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 1.25rem; padding: 1.5rem;">
+                    <h4 style="margin: 0 0 1rem; font-size: 0.9rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">
+                        <i class="ph ph-hard-drive" style="margin-right: 0.4rem; color: var(--primary);"></i>{{ __('Server Environment Diagnostics') }}
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+                        <div style="background: rgba(255,255,255,0.02); padding: 0.85rem 1rem; border-radius: 0.75rem; border: 1px solid var(--border);">
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); display: block;">PHP Version</span>
+                            <span style="font-size: 0.95rem; font-weight: 700; font-family: monospace;">{{ PHP_VERSION }}</span>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.02); padding: 0.85rem 1rem; border-radius: 0.75rem; border: 1px solid var(--border);">
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); display: block;">Laravel Framework</span>
+                            <span style="font-size: 0.95rem; font-weight: 700; font-family: monospace;">v{{ app()->version() }}</span>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.02); padding: 0.85rem 1rem; border-radius: 0.75rem; border: 1px solid var(--border);">
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); display: block;">Database Driver</span>
+                            <span style="font-size: 0.95rem; font-weight: 700; font-family: monospace;">{{ config('database.default') }}</span>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.02); padding: 0.85rem 1rem; border-radius: 0.75rem; border: 1px solid var(--border);">
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); display: block;">Server Timezone</span>
+                            <span style="font-size: 0.95rem; font-weight: 700; font-family: monospace;">{{ config('app.timezone') }}</span>
+                        </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Hidden Form for System Cleanup --}}
+        <form id="systemCleanupForm" action="{{ route('settings.cleanup') }}" method="POST" style="display: none;">
+            @csrf
+        </form>
 
         <!-- Crop Modal -->
         <div class="modal-overlay" id="cropModal" style="z-index: 1000001;">
@@ -1642,7 +1957,7 @@ function initGeofenceMap() {
 
     document.querySelectorAll('.settings-nav-item').forEach(item => {
         item.addEventListener('click', function () {
-            if (this.getAttribute('data-target') === 'section-security') {
+            if (this.getAttribute('data-target') === 'section-geofence') {
                 setTimeout(() => {
                     if (geofenceMap) geofenceMap.invalidateSize();
                 }, 250);
@@ -1719,6 +2034,116 @@ function detectGPSLocation() {
         },
         { enableHighAccuracy: true }
     );
+}
+
+async function sendTelegramTest() {
+    const btn = document.getElementById('btnTestTelegram');
+    const resultBox = document.getElementById('telegramTestResult');
+    const token = document.getElementById('telegram_bot_token')?.value;
+    const chatId = document.getElementById('telegram_chat_id')?.value;
+
+    if (!chatId) {
+        alert("{{ __('Please enter a Broadcast Channel or Group ID first.') }}");
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> {{ __("Testing...") }}';
+    resultBox.style.display = 'none';
+
+    try {
+        const response = await fetch("{{ route('settings.telegram.test') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ chat_id: chatId, bot_token: token })
+        });
+        const data = await response.json();
+
+        resultBox.style.display = 'block';
+        if (data.status === 'success' || data.success) {
+            resultBox.style.background = 'rgba(16, 185, 129, 0.12)';
+            resultBox.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+            resultBox.style.color = '#10b981';
+            resultBox.innerHTML = '<strong><i class="ph ph-check-circle"></i> {{ __("Connected!") }}</strong> ' + (data.message || 'Test message sent successfully.');
+        } else {
+            resultBox.style.background = 'rgba(239, 68, 68, 0.12)';
+            resultBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+            resultBox.style.color = '#ef4444';
+            resultBox.innerHTML = '<strong><i class="ph ph-warning-circle"></i> {{ __("Connection Failed:") }}</strong> ' + (data.message || 'Could not deliver message.');
+        }
+    } catch (err) {
+        resultBox.style.display = 'block';
+        resultBox.style.background = 'rgba(239, 68, 68, 0.12)';
+        resultBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+        resultBox.style.color = '#ef4444';
+        resultBox.innerHTML = '<strong><i class="ph ph-warning-circle"></i> Error:</strong> ' + err.message;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ph ph-paper-plane-tilt"></i> {{ __("Send Test Message") }}';
+    }
+}
+
+async function fetchTelegramChats() {
+    try {
+        const resp = await fetch("{{ route('settings.telegram.chats') }}");
+        const data = await resp.json();
+        if (data.success && data.chats && data.chats.length > 0) {
+            let msg = "{{ __('Found active Telegram chats/channels:') }}\n\n";
+            data.chats.forEach(c => {
+                msg += `• ${c.title} (${c.type}): ${c.id}\n`;
+            });
+            msg += "\n{{ __('Would you like to use the first chat ID?') }}";
+            if (confirm(msg)) {
+                document.getElementById('telegram_chat_id').value = data.chats[0].id;
+            }
+        } else {
+            alert(data.message || "{{ __('No active chats found. Send a message to your bot first, then try again.') }}");
+        }
+    } catch (e) {
+        alert("Failed to fetch chats: " + e.message);
+    }
+}
+
+async function clearSystemCacheAction() {
+    const btn = document.getElementById('btnClearCache');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> {{ __("Clearing...") }}';
+
+    try {
+        const response = await fetch("{{ route('settings.clear-cache') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        });
+        const data = await response.json();
+        if (data.success) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: '{{ __("Cache Cleared!") }}',
+                    text: data.message,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                alert(data.message);
+            }
+        } else {
+            alert(data.message || 'Failed to clear cache.');
+        }
+    } catch (e) {
+        alert('Cache clear failed: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ph ph-arrows-clockwise"></i> {{ __("Clear Cache Now") }}';
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function () {

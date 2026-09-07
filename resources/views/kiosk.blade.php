@@ -22,6 +22,13 @@
     @php
         $uLogo = \App\Models\Setting::getAssetUrl('university_logo', '/images/ntti_logo.png');
         $uName = \App\Models\Setting::getValue('university_name', 'វិទ្យាស្ថានជាតិបណ្តុះបណ្តាលបច្ចេកទេស');
+        $stationName = $kioskSettings['station_name'] ?? \App\Models\Setting::getValue('kiosk_station_name', 'SMART ATTENDANCE KIOSK STATION · ស្ថានីយស្កេនវៃឆ្លាត');
+        $defaultTab = $kioskSettings['default_tab'] ?? \App\Models\Setting::getValue('kiosk_default_tab', 'camera');
+        $voiceEnabled = $kioskSettings['voice_enabled'] ?? (\App\Models\Setting::getValue('kiosk_voice_enabled', 'true') === 'true');
+        $voiceSpeed = $kioskSettings['voice_speed'] ?? (float)\App\Models\Setting::getValue('kiosk_voice_speed', 1.0);
+        $confettiEnabled = $kioskSettings['confetti'] ?? (\App\Models\Setting::getValue('kiosk_confetti', 'true') === 'true');
+        $showAnnouncements = $kioskSettings['announcements'] ?? (\App\Models\Setting::getValue('kiosk_show_announcements', 'true') === 'true');
+        $qrRotation = $kioskSettings['qr_rotation'] ?? (int)\App\Models\Setting::getValue('kiosk_qr_rotation', 20);
     @endphp
 
     <style>
@@ -858,7 +865,7 @@
             </div>
             <div class="brand-text">
                 <h1>{{ $uName }} <span style="color: var(--primary); font-size: 0.75rem; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 6px;">NTTI</span></h1>
-                <div class="tagline">SMART ATTENDANCE KIOSK STATION · ស្ថានីយស្កេនវៃឆ្លាត</div>
+                <div class="tagline">{{ $stationName }}</div>
             </div>
         </div>
 
@@ -1082,14 +1089,24 @@
 
     <script>
         // ── Kiosk Configuration & Global State ──
+        const KIOSK_CONFIG = {
+            stationName: @json($stationName),
+            defaultTab: @json($defaultTab),
+            voiceEnabled: @json($voiceEnabled),
+            voiceSpeed: @json($voiceSpeed),
+            confetti: @json($confettiEnabled),
+            showAnnouncements: @json($showAnnouncements),
+            qrRotation: @json($qrRotation),
+        };
+
         const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        let voiceEnabled = localStorage.getItem('kiosk_voice') !== 'false';
+        let voiceEnabled = localStorage.getItem('kiosk_voice') !== null ? (localStorage.getItem('kiosk_voice') !== 'false') : KIOSK_CONFIG.voiceEnabled;
         let isProcessingScan = false;
         let qrScanner = null;
         let currentFacingMode = 'environment';
         let dynamicQrInterval = null;
         let qrCountdownTimer = null;
-        let qrSecondsLeft = 20;
+        let qrSecondsLeft = KIOSK_CONFIG.qrRotation || 20;
 
         // ── IndexedDB Offline Buffer Engine ──
         const DB_NAME = 'NTTI_Kiosk_DB';
@@ -1250,7 +1267,7 @@
                     window.speechSynthesis.cancel();
                     const utter = new SpeechSynthesisUtterance(text);
                     utter.lang = lang === 'km' ? 'km-KH' : 'en-US';
-                    utter.rate = 0.95;
+                    utter.rate = KIOSK_CONFIG.voiceSpeed || 0.95;
                     window.speechSynthesis.speak(utter);
                 }
             });
@@ -1364,7 +1381,7 @@
                     try { qrScanner.stop(); } catch(e) {}
                 }
                 loadDynamicScreenQr();
-                dynamicQrInterval = setInterval(loadDynamicScreenQr, 20000);
+                dynamicQrInterval = setInterval(loadDynamicScreenQr, (KIOSK_CONFIG.qrRotation || 20) * 1000);
             }
         }
 
@@ -1389,7 +1406,7 @@
                         correctLevel: QRCode.CorrectLevel.M
                     });
 
-                    qrSecondsLeft = json.expires_in || 20;
+                    qrSecondsLeft = json.expires_in || (KIOSK_CONFIG.qrRotation || 20);
                     startQrCountdown();
                 }
             } catch(e) {
@@ -1621,6 +1638,7 @@
         }
 
         function triggerConfetti() {
+            if (!KIOSK_CONFIG.confetti) return;
             if (typeof confetti === 'function') {
                 confetti({
                     particleCount: 50,
@@ -1752,10 +1770,20 @@
         // ── Initialize on Page Load ──
         document.addEventListener('DOMContentLoaded', () => {
             initOfflineDB();
-            initCameraScanner();
+            if (KIOSK_CONFIG.defaultTab && KIOSK_CONFIG.defaultTab !== 'camera' && typeof switchScanTab === 'function') {
+                switchScanTab(KIOSK_CONFIG.defaultTab);
+            } else {
+                initCameraScanner();
+            }
             if (!voiceEnabled) {
                 document.getElementById('voiceToggleBtn').classList.remove('active');
                 document.getElementById('voiceIcon').className = 'ph ph-speaker-slash';
+            }
+            if (!KIOSK_CONFIG.showAnnouncements) {
+                const marqueeEl = document.getElementById('kioskMarquee');
+                if (marqueeEl && marqueeEl.closest('.kiosk-footer-marquee, .marquee-wrap, footer')) {
+                    marqueeEl.closest('.kiosk-footer-marquee, .marquee-wrap, footer').style.display = 'none';
+                }
             }
         });
     </script>

@@ -7,18 +7,26 @@ use Illuminate\Support\Facades\Cache;
 
 class DynamicQrService
 {
-    const ROTATION_SECONDS = 20;
-    const TOLERANCE_SECONDS = 35; // Allow reasonable network delay for mobile capture
+    public static function getRotationInterval(): int
+    {
+        try {
+            $val = (int)\App\Models\Setting::getValue('kiosk_qr_rotation', 20);
+            return ($val >= 10 && $val <= 120) ? $val : 20;
+        } catch (\Throwable $e) {
+            return 20;
+        }
+    }
 
     /**
      * Generate the current valid dynamic QR payload and expiration info.
      */
     public static function generateToken(): array
     {
+        $rotation = self::getRotationInterval();
         $now = Carbon::now();
         $timestamp = $now->timestamp;
-        $window = floor($timestamp / self::ROTATION_SECONDS);
-        $expiresIn = self::ROTATION_SECONDS - ($timestamp % self::ROTATION_SECONDS);
+        $window = floor($timestamp / $rotation);
+        $expiresIn = $rotation - ($timestamp % $rotation);
 
         $secret = config('app.key', 'ntti-qr-secret-key');
         $data = "ntti-dynamic-qr:{$window}";
@@ -36,7 +44,7 @@ class DynamicQrService
             'token'       => $payload,
             'url'         => url('/portal?checkin_token=' . urlencode($payload)),
             'expires_in'  => (int)$expiresIn,
-            'interval'    => self::ROTATION_SECONDS,
+            'interval'    => $rotation,
             'window'      => $window,
             'server_time' => $now->toIso8601String(),
         ];
@@ -68,16 +76,18 @@ class DynamicQrService
 
             $currentTimestamp = Carbon::now()->timestamp;
             $tokenTimestamp = (int)$json['t'];
+            $rotation = self::getRotationInterval();
+            $tolerance = $rotation + 20; // Allow rotation time plus 20s network/camera latency
 
             // Check if token timestamp is older than allowable tolerance window
-            if (($currentTimestamp - $tokenTimestamp) > self::TOLERANCE_SECONDS || ($tokenTimestamp - $currentTimestamp) > 10) {
+            if (($currentTimestamp - $tokenTimestamp) > $tolerance || ($tokenTimestamp - $currentTimestamp) > 10) {
                 return false;
             }
 
             $window = (int)$json['w'];
-            $currentWindow = floor($currentTimestamp / self::ROTATION_SECONDS);
+            $currentWindow = floor($currentTimestamp / $rotation);
 
-            // Allow current window or immediately preceding window (tolerance for 20s transition)
+            // Allow current window or immediately preceding window (tolerance for transition)
             if (abs($currentWindow - $window) > 1) {
                 return false;
             }

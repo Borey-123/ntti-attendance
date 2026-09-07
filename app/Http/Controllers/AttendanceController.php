@@ -746,8 +746,14 @@ class AttendanceController extends Controller
             ]);
         }
 
+        // Apply grace period if configured
+        $graceMinutes = (int)Setting::getValue('late_grace_period', 0);
+        $effectiveCutoff = ($graceMinutes > 0 && $lateCutoff) 
+            ? (clone $lateCutoff)->addMinutes($graceMinutes) 
+            : $lateCutoff;
+
         // Perform Check-In
-        $status = $now->greaterThan($lateCutoff) ? 'late' : 'present';
+        $status = ($effectiveCutoff && $now->greaterThan($effectiveCutoff)) ? 'late' : 'present';
         $record->update([
             $inCol    => $timeString,
             $statusCol => $status,
@@ -896,9 +902,19 @@ class AttendanceController extends Controller
         $morningLate   = Setting::getValue('morning_late_cutoff', '07:45');
         $afternoonLate = Setting::getValue('afternoon_late_cutoff', '14:15');
 
+        $kioskSettings = [
+            'station_name'   => Setting::getValue('kiosk_station_name', 'NTTI Main Gate Terminal'),
+            'default_tab'    => Setting::getValue('kiosk_default_tab', 'camera'),
+            'qr_rotation'    => (int)Setting::getValue('kiosk_qr_rotation', 20),
+            'voice_enabled'  => Setting::getValue('kiosk_voice_enabled', 'true') === 'true',
+            'voice_speed'    => (float)Setting::getValue('kiosk_voice_speed', 1.0),
+            'confetti'       => Setting::getValue('kiosk_confetti', 'true') === 'true',
+            'announcements'  => Setting::getValue('kiosk_show_announcements', 'true') === 'true',
+        ];
+
         return view('kiosk', compact(
             'totalTeachers', 'presentCount', 'lateCount', 'rate',
-            'recentScans', 'systemOpen', 'systemClose', 'morningLate', 'afternoonLate'
+            'recentScans', 'systemOpen', 'systemClose', 'morningLate', 'afternoonLate', 'kioskSettings'
         ));
     }
 

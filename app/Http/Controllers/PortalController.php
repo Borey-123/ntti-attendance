@@ -484,18 +484,30 @@ class PortalController extends Controller
         $attendance->longitude = $lng;
         $attendance->checkin_method = 'gps';
 
+        $morningLateStr = \App\Models\Setting::getValue('morning_late_cutoff', '07:45');
+        $afternoonLateStr = \App\Models\Setting::getValue('afternoon_late_cutoff', '14:15');
+        $graceMinutes = (int)\App\Models\Setting::getValue('late_grace_period', 0);
+
+        $mParts = explode(':', $morningLateStr);
+        $mCutoff = now()->copy()->setTime((int)($mParts[0] ?? 7), (int)($mParts[1] ?? 45));
+        if ($graceMinutes > 0) $mCutoff->addMinutes($graceMinutes);
+
+        $aParts = explode(':', $afternoonLateStr);
+        $aCutoff = now()->copy()->setTime((int)($aParts[0] ?? 14), (int)($aParts[1] ?? 15));
+        if ($graceMinutes > 0) $aCutoff->addMinutes($graceMinutes);
+
         // Determine morning or afternoon shift check-in/out
         if ($hour < 12.0) {
             if (!$attendance->morning_in) {
                 $attendance->morning_in = $currentTime;
-                $attendance->morning_status = ($hour > 8.25) ? 'late' : 'present';
+                $attendance->morning_status = now()->greaterThan($mCutoff) ? 'late' : 'present';
             } else {
                 $attendance->morning_out = $currentTime;
             }
         } else {
             if (!$attendance->afternoon_in) {
                 $attendance->afternoon_in = $currentTime;
-                $attendance->afternoon_status = ($hour > 14.25) ? 'late' : 'present';
+                $attendance->afternoon_status = now()->greaterThan($aCutoff) ? 'late' : 'present';
             } else {
                 $attendance->afternoon_out = $currentTime;
             }
