@@ -595,7 +595,7 @@ class AttendanceController extends Controller
                 'message'        => 'Today (' . $now->format('l') . ') is not a working day.',
                 'teacher_name'   => $teacher->name,
                 'teacher_name_kh'=> $teacher->name_kh,
-                'photo'          => $teacher->photo ? url($teacher->photo) : null,
+                'photo'          => $teacher->photo ? to_asset_url($teacher->photo) : null,
                 'action'         => null,
             ], 403);
         }
@@ -720,7 +720,7 @@ class AttendanceController extends Controller
                     'action'  => 'already-checked-out',
                     'teacher_name' => $teacher->name,
                     'teacher_name_kh' => $teacher->name_kh,
-                    'photo'   => $teacher->photo ? url($teacher->photo) : null,
+                    'photo'   => $teacher->photo ? to_asset_url($teacher->photo) : null,
                     'message' => "{$teacher->name} already checked out today. No active shift right now.",
                 ]);
             }
@@ -740,7 +740,7 @@ class AttendanceController extends Controller
                 'action'       => 'already-checked-out',
                 'teacher_name' => $teacher->name,
                 'teacher_name_kh' => $teacher->name_kh,
-                'photo'        => $teacher->photo ? url($teacher->photo) : null,
+                'photo'        => $teacher->photo ? to_asset_url($teacher->photo) : null,
                 'shift'        => $shiftType,
                 'message'      => "{$teacher->name} already checked out for {$shiftType} shift",
             ]);

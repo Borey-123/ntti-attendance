@@ -81,22 +81,25 @@
 
         .brand-logo-wrap {
             position: relative;
-            width: 52px;
-            height: 52px;
-            border-radius: 14px;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+            flex-shrink: 0;
+            background: transparent;
+            border: none;
+            box-shadow: none;
         }
 
         .brand-logo-wrap img {
-            width: 42px;
-            height: 42px;
-            object-fit: contain;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block;
         }
 
         .brand-text h1 {
@@ -586,6 +589,23 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
+        .item-avatar-placeholder {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(6, 182, 212, 0.25) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: var(--primary);
+            font-size: 1.15rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            text-transform: uppercase;
+            font-family: var(--font-en);
+        }
+
         .item-info {
             flex: 1;
             min-width: 0;
@@ -747,6 +767,22 @@
             background: #020617;
         }
 
+        .hud-avatar-placeholder {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+            color: #ffffff;
+            font-size: 3.5rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            font-family: var(--font-en);
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+
         .hud-check-badge {
             position: absolute;
             bottom: 0;
@@ -847,10 +883,6 @@
             <button class="icon-btn" onclick="toggleFullscreen()" title="Fullscreen (F11)">
                 <i class="ph ph-arrows-out-simple"></i>
             </button>
-
-            <a href="{{ route('dashboard') }}" class="icon-btn" title="Back to Dashboard">
-                <i class="ph ph-x"></i>
-            </a>
         </div>
     </header>
 
@@ -965,13 +997,19 @@
                     @forelse($recentScans as $scan)
                         @php
                             $teacher = $scan->teacher;
-                            $photo = $teacher && $teacher->photo ? to_asset_url($teacher->photo) : asset('images/default-avatar.png');
+                            $hasPhoto = $teacher && !empty($teacher->photo);
+                            $photoUrl = $hasPhoto ? to_asset_url($teacher->photo) : '';
+                            $initial = strtoupper(substr($teacher->name ?? 'T', 0, 1));
                             $time = $scan->morning_in ?? $scan->afternoon_in ?? 'N/A';
                             $status = ($scan->morning_status === 'late' || $scan->afternoon_status === 'late') ? 'late' : 'ontime';
                             $statusText = $status === 'late' ? 'Late' : 'On Time';
                         @endphp
                         <div class="scan-item" data-scan-id="{{ $scan->id }}">
-                            <img src="{{ $photo }}" class="item-avatar" alt="Avatar" onerror="this.src='/images/default-avatar.png';">
+                            @if($hasPhoto)
+                                <img src="{{ $photoUrl }}" class="item-avatar" alt="Avatar" onerror="this.outerHTML='<div class=\'item-avatar-placeholder\'>{{ $initial }}</div>';">
+                            @else
+                                <div class="item-avatar-placeholder">{{ $initial }}</div>
+                            @endif
                             <div class="item-info">
                                 <div class="item-name">{{ $teacher->name ?? 'Teacher' }}</div>
                                 <div class="item-name-kh">{{ $teacher->name_kh ?? '' }}</div>
@@ -1009,7 +1047,8 @@
     <div class="hud-modal" id="hudModal">
         <div class="hud-card">
             <div class="hud-avatar-frame">
-                <img id="hudPhoto" src="{{ asset('images/default-avatar.png') }}" alt="Teacher">
+                <img id="hudPhoto" src="{{ asset('images/default-avatar.png') }}" alt="Teacher" style="display: block;">
+                <div id="hudPhotoPlaceholder" class="hud-avatar-placeholder" style="display: none;"></div>
                 <div class="hud-check-badge">
                     <i class="ph ph-check-bold" id="hudCheckIcon"></i>
                 </div>
@@ -1530,8 +1569,25 @@
         function showHudModal(data) {
             clearTimeout(hudTimeout);
             const modal = document.getElementById('hudModal');
+            const photoImg = document.getElementById('hudPhoto');
+            const placeholder = document.getElementById('hudPhotoPlaceholder');
+            const initial = (data.teacher_name || 'T').trim().charAt(0).toUpperCase();
 
-            document.getElementById('hudPhoto').src = data.photo || '/images/default-avatar.png';
+            if (data.photo && data.photo.trim() !== '') {
+                photoImg.src = data.photo;
+                photoImg.style.display = 'block';
+                placeholder.style.display = 'none';
+                photoImg.onerror = function() {
+                    photoImg.style.display = 'none';
+                    placeholder.textContent = initial;
+                    placeholder.style.display = 'flex';
+                };
+            } else {
+                photoImg.style.display = 'none';
+                placeholder.textContent = initial;
+                placeholder.style.display = 'flex';
+            }
+
             document.getElementById('hudNameKh').textContent = data.teacher_name_kh || data.teacher_name || 'គ្រូបង្រៀន';
             document.getElementById('hudNameEn').textContent = data.teacher_name || 'Teacher';
             document.getElementById('hudTime').textContent = data.time || new Date().toLocaleTimeString();
@@ -1581,7 +1637,13 @@
 
             // Display error prominently on the HUD modal
             const modal = document.getElementById('hudModal');
-            document.getElementById('hudPhoto').src = '{{ asset("images/default-avatar.png") }}';
+            const photoImg = document.getElementById('hudPhoto');
+            const placeholder = document.getElementById('hudPhotoPlaceholder');
+            photoImg.style.display = 'none';
+            placeholder.innerHTML = '<i class="ph ph-warning-octagon" style="font-size: 3.5rem; color: var(--danger);"></i>';
+            placeholder.style.background = 'rgba(239, 68, 68, 0.15)';
+            placeholder.style.display = 'flex';
+
             document.getElementById('hudNameKh').textContent = 'មិនអាចកត់ត្រាវត្តមានបានទេ';
             document.getElementById('hudNameEn').textContent = msg;
             document.getElementById('hudTime').textContent = new Date().toLocaleTimeString();
@@ -1611,9 +1673,14 @@
 
             const statusClass = data.attendance_status === 'late' ? 'badge-late' : 'badge-ontime';
             const statusLabel = data.attendance_status === 'late' ? 'Late' : (data.action === 'check-out' ? 'Out' : 'On Time');
+            const initial = (data.teacher_name || 'T').trim().charAt(0).toUpperCase();
+
+            const avatarHtml = (data.photo && data.photo.trim() !== '')
+                ? `<img src="${data.photo}" class="item-avatar" alt="Avatar" onerror="this.outerHTML='<div class=\\'item-avatar-placeholder\\'>${initial}</div>';">`
+                : `<div class="item-avatar-placeholder">${initial}</div>`;
 
             item.innerHTML = `
-                <img src="${data.photo || '/images/default-avatar.png'}" class="item-avatar" alt="Avatar" onerror="this.src='/images/default-avatar.png';">
+                ${avatarHtml}
                 <div class="item-info">
                     <div class="item-name">${data.teacher_name || 'Teacher'}</div>
                     <div class="item-name-kh">${data.teacher_name_kh || ''}</div>
