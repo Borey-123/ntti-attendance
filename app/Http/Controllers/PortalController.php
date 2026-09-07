@@ -44,6 +44,32 @@ class PortalController extends Controller
         }
 
         $teacherId = session('portal_teacher_id');
+
+        // Handle instant checkin token scanned from Kiosk screen
+        if ($request->filled('checkin_token')) {
+            $token = $request->checkin_token;
+            if (!$teacherId) {
+                session(['pending_checkin_token' => $token]);
+                session()->flash('info', 'សូមបញ្ចូលលេខកូដ PIN ៦ខ្ទង់ ដើម្បីបញ្ជាក់ការចុះវត្តមាន Kiosk (Please enter PIN to confirm Kiosk check-in)');
+                return view('portal.login');
+            } else {
+                $teacher = Teacher::find($teacherId);
+                if ($teacher && $teacher->status === 'active') {
+                    if (\App\Services\DynamicQrService::validateToken($token)) {
+                        $scanRequest = new Request([
+                            'teacher_id'     => $teacher->id,
+                            'checkin_method' => 'dynamic_qr',
+                        ]);
+                        $response = app(AttendanceController::class)->adminScan($scanRequest);
+                        $data = $response->getData(true);
+                        $successMsg = $data['message'] ?? 'Attendance recorded successfully via Smart Kiosk QR!';
+                        return redirect()->route('portal.index')->with('success', $successMsg);
+                    } else {
+                        session()->flash('error', 'QR Code expired or invalid. Please scan live screen again.');
+                    }
+                }
+            }
+        }
         
         if (!$teacherId) {
             return view('portal.login');
@@ -270,6 +296,21 @@ class PortalController extends Controller
         session()->regenerate();
 
         \App\Models\SecurityLog::recordPortal('Portal Login', 'Teacher ID: ' . $teacher->employee_id, 'Teacher successfully logged in to the portal.');
+
+        // If user scanned a Kiosk QR code before logging in, complete the check-in immediately
+        if (session()->has('pending_checkin_token')) {
+            $pendingToken = session()->pull('pending_checkin_token');
+            if (\App\Services\DynamicQrService::validateToken($pendingToken)) {
+                $scanRequest = new Request([
+                    'teacher_id'     => $teacher->id,
+                    'checkin_method' => 'dynamic_qr',
+                ]);
+                $response = app(AttendanceController::class)->adminScan($scanRequest);
+                $data = $response->getData(true);
+                $successMsg = $data['message'] ?? 'Attendance recorded successfully via Smart Kiosk QR!';
+                return redirect()->route('portal.index')->with('success', $successMsg);
+            }
+        }
 
         return redirect()->route('portal.index');
     }

@@ -19,6 +19,11 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
+    @php
+        $uLogo = \App\Models\Setting::getAssetUrl('university_logo', '/images/ntti_logo.png');
+        $uName = \App\Models\Setting::getValue('university_name', 'វិទ្យាស្ថានជាតិបណ្តុះបណ្តាលបច្ចេកទេស');
+    @endphp
+
     <style>
         :root {
             --bg-kiosk: radial-gradient(circle at 50% 15%, #0f172a 0%, #020617 100%);
@@ -76,20 +81,21 @@
 
         .brand-logo-wrap {
             position: relative;
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
             background: rgba(16, 185, 129, 0.1);
             border: 1px solid rgba(16, 185, 129, 0.3);
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
         }
 
         .brand-logo-wrap img {
-            width: 38px;
-            height: 38px;
+            width: 42px;
+            height: 42px;
             object-fit: contain;
         }
 
@@ -236,7 +242,6 @@
             overflow: hidden;
         }
 
-        /* Glowing background decorative blobs */
         .glow-blob {
             position: absolute;
             width: 350px;
@@ -358,7 +363,6 @@
         .corner-bl { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; border-bottom-left-radius: 12px; }
         .corner-br { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-bottom-right-radius: 12px; }
 
-        /* Sweeping Laser Line */
         .hud-laser {
             position: absolute;
             top: 0;
@@ -416,7 +420,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 1rem;
+            gap: 1.25rem;
             width: 100%;
             height: 100%;
             padding: 2rem;
@@ -426,8 +430,9 @@
         .qr-canvas-box {
             background: #fff;
             padding: 1.25rem;
-            border-radius: 1.25rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border-radius: 1.5rem;
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.35);
+            border: 2px solid var(--primary);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -813,10 +818,10 @@
     <header class="kiosk-header">
         <div class="brand-section">
             <div class="brand-logo-wrap">
-                <img src="{{ asset('images/logo.png') }}" onerror="this.src='/images/logo.png'; this.onerror=null;" alt="NTTI">
+                <img src="{{ $uLogo }}" onerror="this.src='{{ asset('images/ntti_logo.png') }}'; this.onerror=null;" alt="NTTI">
             </div>
             <div class="brand-text">
-                <h1>វិទ្យាស្ថានជាតិបណ្តុះបណ្តាលបច្ចេកទេស <span style="color: var(--primary); font-size: 0.75rem; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 6px;">NTTI</span></h1>
+                <h1>{{ $uName }} <span style="color: var(--primary); font-size: 0.75rem; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 6px;">NTTI</span></h1>
                 <div class="tagline">SMART ATTENDANCE KIOSK STATION · ស្ថានីយស្កេនវៃឆ្លាត</div>
             </div>
         </div>
@@ -903,9 +908,13 @@
                     <div class="qr-canvas-box">
                         <div id="dynamicQrCanvas"></div>
                     </div>
-                    <div>
-                        <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 0.35rem;">ស្កេន QR នេះដោយទូរសព្ទដៃ</h3>
-                        <p style="color: var(--text-sub); font-size: 0.85rem;">Scan this rotating anti-proxy code with your Teacher Portal app.</p>
+                    <div style="max-width: 380px;">
+                        <h3 style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 0.35rem;">ស្កេន QR នេះដោយទូរសព្ទដៃ</h3>
+                        <p style="color: var(--cyan); font-size: 0.9rem; font-weight:600; margin-bottom:0.6rem;">Point any smartphone camera or Teacher Portal at this QR</p>
+                        <div style="background:rgba(255,255,255,0.06); border:1px dashed var(--card-border); padding:0.5rem 1rem; border-radius:10px; font-size:0.82rem; color:var(--text-sub); display:flex; align-items:center; justify-content:center; gap:0.5rem;">
+                            <i class="ph ph-arrows-clockwise" style="color:var(--primary);"></i>
+                            <span>កូដផ្លាស់ប្តូរស្វ័យប្រវត្តរៀងរាល់ <strong id="qrCountdown" style="color:var(--primary); font-family:var(--font-mono);">20</strong> វិនាទី</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -913,7 +922,7 @@
             {{-- Bottom Prompt Bar --}}
             <div class="scanner-prompt">
                 <div class="prompt-text">
-                    <i class="ph ph-check-circle"></i>
+                    <i class="ph ph-check-circle" id="scannerPromptIcon"></i>
                     <span id="scannerStatusPrompt">{{ __('Point your Teacher ID Card QR code or Dynamic QR code at the camera') }}</span>
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
@@ -961,7 +970,7 @@
                             $status = ($scan->morning_status === 'late' || $scan->afternoon_status === 'late') ? 'late' : 'ontime';
                             $statusText = $status === 'late' ? 'Late' : 'On Time';
                         @endphp
-                        <div class="scan-item">
+                        <div class="scan-item" data-scan-id="{{ $scan->id }}">
                             <img src="{{ $photo }}" class="item-avatar" alt="Avatar" onerror="this.src='/images/default-avatar.png';">
                             <div class="item-info">
                                 <div class="item-name">{{ $teacher->name ?? 'Teacher' }}</div>
@@ -974,7 +983,7 @@
                             </div>
                         </div>
                     @empty
-                        <div style="text-align: center; color: var(--text-sub); padding: 3rem 1rem; font-size: 0.85rem;">
+                        <div id="kioskEmptyFeed" style="text-align: center; color: var(--text-sub); padding: 3rem 1rem; font-size: 0.85rem;">
                             {{ __('No scans recorded today yet.') }}
                         </div>
                     @endforelse
@@ -1040,6 +1049,8 @@
         let qrScanner = null;
         let currentFacingMode = 'environment';
         let dynamicQrInterval = null;
+        let qrCountdownTimer = null;
+        let qrSecondsLeft = 20;
 
         // ── IndexedDB Offline Buffer Engine ──
         const DB_NAME = 'NTTI_Kiosk_DB';
@@ -1226,17 +1237,15 @@
         }
 
         // ── Global RFID Card Keystroke Interceptor ──
-        // Intercepts USB RFID card swipes anywhere on the page without requiring an active input box!
         let rfidKeyBuffer = '';
         let rfidLastKeyTime = 0;
 
         window.addEventListener('keydown', function(e) {
-            // Ignore if user is inside an input or textarea
             if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
 
             const now = Date.now();
             if (now - rfidLastKeyTime > 150) {
-                rfidKeyBuffer = ''; // Reset buffer if typing is slow (human typing)
+                rfidKeyBuffer = '';
             }
             rfidLastKeyTime = now;
 
@@ -1268,7 +1277,7 @@
                 { facingMode: currentFacingMode },
                 config,
                 onQrCodeDetected,
-                () => {} // silent on frame errors
+                () => {}
             ).catch(err => {
                 console.warn('[KIOSK CAMERA] Camera start warning:', err);
                 document.getElementById('scannerStatusPrompt').textContent = '⚠️ មិនអាចបើកកាមេរ៉ាបានទេ (សូមអនុញ្ញាត Camera Permission ឬប្រើកាត RFID)';
@@ -1298,6 +1307,7 @@
                 document.getElementById('scannerStatusPrompt').textContent = '{{ __("Point your Teacher ID Card QR code or Dynamic QR code at the camera") }}';
                 initCameraScanner();
                 clearInterval(dynamicQrInterval);
+                clearInterval(qrCountdownTimer);
             } else if (mode === 'rfid') {
                 document.getElementById('tabRfid').classList.add('active');
                 document.getElementById('rfidViewWrap').style.display = 'flex';
@@ -1306,15 +1316,16 @@
                     try { qrScanner.stop(); } catch(e) {}
                 }
                 clearInterval(dynamicQrInterval);
+                clearInterval(qrCountdownTimer);
             } else if (mode === 'screen_qr') {
                 document.getElementById('tabScreenQr').classList.add('active');
                 document.getElementById('screenQrViewWrap').style.display = 'flex';
-                document.getElementById('scannerStatusPrompt').textContent = 'កូដ QR វិលលើអេក្រង់ផ្ទាល់ (ផ្លាស់ប្តូររៀងរាល់ ១០ វិនាទី)';
+                document.getElementById('scannerStatusPrompt').textContent = 'ស្កេនកូដ QR លើអេក្រង់នេះដោយទូរសព្ទដៃរបស់អ្នក (Point your phone at this QR)';
                 if (qrScanner) {
                     try { qrScanner.stop(); } catch(e) {}
                 }
                 loadDynamicScreenQr();
-                dynamicQrInterval = setInterval(loadDynamicScreenQr, 10000);
+                dynamicQrInterval = setInterval(loadDynamicScreenQr, 20000);
             }
         }
 
@@ -1326,31 +1337,128 @@
                 if (json.token) {
                     const canvasBox = document.getElementById('dynamicQrCanvas');
                     canvasBox.innerHTML = '';
+                    
+                    // Encode full checkin URL so standard camera apps open it directly
+                    const qrPayload = json.url || json.token;
+                    
                     new QRCode(canvasBox, {
-                        text: json.token,
-                        width: 180,
-                        height: 180,
+                        text: qrPayload,
+                        width: 200,
+                        height: 200,
                         colorDark: "#020617",
                         colorLight: "#ffffff",
                         correctLevel: QRCode.CorrectLevel.M
                     });
+
+                    qrSecondsLeft = json.expires_in || 20;
+                    startQrCountdown();
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.warn('[KIOSK] loadDynamicScreenQr error:', e);
+            }
         }
 
-        // ── Unified Scan Processing ──
+        function startQrCountdown() {
+            clearInterval(qrCountdownTimer);
+            const countEl = document.getElementById('qrCountdown');
+            if (countEl) countEl.textContent = qrSecondsLeft;
+            
+            qrCountdownTimer = setInterval(() => {
+                qrSecondsLeft--;
+                if (countEl) countEl.textContent = Math.max(0, qrSecondsLeft);
+                if (qrSecondsLeft <= 0) {
+                    clearInterval(qrCountdownTimer);
+                    loadDynamicScreenQr();
+                }
+            }, 1000);
+        }
+
+        // ── Real-Time Campus-Wide Scan Polling Engine ──
+        // Listens for scans triggered from ANY device (mobile phone scanning screen QR, card, admin scan)
+        let seenScanSignatures = new Set();
+        let isFirstPoll = true;
+
+        async function pollKioskLiveStream() {
+            try {
+                const res = await fetch('/api-live/latest');
+                if (!res.ok) return;
+                const data = await res.json();
+
+                if (data.scans && data.scans.length > 0) {
+                    if (isFirstPoll) {
+                        // Seed seen scans from initial page load
+                        data.scans.forEach(s => seenScanSignatures.add(s.id + '_' + s.updated_at));
+                        isFirstPoll = false;
+                        return;
+                    }
+
+                    // Identify new incoming scans
+                    const newScans = data.scans.filter(s => !seenScanSignatures.has(s.id + '_' + s.updated_at));
+
+                    if (newScans.length > 0) {
+                        newScans.forEach(s => seenScanSignatures.add(s.id + '_' + s.updated_at));
+
+                        const latest = newScans[0];
+                        playSound('success');
+                        triggerConfetti();
+
+                        // Immediate Holographic Modal Popup!
+                        showHudModal({
+                            teacher_name: latest.teacher_name,
+                            teacher_name_kh: latest.teacher_name_kh,
+                            photo: latest.photo,
+                            department: latest.department,
+                            time: latest.time,
+                            action: latest.type || 'check-in',
+                            attendance_status: latest.status === 'late' ? 'late' : 'present',
+                        });
+
+                        // Prepend to Live Stream with Slide-In Animation!
+                        prependStreamFeed({
+                            teacher_name: latest.teacher_name,
+                            teacher_name_kh: latest.teacher_name_kh,
+                            photo: latest.photo,
+                            department: latest.department,
+                            time: latest.time,
+                            action: latest.type || 'check-in',
+                            attendance_status: latest.status === 'late' ? 'late' : 'present',
+                        });
+
+                        // Announce in Khmer with Voice Speech!
+                        const actionKh = (latest.type === 'check-out') ? 'ចេញពីបង្រៀន' : 'ចូលបង្រៀន';
+                        const nameToSpeak = latest.teacher_name_kh || latest.teacher_name;
+                        speakText(`សូមស្វាគមន៍ ${nameToSpeak} ${actionKh}`, 'km');
+
+                        // Refresh KPI Counters
+                        if (data.stats) {
+                            const countEl = document.getElementById('kioskPresentCount');
+                            if (countEl) {
+                                countEl.innerHTML = `${data.stats.present}<span style="font-size: 0.9rem; color: var(--text-sub); font-weight: 500;">/${data.stats.total}</span>`;
+                            }
+                            const rateEl = document.getElementById('kioskRate');
+                            if (rateEl) rateEl.textContent = `${data.stats.rate}%`;
+                            const lateEl = document.getElementById('kioskLateCount');
+                            if (lateEl) lateEl.textContent = data.stats.late;
+                        }
+                    }
+                }
+            } catch (err) {
+                // Ignore transient network errors
+            }
+        }
+        setInterval(pollKioskLiveStream, 2000);
+
+        // ── Local Kiosk Scan Processing (Camera / USB RFID) ──
         async function handleScanProcess(payload) {
             if (isProcessingScan) return;
             isProcessingScan = true;
 
-            // Pause camera while showing modal
             if (qrScanner) {
-                try { qrScanner.pause(); } catch(e) {}
+                try { qrScanner.pause(); } catch (e) {}
             }
 
             try {
                 if (!navigator.onLine) {
-                    // Store locally in IndexedDB
                     saveOfflineScan(payload);
                     playSound('success');
                     showHudModal({
@@ -1395,7 +1503,6 @@
                 }
             } catch (err) {
                 console.warn('[KIOSK SCAN ERROR]', err);
-                // If network failed mid-request, save offline
                 saveOfflineScan(payload);
                 playSound('success');
                 showHudModal({
@@ -1412,7 +1519,7 @@
                 setTimeout(() => {
                     isProcessingScan = false;
                     if (qrScanner) {
-                        try { qrScanner.resume(); } catch(e) {}
+                        try { qrScanner.resume(); } catch (e) {}
                     }
                 }, 3500);
             }
@@ -1468,16 +1575,37 @@
         }
 
         function showErrorNotification(msg) {
+            playSound('error');
             const prompt = document.getElementById('scannerStatusPrompt');
-            const orig = prompt.textContent;
             prompt.innerHTML = `<span style="color: var(--danger); font-weight: 800;">⚠️ ${msg}</span>`;
+
+            // Display error prominently on the HUD modal
+            const modal = document.getElementById('hudModal');
+            document.getElementById('hudPhoto').src = '{{ asset("images/default-avatar.png") }}';
+            document.getElementById('hudNameKh').textContent = 'មិនអាចកត់ត្រាវត្តមានបានទេ';
+            document.getElementById('hudNameEn').textContent = msg;
+            document.getElementById('hudTime').textContent = new Date().toLocaleTimeString();
+            document.getElementById('hudDept').textContent = 'System Alert';
+
+            const actionPill = document.getElementById('hudActionPill');
+            actionPill.style.background = 'rgba(239, 68, 68, 0.2)';
+            actionPill.style.borderColor = 'var(--danger)';
+            actionPill.style.color = 'var(--danger)';
+            document.getElementById('hudActionIcon').className = 'ph ph-x-circle';
+            document.getElementById('hudActionText').textContent = 'ការស្កេនបរាជ័យ (Scan Failed)';
+
+            modal.classList.add('show');
             setTimeout(() => {
-                prompt.textContent = orig;
-            }, 3000);
+                modal.classList.remove('show');
+                prompt.textContent = '{{ __("Point your Teacher ID Card QR code or Dynamic QR code at the camera") }}';
+            }, 3200);
         }
 
         function prependStreamFeed(data) {
             const list = document.getElementById('kioskStreamList');
+            const emptyNotice = document.getElementById('kioskEmptyFeed');
+            if (emptyNotice) emptyNotice.remove();
+
             const item = document.createElement('div');
             item.className = 'scan-item highlight';
 
@@ -1499,12 +1627,10 @@
 
             list.insertBefore(item, list.firstChild);
 
-            // Remove highlight after 4s
             setTimeout(() => {
                 item.classList.remove('highlight');
             }, 4000);
 
-            // Keep max 15 items in stream
             while (list.children.length > 15) {
                 list.removeChild(list.lastChild);
             }

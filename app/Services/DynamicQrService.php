@@ -34,6 +34,7 @@ class DynamicQrService
 
         return [
             'token'       => $payload,
+            'url'         => url('/portal?checkin_token=' . urlencode($payload)),
             'expires_in'  => (int)$expiresIn,
             'interval'    => self::ROTATION_SECONDS,
             'window'      => $window,
@@ -47,6 +48,14 @@ class DynamicQrService
     public static function validateToken(string $token): bool
     {
         try {
+            // Extract token if full URL was scanned by camera
+            if (str_contains($token, 'checkin_token=')) {
+                parse_str(parse_url($token, PHP_URL_QUERY) ?? '', $queryParams);
+                if (!empty($queryParams['checkin_token'])) {
+                    $token = $queryParams['checkin_token'];
+                }
+            }
+
             $decoded = base64_decode($token, true);
             if (!$decoded) {
                 return false;

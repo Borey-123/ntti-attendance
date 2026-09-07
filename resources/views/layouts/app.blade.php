@@ -300,10 +300,6 @@
             <a href="{{ route('scan.index') }}" data-title="{{ __('Scan Station') }}" class="nav-item {{ request()->routeIs('scan.*') ? 'active' : '' }}">
                 <i class="ph ph-scan nav-icon"></i> <span class="nav-text">{{ __('Scan Station') }}</span>
             </a>
-            <a href="{{ route('kiosk.index') }}" target="_blank" data-title="{{ __('Smart Kiosk Station') }}" class="nav-item">
-                <i class="ph ph-desktop nav-icon" style="color: #10b981;"></i> <span class="nav-text">{{ __('Smart Kiosk') }}</span>
-                <span class="badge" style="background: rgba(16,185,129,0.15); color: #10b981; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-left: auto;">NEW</span>
-            </a>
             <a href="{{ route('teachers.index') }}" data-title="{{ __('Teacher Directory') }}" class="nav-item {{ request()->routeIs('teachers.*') ? 'active' : '' }}">
                 <i class="ph ph-users nav-icon"></i> <span class="nav-text">{{ __('Teacher Directory') }}</span>
             </a>
