@@ -51,6 +51,7 @@ Route::get('/lang-live/{locale}', function (string $locale) {
 // Live Monitor (public, no auth needed)
 Route::get('/live', [AttendanceController::class, 'liveMonitor'])->name('live.monitor');
 Route::get('/api-live/latest', [AttendanceController::class, 'latest'])->name('api.live.latest');
+Route::get('/api-live/tts', [AttendanceController::class, 'tts'])->name('api.live.tts');
 
 // Teacher Portal Enhancements
 Route::get('/portal/export', [PortalController::class, 'export'])->name('portal.export');

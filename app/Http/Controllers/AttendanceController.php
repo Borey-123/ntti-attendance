@@ -722,9 +722,11 @@ class AttendanceController extends Controller
             }
 
             return response()->json([
-                'status'  => 'error',
-                'message' => 'No active shift at this time.',
-                'shift'   => null,
+                'status'          => 'error',
+                'message'         => 'No active shift at this time.',
+                'teacher_name'    => $teacher->name,
+                'teacher_name_kh' => $teacher->name_kh,
+                'shift'           => null,
             ], 400);
         }
 
@@ -1069,6 +1071,65 @@ class AttendanceController extends Controller
             'departments' => $deptStats,
             'scans' => array_slice($data, 0, 10),
         ]);
+    }
+
+    /**
+     * High-fidelity Text-To-Speech audio proxy (supports Khmer km-KH without browser Referer blocks).
+     */
+    public function tts(Request $request)
+    {
+        $text = trim($request->query('text', ''));
+        $lang = trim($request->query('lang', 'km'));
+
+        if (empty($text)) {
+            return response('No text provided', 400);
+        }
+
+        // Limit text length
+        $text = mb_substr($text, 0, 250);
+
+        $cacheDir = storage_path('app/tts_cache');
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0755, true);
+        }
+
+        $hash = md5($lang . '_' . $text);
+        $cacheFile = $cacheDir . '/' . $hash . '.mp3';
+
+        if (file_exists($cacheFile) && filesize($cacheFile) > 500) {
+            return response()->file($cacheFile, [
+                'Content-Type' => 'audio/mpeg',
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+        }
+
+        $url = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=' . urlencode($lang) . '&client=tw-ob&q=' . urlencode($text);
+
+        $opts = [
+            'http' => [
+                'method' => 'GET',
+                'header' => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\r\n" .
+                            "Referer: https://translate.google.com/\r\n",
+                'timeout' => 6,
+            ],
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+            ]
+        ];
+
+        $context = stream_context_create($opts);
+        $audioData = @file_get_contents($url, false, $context);
+
+        if ($audioData && strlen($audioData) > 500) {
+            @file_put_contents($cacheFile, $audioData);
+            return response($audioData, 200, [
+                'Content-Type' => 'audio/mpeg',
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+        }
+
+        return response('TTS generation failed', 502);
     }
 
     /**

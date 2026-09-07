@@ -651,16 +651,16 @@ function speakGreeting(teacher, action, shift) {
         } catch(e) {}
     }
 
-    // 1. Natural High-Fidelity Khmer Speech Streaming (Google Translate TTS API)
+    // 1. Natural High-Fidelity Khmer Speech Streaming (via local backend proxy)
     if (isKm) {
         try {
-            const googleTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=km&client=tw-ob&q=${encodeURIComponent(text)}`;
-            currentGreetingAudio = new Audio(googleTtsUrl);
+            const proxyTtsUrl = `{{ route('api.live.tts') }}?lang=km&text=${encodeURIComponent(text)}`;
+            currentGreetingAudio = new Audio(proxyTtsUrl);
             currentGreetingAudio.playbackRate = 1.0;
             const playPromise = currentGreetingAudio.play();
             if (playPromise !== undefined) {
                 playPromise.catch(err => {
-                    console.log('Khmer audio stream fallback to WebSpeech:', err);
+                    console.log('Proxy Khmer audio stream failed, fallback to WebSpeech:', err);
                     fallbackWebSpeech(text, 'km-KH');
                 });
             }
@@ -828,6 +828,10 @@ document.getElementById('deptFilter').addEventListener('change', filterTeachers)
 async function doAdminScan() {
     if (!selectedTeacherId) return;
 
+    const selectedCard = document.querySelector('.teacher-card.selected');
+    const selName = selectedCard ? (selectedCard.dataset.name || '') : '';
+    const selNameKh = selectedCard ? (selectedCard.dataset.nameKh || '') : '';
+
     const btn = document.getElementById('scanBtn');
     const ring = document.getElementById('scannerRing');
     btn.disabled = true;
@@ -840,6 +844,9 @@ async function doAdminScan() {
             body: JSON.stringify({ teacher_id: parseInt(selectedTeacherId) })
         });
 
+        if (!res.teacher_name && selName) res.teacher_name = selName;
+        if (!res.teacher_name_kh && selNameKh) res.teacher_name_kh = selNameKh;
+
         showResult(res);
         addLogEntry(res);
         updateStats(res);
@@ -848,8 +855,20 @@ async function doAdminScan() {
             speakGreeting(res, res.action, res.shift);
         }
     } catch (e) {
-        showResult({ status: 'error', message: e.message, action: 'error' });
-        addLogEntry({ status: 'error', message: e.message, teacher_name: '—', action: 'error' });
+        showResult({ 
+            status: 'error', 
+            message: e.message, 
+            teacher_name: selName, 
+            teacher_name_kh: selNameKh, 
+            action: 'error' 
+        });
+        addLogEntry({ 
+            status: 'error', 
+            message: e.message, 
+            teacher_name: selName || '—', 
+            teacher_name_kh: selNameKh, 
+            action: 'error' 
+        });
         playSound('error');
     } finally {
         setTimeout(() => {
@@ -889,9 +908,12 @@ function showResult(res) {
 
     const icon = res.action === 'check-in' ? '✅' : res.action === 'check-out' ? '🔵' : res.status === 'info' ? '⚠️' : '❌';
     const nameKh = res.teacher_name_kh || '';
+    const nameEn = res.teacher_name || '';
+    const displayName = nameKh || nameEn;
+
     nameEl.innerHTML = `
-        <div style="font-size: 1.45rem; font-weight: 800; color: var(--primary); font-family: 'Kantumruy Pro', 'Battambang', sans-serif; letter-spacing: -0.01em;">${icon} ${nameKh}</div>
-        <div style="font-size: 1rem; font-weight: 600; opacity: 0.85; margin-top: 2px;">${res.teacher_name || ''}</div>
+        <div style="font-size: 1.45rem; font-weight: 800; color: var(--primary); font-family: 'Kantumruy Pro', 'Battambang', sans-serif; letter-spacing: -0.01em;">${icon} ${displayName}</div>
+        ${(nameKh && nameEn && nameKh !== nameEn) ? `<div style="font-size: 1rem; font-weight: 600; opacity: 0.85; margin-top: 2px;">${nameEn}</div>` : ''}
     `;
 
     let meta = res.message || '';
