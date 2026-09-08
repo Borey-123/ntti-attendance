@@ -324,7 +324,9 @@
         }
 
         async function clearQueue() {
-            if (!confirm('តើអ្នកពិតជាចង់សម្អាត Queue មែនទេ?')) return;
+            const ok = await showOfflineConfirm('តើអ្នកយល់ព្រមសម្អាតទិន្នន័យស្កេនទាំងអស់ក្នុងបញ្ជីរង់ចាំ (Queue) នេះដែរឬទេ?', 'សម្អាត Queue', 'danger');
+            if (!ok) return;
+
             try {
                 const db = await openDB();
                 const tx = db.transaction('attendance_queue', 'readwrite');
@@ -336,6 +338,9 @@
         }
 
         async function manualSyncQueue() {
+            const ok = await showOfflineConfirm('តើអ្នកយល់ព្រមធ្វើសមកាលកម្មទិន្នន័យស្កេនទាំងអស់ទៅកាន់ Server ដែរឬទេ?', 'Sync Queue ទៅ Server', 'success');
+            if (!ok) return;
+
             const btn = document.getElementById('btnSync');
             btn.innerHTML = '<i class="ph ph-spinner animate-spin"></i> កំពុង Sync...';
             btn.disabled = true;
@@ -365,13 +370,13 @@
                 });
 
                 const data = await res.json();
-                if (data.status === 'success') {
+                if (data.status === 'success' || data.success) {
                     // Clear synced
                     const clearTx = db.transaction('attendance_queue', 'readwrite');
                     clearTx.objectStore('attendance_queue').clear();
                     clearTx.oncomplete = () => {
                         loadOfflineQueue();
-                        alert(`Sync ជោគជ័យ! បញ្ចូលទិន្នន័យបានចំនួន ${data.synced_count || items.length} កំណត់ត្រា។`);
+                        alert(`Sync ជោគជ័យ! បញ្ចូលទិន្នន័យបានចំនួន ${data.synced_count || data.processed_count || items.length} កំណត់ត្រា។`);
                     };
                 } else {
                     alert('Sync failed: ' + (data.message || 'Server error'));
@@ -428,10 +433,65 @@
             }
         }
 
+        // Custom Confirmation Modal for Offline Page
+        function showOfflineConfirm(message, title = 'បញ្ជាក់ការយល់ព្រម', type = 'warning') {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('offlineConfirmModal');
+                const titleEl = document.getElementById('offlineConfirmTitle');
+                const messageEl = document.getElementById('offlineConfirmMessage');
+                const iconBox = document.getElementById('offlineConfirmIconBox');
+                const iconEl = document.getElementById('offlineConfirmIcon');
+                const btnConfirm = document.getElementById('offlineBtnConfirm');
+                const btnCancel = document.getElementById('offlineBtnCancel');
+
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+
+                iconBox.style.background = type === 'danger' ? 'rgba(239, 68, 68, 0.15)' : (type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)');
+                iconBox.style.color = type === 'danger' ? '#f87171' : (type === 'success' ? '#34d399' : '#fbbf24');
+                iconEl.className = type === 'danger' ? 'ph ph-warning-octagon' : (type === 'success' ? 'ph ph-check-circle' : 'ph ph-warning');
+
+                btnConfirm.style.background = type === 'danger' ? 'linear-gradient(135deg, #ef4444, #b91c1c)' : (type === 'success' ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #f59e0b, #d97706)');
+
+                modal.style.display = 'flex';
+
+                const handleConfirm = () => { cleanup(); resolve(true); };
+                const handleCancel = () => { cleanup(); resolve(false); };
+
+                function cleanup() {
+                    modal.style.display = 'none';
+                    btnConfirm.removeEventListener('click', handleConfirm);
+                    btnCancel.removeEventListener('click', handleCancel);
+                }
+
+                btnConfirm.addEventListener('click', handleConfirm);
+                btnCancel.addEventListener('click', handleCancel);
+            });
+        }
+
         window.addEventListener('online', updateNetworkStatus);
         window.addEventListener('offline', updateNetworkStatus);
         updateNetworkStatus();
         loadOfflineQueue();
     </script>
+
+    <!-- Offline Custom Interactive Confirmation Modal -->
+    <div id="offlineConfirmModal" style="display: none; position: fixed; inset: 0; z-index: 999999; background: rgba(3, 7, 18, 0.82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); align-items: center; justify-content: center; padding: 1.25rem;">
+        <div style="background: rgba(17, 24, 39, 0.95); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 1.5rem; max-width: 440px; width: 100%; padding: 2rem; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7); text-align: center; font-family: 'Battambang', system-ui, sans-serif;">
+            <div id="offlineConfirmIconBox" style="width: 4rem; height: 4rem; margin: 0 auto 1.25rem; border-radius: 1rem; display: flex; align-items: center; justify-content: center; font-size: 2rem; border: 1px solid rgba(255, 255, 255, 0.1);">
+                <i id="offlineConfirmIcon" class="ph ph-warning"></i>
+            </div>
+            <h3 id="offlineConfirmTitle" style="font-size: 1.35rem; font-weight: 700; color: #fff; margin-bottom: 0.6rem; letter-spacing: -0.02em;">បញ្ជាក់ការយល់ព្រម</h3>
+            <p id="offlineConfirmMessage" style="font-size: 0.92rem; color: #9ca3af; line-height: 1.6; margin-bottom: 1.75rem;">តើអ្នកប្រាកដជាចង់បន្តសកម្មភាពនេះដែរឬទេ?</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <button type="button" id="offlineBtnCancel" style="padding: 0.85rem 1.25rem; border-radius: 0.85rem; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.05); color: #e5e7eb; font-weight: 600; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s;">
+                    <i class="ph ph-x"></i> មិនយល់ព្រម
+                </button>
+                <button type="button" id="offlineBtnConfirm" style="padding: 0.85rem 1.25rem; border-radius: 0.85rem; border: none; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-weight: 700; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 10px 20px -5px rgba(245, 158, 11, 0.4); transition: all 0.2s;">
+                    <i class="ph ph-check"></i> យល់ព្រម
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

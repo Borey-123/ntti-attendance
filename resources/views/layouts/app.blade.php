@@ -1548,11 +1548,107 @@
                     navigator.serviceWorker.register('/sw.js')
                         .then(reg => console.log('NTTI PWA: ServiceWorker active', reg.scope))
                         .catch(err => console.warn('NTTI PWA: ServiceWorker reg failed', err));
-                } else {
-                    console.info('NTTI PWA Notice: ServiceWorker registration requires HTTPS or localhost. If testing on plain HTTP IP (e.g. 66.42.61.106), browsers block ServiceWorkers by default. For full PWA install, configure SSL/domain or chrome://flags/#unsafely-treat-insecure-origin-as-secure.');
                 }
             });
         }
+    </script>
+
+    {{-- Global Interactive Confirm Modal ("យល់ព្រម" / "មិនយល់ព្រម") --}}
+    <div class="modal-overlay" id="appConfirmModal" style="z-index: 10000000; backdrop-filter: blur(12px); background: rgba(5, 10, 24, 0.82);">
+        <div class="modal-content" style="max-width: 440px; border-radius: 1.75rem; padding: 2.25rem 2rem; text-align: center; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 30px 70px rgba(0,0,0,0.6);">
+            <div id="confirmModalIconWrap" style="width: 76px; height: 76px; border-radius: 50%; margin: 0 auto 1.25rem; display: flex; align-items: center; justify-content: center; font-size: 2.25rem; transition: all 0.3s ease;">
+                <i id="confirmModalIcon" class="ph ph-warning-circle"></i>
+            </div>
+            <h3 id="confirmModalTitle" style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.6rem; color: var(--text-primary);">
+                {{ __('Please Confirm') }}
+            </h3>
+            <p id="confirmModalMessage" style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.75rem; word-break: break-word;">
+                {{ __('Are you sure you want to proceed?') }}
+            </p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+                <button type="button" id="confirmModalCancelBtn" class="btn btn-secondary" style="border-radius: 1rem; padding: 0.85rem 1rem; font-weight: 700; font-size: 0.95rem; justify-content: center;">
+                    {{ __('Disagree') }}
+                </button>
+                <button type="button" id="confirmModalConfirmBtn" class="btn btn-primary" style="border-radius: 1rem; padding: 0.85rem 1rem; font-weight: 800; font-size: 0.95rem; justify-content: center; box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.35);">
+                    {{ __('Agree') }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.confirmModal = function(options) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('appConfirmModal');
+                const iconWrap = document.getElementById('confirmModalIconWrap');
+                const icon = document.getElementById('confirmModalIcon');
+                const titleEl = document.getElementById('confirmModalTitle');
+                const msgEl = document.getElementById('confirmModalMessage');
+                const cancelBtn = document.getElementById('confirmModalCancelBtn');
+                const confirmBtn = document.getElementById('confirmModalConfirmBtn');
+
+                if (!modal) {
+                    resolve(window.confirm(typeof options === 'string' ? options : options.message));
+                    return;
+                }
+
+                const opts = typeof options === 'string' ? { message: options } : (options || {});
+                const title = opts.title || '{{ __("Please Confirm") }}';
+                const message = opts.message || 'តើអ្នកយល់ព្រមបន្តសកម្មភាពនេះដែរឬទេ?';
+                const confirmText = opts.confirmText || '{{ __("Agree") }}';
+                const cancelText = opts.cancelText || '{{ __("Disagree") }}';
+                const type = opts.type || 'warning';
+
+                titleEl.textContent = title;
+                msgEl.textContent = message;
+                confirmBtn.textContent = confirmText;
+                cancelBtn.textContent = cancelText;
+
+                if (type === 'danger') {
+                    iconWrap.style.background = 'rgba(239, 68, 68, 0.15)';
+                    iconWrap.style.color = '#ef4444';
+                    iconWrap.style.border = '2px solid rgba(239, 68, 68, 0.35)';
+                    icon.className = 'ph ph-trash';
+                    confirmBtn.style.background = '#ef4444';
+                    confirmBtn.style.borderColor = '#ef4444';
+                    confirmBtn.style.color = '#fff';
+                    confirmBtn.style.boxShadow = '0 8px 20px rgba(239, 68, 68, 0.35)';
+                } else if (type === 'success') {
+                    iconWrap.style.background = 'rgba(16, 185, 129, 0.15)';
+                    iconWrap.style.color = '#10b981';
+                    iconWrap.style.border = '2px solid rgba(16, 185, 129, 0.35)';
+                    icon.className = 'ph ph-check-circle';
+                    confirmBtn.style.background = '#10b981';
+                    confirmBtn.style.borderColor = '#10b981';
+                    confirmBtn.style.color = '#fff';
+                    confirmBtn.style.boxShadow = '0 8px 20px rgba(16, 185, 129, 0.35)';
+                } else {
+                    iconWrap.style.background = 'rgba(245, 158, 11, 0.15)';
+                    iconWrap.style.color = '#f59e0b';
+                    iconWrap.style.border = '2px solid rgba(245, 158, 11, 0.35)';
+                    icon.className = 'ph ph-warning-circle';
+                    confirmBtn.style.background = 'var(--primary)';
+                    confirmBtn.style.borderColor = 'var(--primary)';
+                    confirmBtn.style.color = '#000';
+                    confirmBtn.style.boxShadow = '0 8px 20px rgba(var(--primary-rgb), 0.35)';
+                }
+
+                modal.classList.add('active');
+
+                const cleanup = (result) => {
+                    modal.classList.remove('active');
+                    confirmBtn.removeEventListener('click', onConfirm);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    resolve(result);
+                };
+
+                const onConfirm = () => cleanup(true);
+                const onCancel = () => cleanup(false);
+
+                confirmBtn.addEventListener('click', onConfirm);
+                cancelBtn.addEventListener('click', onCancel);
+            });
+        };
     </script>
     @stack('scripts')
 </body>
