@@ -13,6 +13,8 @@ use App\Http\Controllers\PortalController;
 use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\AcademicCalendarController;
+use App\Http\Controllers\PayrollController;
 
 // Auth
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -48,6 +50,11 @@ Route::get('/lang-live/{locale}', function (string $locale) {
     return redirect()->back();
 })->name('lang.switch.live');
 
+// Offline PWA fallback page
+Route::get('/offline', function () {
+    return view('offline');
+})->name('offline');
+
 // Live Monitor (public, no auth needed)
 Route::get('/live', [AttendanceController::class, 'liveMonitor'])->name('live.monitor');
 Route::get('/api-live/latest', [AttendanceController::class, 'latest'])->name('api.live.latest');
@@ -73,6 +80,11 @@ Route::post('/portal/logout', [PortalController::class, 'logout'])->name('portal
 Route::post('/portal/change-password', [PortalController::class, 'changePassword'])->name('portal.change-password');
 Route::post('/portal/change-photo', [PortalController::class, 'changePhoto'])->name('portal.change-photo');
 Route::post('/portal/change-face', [PortalController::class, 'changeFace'])->name('portal.change-face');
+Route::post('/portal/substitute-request', [PortalController::class, 'storeSubstituteRequest'])->name('portal.substitute.request');
+Route::get('/portal/slip', [PortalController::class, 'attendanceSlip'])->name('portal.slip');
+Route::get('/portal/timetable/ics', [PortalController::class, 'exportCalendarIcs'])->name('portal.timetable.ics');
+Route::post('/portal/biometric/register', [PortalController::class, 'registerBiometric'])->name('portal.biometric.register');
+Route::post('/portal/biometric/login', [PortalController::class, 'biometricLogin'])->name('portal.biometric.login');
 Route::get('/api-web/portal/search', [PortalController::class, 'search'])->name('api.portal.search');
 Route::get('/api-web/announcements/active', [\App\Http\Controllers\AnnouncementController::class, 'activeAnnouncements'])->name('api.announcements.active');
 Route::post('/api/device/ping', function (\Illuminate\Http\Request $request) {
@@ -205,4 +217,28 @@ Route::middleware('auth')->group(function () {
 
     // PDF Reports Generator
     Route::get('/reports/pdf', [\App\Http\Controllers\PdfReportController::class, 'generate'])->name('reports.pdf');
+
+    // ── Academic Calendar ─────────────────────────────────────────────────────
+    Route::get('/academic-calendar', [AcademicCalendarController::class, 'index'])->name('academic.index');
+    Route::post('/academic-calendar/years', [AcademicCalendarController::class, 'store'])->name('academic.years.store');
+    Route::put('/academic-calendar/years/{id}', [AcademicCalendarController::class, 'update'])->name('academic.years.update');
+    Route::delete('/academic-calendar/years/{id}', [AcademicCalendarController::class, 'destroy'])->name('academic.years.destroy');
+    Route::post('/academic-calendar/years/{id}/set-current', [AcademicCalendarController::class, 'setCurrent'])->name('academic.years.set-current');
+    Route::post('/academic-calendar/periods', [AcademicCalendarController::class, 'addPeriod'])->name('academic.periods.store');
+    Route::put('/academic-calendar/periods/{id}', [AcademicCalendarController::class, 'updatePeriod'])->name('academic.periods.update');
+    Route::delete('/academic-calendar/periods/{id}', [AcademicCalendarController::class, 'destroyPeriod'])->name('academic.periods.destroy');
+    Route::get('/api-web/academic-calendar', [AcademicCalendarController::class, 'getData'])->name('api.academic.data');
+
+    // ── Payroll ───────────────────────────────────────────────────────────────
+    Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+    Route::post('/payroll/generate', [PayrollController::class, 'generate'])->name('payroll.generate');
+    Route::post('/payroll/bulk-approve', [PayrollController::class, 'bulkApprove'])->name('payroll.bulk-approve');
+    Route::get('/payroll/settings', [PayrollController::class, 'settings'])->name('payroll.settings');
+    Route::post('/payroll/settings', [PayrollController::class, 'saveSettings'])->name('payroll.settings.save');
+    Route::get('/payroll/export/csv', [PayrollController::class, 'exportCsv'])->name('payroll.export.csv');
+    Route::get('/payroll/{id}', [PayrollController::class, 'show'])->name('payroll.show');
+    Route::post('/payroll/{id}/approve', [PayrollController::class, 'approve'])->name('payroll.approve');
+    Route::post('/payroll/{id}/paid', [PayrollController::class, 'markPaid'])->name('payroll.paid');
+    Route::get('/payroll/{id}/pdf', [PayrollController::class, 'exportPdf'])->name('payroll.pdf');
+    Route::get('/api-web/payroll', [PayrollController::class, 'getData'])->name('api.payroll.list');
 });

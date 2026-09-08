@@ -318,6 +318,12 @@
             <a href="{{ route('analytics.index') }}" data-title="{{ __('Analytics') }}" class="nav-item {{ request()->routeIs('analytics.*') ? 'active' : '' }}">
                 <i class="ph ph-chart-donut nav-icon"></i> <span class="nav-text">{{ __('Analytics') }}</span>
             </a>
+            <a href="{{ route('academic.index') }}" data-title="{{ __('Academic Calendar') }}" class="nav-item {{ request()->routeIs('academic.*') ? 'active' : '' }}">
+                <i class="ph ph-graduation-cap nav-icon"></i> <span class="nav-text">{{ __('Academic Calendar') }}</span>
+            </a>
+            <a href="{{ route('payroll.index') }}" data-title="{{ __('Payroll') }}" class="nav-item {{ request()->routeIs('payroll.*') ? 'active' : '' }}">
+                <i class="ph ph-money nav-icon"></i> <span class="nav-text">{{ __('Payroll') }}</span>
+            </a>
             <a href="{{ route('reports.index') }}" data-title="{{ __('Reports') }}" class="nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                 <i class="ph ph-chart-bar nav-icon"></i> <span class="nav-text">{{ __('Reports') }}</span>
             </a>
@@ -804,7 +810,9 @@
             setInterval(updateHardwareStatus, 10000); // Check every 10s
 
         // Handle Laravel session messages
-        @if(session('error')) window.showToast("{{ session('error') }}", 'error'); @endif
+        @if(session('success')) window.showToast("{{ addslashes(session('success')) }}", 'success'); @endif
+        @if(session('error')) window.showToast("{{ addslashes(session('error')) }}", 'error'); @endif
+        @if(isset($errors) && $errors->any()) window.showToast("{{ addslashes($errors->first()) }}", 'error'); @endif
 
         // ── Teacher Insights Global Logic ────────────────
         window.openTeacherInsights = async function(id) {
