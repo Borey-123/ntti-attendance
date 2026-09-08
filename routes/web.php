@@ -240,6 +240,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/payroll/{id}', [PayrollController::class, 'show'])->name('payroll.show');
     Route::post('/payroll/{id}/approve', [PayrollController::class, 'approve'])->name('payroll.approve');
     Route::post('/payroll/{id}/paid', [PayrollController::class, 'markPaid'])->name('payroll.paid');
+    Route::post('/payroll/{id}/recalculate', [PayrollController::class, 'recalculate'])->name('payroll.recalculate');
     Route::get('/payroll/{id}/pdf', [PayrollController::class, 'exportPdf'])->name('payroll.pdf');
     Route::get('/api-web/payroll', [PayrollController::class, 'getData'])->name('api.payroll.list');
 });

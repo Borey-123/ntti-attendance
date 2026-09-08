@@ -156,7 +156,7 @@
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:0.85rem 0; border-bottom:1px solid var(--border);">
                         <div>
                             <span style="font-weight:700; color:#ef4444;">{{ __('Late Deduction') }}</span>
-                            <div style="font-size:0.75rem; color:var(--text-muted);">{{ $payroll->late_minutes }} នាទី × {{ $sym }}{{ number_format($settings['late_deduction_rate'] ?? 0.50, 2) }}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">{{ $payroll->late_minutes }} នាទី × {{ $sym }}{{ number_format($settings['late_deduction_per_minute'] ?? $settings['late_deduction_rate'] ?? 0.50, 2) }}</div>
                         </div>
                         <span style="font-weight:800; font-size:1.05rem; color:#ef4444;">-{{ $sym }}{{ number_format($payroll->late_deduction, 2) }}</span>
                     </div>

@@ -342,6 +342,10 @@
                                         <i class="ph ph-file-pdf"></i>
                                     </a>
 
+                                    <button onclick="recalculatePayroll({{ $p->id }}, '{{ addslashes($p->teacher->name) }}')" class="btn btn-secondary" style="padding:0.45rem 0.65rem; border-radius:0.6rem; font-size:0.85rem; color:#f59e0b;" title="{{ __('Recalculate') }}">
+                                        <i class="ph ph-arrows-clockwise"></i>
+                                    </button>
+
                                     @if($p->status === 'draft')
                                     <button onclick="approvePayroll({{ $p->id }}, '{{ addslashes($p->teacher->name) }}')" class="btn btn-secondary" style="padding:0.45rem 0.65rem; border-radius:0.6rem; font-size:0.85rem; color:#10b981; border-color:rgba(16,185,129,0.3);" title="{{ __('Approve Payroll') }}">
                                         <i class="ph ph-check-circle"></i>
@@ -473,7 +477,7 @@ async function triggerGeneratePayroll() {
             body: JSON.stringify(payload),
         });
         const data = await res.json();
-        if (data.status === 'success') {
+        if (data.status === 'success' || data.success) {
             if (window.showToast) window.showToast(`Generated payroll for ${data.generated} teachers!`, 'success');
             setTimeout(() => location.reload(), 500);
         } else {
@@ -485,6 +489,30 @@ async function triggerGeneratePayroll() {
         btn.disabled = false;
         btn.innerHTML = '<i class="ph ph-lightning"></i> Generate';
     }
+}
+
+async function recalculatePayroll(id, teacherName) {
+    const ok = await window.confirmModal({
+        title: '{{ __("Please Confirm") }}',
+        message: 'តើអ្នកយល់ព្រមគណនាប្រាក់បៀវត្សរ៍ឡើងវិញសម្រាប់លោកគ្រូ/អ្នកគ្រូ "' + teacherName + '" ដែរឬទេ?',
+        confirmText: '{{ __("Agree") }}',
+        cancelText: '{{ __("Disagree") }}',
+        type: 'warning'
+    });
+    if (!ok) return;
+
+    try {
+        const res = await fetch(`/payroll/${id}/recalculate`, {
+            method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success || data.status === 'success') {
+            if (window.showToast) window.showToast('{{ __("Payroll recalculated successfully!") }}', 'success');
+            setTimeout(() => location.reload(), 400);
+        } else {
+            alert(data.message || 'Error');
+        }
+    } catch(err) { alert('Error: ' + err.message); }
 }
 
 async function approvePayroll(id, teacherName) {

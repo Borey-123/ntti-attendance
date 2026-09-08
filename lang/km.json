@@ -1240,5 +1240,7 @@
     "Total Staff": "បុគ្គលិកសរុប",
     "Total Payout": "ទំហំប្រាក់បើកសរុប",
     "Drafts Pending": "កំពុងរង់ចាំការអនុម័ត",
-    "Paid Salaries": "បានបើករួចរាល់"
+    "Paid Salaries": "បានបើករួចរាល់",
+    "Recalculate": "គណនាឡើងវិញ",
+    "Payroll recalculated successfully!": "បានគណនាប្រាក់បៀវត្សរ៍ឡើងវិញដោយជោគជ័យ!"
 }

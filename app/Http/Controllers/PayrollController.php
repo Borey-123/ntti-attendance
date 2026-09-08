@@ -31,6 +31,18 @@ class PayrollController extends Controller
         }
 
         $payrolls   = $query->orderBy('created_at', 'desc')->get();
+
+        // Auto-synchronize if teacher has a configured base_salary but payroll snapshot is 0,
+        // or if payroll net_salary was 0 due to previous calculation issue
+        foreach ($payrolls as $p) {
+            $teacherBase = (float) ($p->teacher?->base_salary ?? 0);
+            if ($teacherBase > 0 && ((float)$p->base_salary == 0 || (float)$p->net_salary == 0)) {
+                $calc = Payroll::calculate($p->teacher, $p->month->format('Y-m-d'));
+                $p->update($calc);
+                $p->refresh();
+            }
+        }
+
         $teachers   = Teacher::where('status', 'active')->orderBy('name')->get();
         $departments = Teacher::select('department')->distinct()->pluck('department');
         $settings   = PayrollSetting::getAllMap();
@@ -83,9 +95,25 @@ class PayrollController extends Controller
 
         return response()->json([
             'success'   => true,
+            'status'    => 'success',
             'generated' => $generated,
             'errors'    => $errors,
             'message'   => "Generated payroll for {$generated} teachers.",
+        ]);
+    }
+
+    // ─── Recalculate single payroll ─────────────────────────
+    public function recalculate($id)
+    {
+        $payroll = Payroll::with('teacher')->findOrFail($id);
+        $calc    = Payroll::calculate($payroll->teacher, $payroll->month->format('Y-m-d'));
+        $payroll->update($calc);
+
+        return response()->json([
+            'success' => true,
+            'status'  => 'success',
+            'payroll' => $payroll,
+            'message' => 'បានគណនាឡើងវិញដោយជោគជ័យ',
         ]);
     }
 
