@@ -22,10 +22,13 @@ class Teacher extends Model
         'is_geofence_exempt',
         'portal_pin',
         'face_descriptor',
+        'base_salary',
+        'position_rank',
     ];
 
     protected $casts = [
         'is_geofence_exempt' => 'boolean',
+        'base_salary' => 'decimal:2',
     ];
 
     protected $hidden = [
@@ -45,5 +48,10 @@ class Teacher extends Model
     public function todayAttendance()
     {
         return $this->hasOne(Attendance::class)->whereDate('date', today());
+    }
+
+    public function payrolls(): HasMany
+    {
+        return $this->hasMany(Payroll::class);
     }
 }

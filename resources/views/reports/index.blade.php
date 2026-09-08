@@ -482,6 +482,7 @@
     <h2 class="subtitle">{{ __('Teacher Attendance Official Report') }}</h2>
     
     <div class="print-meta-grid">
+        <div class="print-meta-item">{{ __('Academic Term') }}: <span>{{ $academicYear ?? '2025-2026' }} ({{ $academicSemester ?? 'Semester 1' }})</span></div>
         <div class="print-meta-item">{{ __('Report Period') }}: <span id="print-range"></span></div>
         <div class="print-meta-item">{{ __('Export Date') }}: <span>{{ now()->format('d-m-Y H:i:s') }}</span></div>
         <div class="print-meta-item">{{ __('Target Department') }}: <span id="print-dept-val">{{ __('All') }}</span></div>
@@ -515,8 +516,13 @@
         
         {{-- Left: Page Title --}}
         <div>
-            <h1 class="page-title" style="margin-bottom: 0.25rem;">{{ __('Attendance Reports') }}</h1>
-            <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">{{ __('Filter, analyze and export institution data') }}</p>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <h1 class="page-title" style="margin-bottom: 0;">{{ __('Attendance Reports') }}</h1>
+                <span class="badge" style="background: rgba(var(--primary-rgb), 0.12); color: var(--primary); border: 1px solid rgba(var(--primary-rgb), 0.3); padding: 0.25rem 0.65rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem;">
+                    <i class="ph ph-graduation-cap"></i> {{ $academicYear ?? '2025-2026' }} &bull; {{ $academicSemester ?? 'Semester 1' }}
+                </span>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">{{ __('Filter, analyze and export institution data') }}</p>
         </div>
 
         

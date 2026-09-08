@@ -689,13 +689,19 @@ class AttendanceController extends Controller
         $aStartFloat = ($afternoonStart[0] ?? 12) + (($afternoonStart[1] ?? 0) / 60);
         $aEndFloat   = ($afternoonEnd[0] ?? 17.5) + (($afternoonEnd[1] ?? 30) / 60);
 
+        // Early Check-In Window (allow check-in X minutes before shift start)
+        $earlyWindow = (int)Setting::getValue('early_checkin_window', 60);
+        $earlyFloat  = $earlyWindow / 60.0;
+        $mAllowedStart = max(0, $mStartFloat - $earlyFloat);
+        $aAllowedStart = max($mEndFloat, $aStartFloat - $earlyFloat);
+
         $shiftType  = null;
         $inCol      = null;
         $outCol     = null;
         $statusCol  = null;
         $lateCutoff = null;
 
-        if ($hourFloat >= $mStartFloat && $hourFloat < $mEndFloat) {
+        if ($hourFloat >= $mAllowedStart && $hourFloat < $mEndFloat) {
             $shiftType  = 'Morning';
             $inCol      = 'morning_in';
             $outCol     = 'morning_out';
@@ -704,7 +710,7 @@ class AttendanceController extends Controller
             $morningLate = Setting::getValue('morning_late_cutoff', '07:45');
             $parts = explode(':', $morningLate);
             $lateCutoff = Carbon::today()->setTime($parts[0] ?? 7, $parts[1] ?? 45);
-        } elseif ($hourFloat >= $aStartFloat && $hourFloat < $aEndFloat) {
+        } elseif ($hourFloat >= $aAllowedStart && $hourFloat < $aEndFloat) {
             $shiftType  = 'Afternoon';
             $inCol      = 'afternoon_in';
             $outCol     = 'afternoon_out';
@@ -906,10 +912,10 @@ class AttendanceController extends Controller
             'station_name'   => Setting::getValue('kiosk_station_name', 'NTTI Main Gate Terminal'),
             'default_tab'    => Setting::getValue('kiosk_default_tab', 'camera'),
             'qr_rotation'    => (int)Setting::getValue('kiosk_qr_rotation', 20),
-            'voice_enabled'  => Setting::getValue('kiosk_voice_enabled', 'true') === 'true',
+            'voice_enabled'  => in_array(strtolower((string)Setting::getValue('kiosk_voice_enabled', 'true')), ['true', 'on', '1'], true),
             'voice_speed'    => (float)Setting::getValue('kiosk_voice_speed', 1.0),
-            'confetti'       => Setting::getValue('kiosk_confetti', 'true') === 'true',
-            'announcements'  => Setting::getValue('kiosk_show_announcements', 'true') === 'true',
+            'confetti'       => in_array(strtolower((string)Setting::getValue('kiosk_confetti', 'true')), ['true', 'on', '1'], true),
+            'announcements'  => in_array(strtolower((string)Setting::getValue('kiosk_show_announcements', 'true')), ['true', 'on', '1'], true),
         ];
 
         return view('kiosk', compact(
@@ -991,7 +997,7 @@ class AttendanceController extends Controller
      */
     public function kioskSyncOffline(Request $request): JsonResponse
     {
-        $scans = $request->input('scans', []);
+        $scans = $request->input('scans') ?? $request->input('records', []);
         if (empty($scans) || !is_array($scans)) {
             return response()->json(['success' => false, 'message' => 'No scans to sync.'], 400);
         }
@@ -1002,6 +1008,7 @@ class AttendanceController extends Controller
         foreach ($scans as $scan) {
             $uid = !empty($scan['rfid_uid']) ? strtoupper(trim($scan['rfid_uid'])) : null;
             $qrData = !empty($scan['qr_data']) ? trim($scan['qr_data']) : null;
+            $teacherId = !empty($scan['teacher_id']) ? trim($scan['teacher_id']) : null;
             $scannedAt = !empty($scan['scanned_at']) ? Carbon::parse($scan['scanned_at']) : now();
             $method = $scan['method'] ?? 'kiosk_offline';
 
@@ -1010,6 +1017,8 @@ class AttendanceController extends Controller
                 $teacher = Teacher::where('employee_id', $qrData)->first();
             } elseif ($uid) {
                 $teacher = Teacher::whereHas('rfidCard', fn($q) => $q->where('uid', $uid))->first();
+            } elseif ($teacherId) {
+                $teacher = Teacher::where('employee_id', $teacherId)->orWhere('id', $teacherId)->first();
             }
 
             if (!$teacher) {

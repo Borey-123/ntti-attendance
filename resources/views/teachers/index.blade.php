@@ -622,6 +622,7 @@
     $statTotal    = (clone $statsQuery)->count();
     $statAssigned = (clone $statsQuery)->whereHas('rfidCard')->count();
     $statPending  = (clone $statsQuery)->whereDoesntHave('rfidCard')->count();
+    $statSalarySet = (clone $statsQuery)->whereNotNull('base_salary')->where('base_salary', '>', 0)->count();
 @endphp
 <div class="teacher-summary-grid">
     <a href="{{ route('teachers.index', array_merge(request()->query(), ['filter' => null])) }}" class="summary-item {{ !request('filter') ? 'active' : '' }}" style="text-decoration: none; color: inherit; cursor: pointer;">
@@ -643,6 +644,13 @@
         <div class="s-data">
             <div class="label">{{ __('Pending Cards') }}</div>
             <div class="value">{{ $statPending }}</div>
+        </div>
+    </a>
+    <a href="{{ route('payroll.index') }}" class="summary-item" style="text-decoration: none; color: inherit; cursor: pointer;" title="{{ __('Go to Payroll Management') }}">
+        <div class="s-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i class="ph ph-currency-dollar"></i></div>
+        <div class="s-data">
+            <div class="label">{{ __('Salary Configured') }}</div>
+            <div class="value" style="color: #10b981;">{{ $statSalarySet }} <span style="font-size: 1rem; color: var(--text-secondary); font-weight: normal;">/ {{ $statTotal }}</span></div>
         </div>
     </a>
 </div>
@@ -746,6 +754,23 @@
                 @endif
             </div>
             <p style="margin-top: 0.5rem; margin-bottom: 0;">{{ $teacher->position ?? __('Instructor') }}</p>
+            <div style="margin-top: 0.4rem;">
+                <button type="button" onclick="openQuickSalaryModal({{ $teacher->id }}, '{{ addslashes($teacher->name) }}', '{{ $teacher->base_salary }}', '{{ addslashes($teacher->position_rank ?? '') }}')"
+                        style="background: none; border: none; padding: 0; cursor: pointer;" title="{{ __('Click to Quick Edit Salary') }}">
+                    @if($teacher->base_salary)
+                        <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); padding: 0.25rem 0.65rem; border-radius: 9999px;">
+                            <i class="ph ph-currency-dollar"></i> ${{ number_format($teacher->base_salary, 2) }}
+                            @if($teacher->position_rank)
+                                <span style="opacity: 0.75; font-weight: normal; font-size: 0.75rem;">• {{ $teacher->position_rank }}</span>
+                            @endif
+                        </span>
+                    @else
+                        <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600; color: #f59e0b; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); padding: 0.2rem 0.55rem; border-radius: 9999px;">
+                            <i class="ph ph-warning-circle"></i> {{ __('Setup Salary') }}
+                        </span>
+                    @endif
+                </button>
+            </div>
         </div>
 
         @php
@@ -773,6 +798,9 @@
             <div class="btn-more" onclick="toggleActionDropdown(this)" title="{{ __('More Actions') }}">
                 <i class="ph ph-dots-three-vertical"></i>
                 <div class="action-dropdown">
+                    <button class="action-dropdown-item" onclick="openQuickSalaryModal({{ $teacher->id }}, '{{ addslashes($teacher->name) }}', '{{ $teacher->base_salary }}', '{{ addslashes($teacher->position_rank ?? '') }}')">
+                        <i class="ph ph-currency-dollar" style="color:#10b981;"></i> {{ __('Set Base Salary') }}
+                    </button>
                     <button class="action-dropdown-item" onclick="openResetPinModal({{ $teacher->id }}, '{{ addslashes($teacher->name) }}')">
                         <i class="ph ph-key" style="color:#10b981;"></i> {{ __('Reset Portal PIN') }}
                     </button>
@@ -848,7 +876,7 @@
             <div class="d-flex gap-4">
                 <div class="form-group" style="flex:1;">
                     <label>{{ __('Position / Title') }}</label>
-                    <input type="text" name="position" class="form-control">
+                    <input type="text" name="position" class="form-control" placeholder="e.g. Lecturer">
                 </div>
                 <div class="form-group" style="flex:1;">
                     <label>{{ __('Telegram Chat ID') }} <span style="font-size: 0.8rem; color: var(--text-secondary);">({{ __('Optional') }})</span></label>
@@ -858,6 +886,23 @@
                             <i class="ph ph-clipboard-text"></i> {{ __('Paste') }}
                         </button>
                     </div>
+                </div>
+            </div>
+            <div class="d-flex gap-4">
+                <div class="form-group" style="flex:1;">
+                    <label style="display: flex; align-items: center; gap: 0.35rem;">
+                        <i class="ph ph-currency-dollar" style="color: #10b981;"></i>
+                        <span>{{ __('Base Salary ($)') }}</span>
+                        <span style="font-size: 0.75rem; color: #10b981; font-weight: 600;">({{ __('For Payroll') }})</span>
+                    </label>
+                    <div style="position: relative;">
+                        <input type="number" step="0.01" min="0" name="base_salary" class="form-control" placeholder="500.00" style="padding-left: 2rem; font-weight: 700; color: #10b981;">
+                        <span style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); font-weight: 800; color: #10b981;">$</span>
+                    </div>
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>{{ __('Position Rank / Grade') }}</label>
+                    <input type="text" name="position_rank" class="form-control" placeholder="e.g. Senior Lecturer, Full Professor">
                 </div>
             </div>
             <div class="form-group">
@@ -946,7 +991,7 @@
             <div class="d-flex gap-4">
                 <div class="form-group" style="flex:1;">
                     <label>{{ __('Position / Title') }}</label>
-                    <input type="text" id="edit_position" name="position" class="form-control">
+                    <input type="text" id="edit_position" name="position" class="form-control" placeholder="e.g. Lecturer">
                 </div>
                 <div class="form-group" style="flex:1;">
                     <label>{{ __('Telegram Chat ID') }} <span style="font-size: 0.8rem; color: var(--text-secondary);">({{ __('Optional') }})</span></label>
@@ -956,6 +1001,23 @@
                             <i class="ph ph-clipboard-text"></i> {{ __('Paste') }}
                         </button>
                     </div>
+                </div>
+            </div>
+            <div class="d-flex gap-4">
+                <div class="form-group" style="flex:1;">
+                    <label style="display: flex; align-items: center; gap: 0.35rem;">
+                        <i class="ph ph-currency-dollar" style="color: #10b981;"></i>
+                        <span>{{ __('Base Salary ($)') }}</span>
+                        <span style="font-size: 0.75rem; color: #10b981; font-weight: 600;">({{ __('For Payroll') }})</span>
+                    </label>
+                    <div style="position: relative;">
+                        <input type="number" step="0.01" min="0" id="edit_base_salary" name="base_salary" class="form-control" placeholder="500.00" style="padding-left: 2rem; font-weight: 700; color: #10b981;">
+                        <span style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); font-weight: 800; color: #10b981;">$</span>
+                    </div>
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>{{ __('Position Rank / Grade') }}</label>
+                    <input type="text" id="edit_position_rank" name="position_rank" class="form-control" placeholder="e.g. Senior Lecturer, Full Professor">
                 </div>
             </div>
             <div class="form-group">
@@ -1041,6 +1103,45 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Quick Salary Modal -->
+<div class="modal-overlay" id="quickSalaryModal" style="z-index: 1000000;">
+    <div class="modal-content" style="max-width: 440px;">
+        <div class="modal-header">
+            <h3 style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="ph ph-currency-dollar" style="color: #10b981;"></i>
+                <span>{{ __('Setup Base Salary') }}</span>
+            </h3>
+            <button class="modal-close" onclick="closeModal('quickSalaryModal')">&times;</button>
+        </div>
+        <form id="quickSalaryForm" onsubmit="submitQuickSalary(event)">
+            <input type="hidden" id="qs_teacher_id">
+            <p style="margin-top: 0; margin-bottom: 1.25rem; font-size: 0.95rem; color: var(--text-secondary);">
+                {{ __('Configure salary & position rank for:') }} <strong id="qs_teacher_name" style="color: var(--primary);"></strong>
+            </p>
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label style="font-weight: 700;">{{ __('Base Salary ($/month)') }} <span style="color: var(--danger);">*</span></label>
+                <div style="position: relative;">
+                    <input type="number" step="0.01" min="0" id="qs_base_salary" class="form-control" required placeholder="500.00" style="padding-left: 2.2rem; font-size: 1.15rem; font-weight: 800; color: #10b981;">
+                    <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-weight: 800; font-size: 1.2rem; color: #10b981;">$</span>
+                </div>
+                <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 0.35rem;">
+                    {{ __('Used to calculate daily rate (Base Salary ÷ Working Days) and deductions.') }}
+                </small>
+            </div>
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label>{{ __('Position Rank / Grade') }} <span style="font-size: 0.8rem; color: var(--text-secondary);">({{ __('Optional') }})</span></label>
+                <input type="text" id="qs_position_rank" class="form-control" placeholder="e.g. Senior Lecturer, Assistant Professor">
+            </div>
+            <div class="d-flex justify-between align-center">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('quickSalaryModal')">{{ __('Cancel') }}</button>
+                <button type="submit" id="qs_submit_btn" class="btn btn-primary" style="width: auto; background: #10b981; border-color: #10b981; font-weight: 700;">
+                    <i class="ph ph-check-circle"></i> {{ __('Save Salary') }}
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -1190,6 +1291,8 @@
             document.getElementById('edit_telegram_chat_id').value = teacher.telegram_chat_id || '';
             document.getElementById('edit_status').value = teacher.status;
             document.getElementById('edit_is_geofence_exempt').checked = !!teacher.is_geofence_exempt;
+            document.getElementById('edit_base_salary').value = teacher.base_salary ? parseFloat(teacher.base_salary).toFixed(2) : '';
+            document.getElementById('edit_position_rank').value = teacher.position_rank || '';
 
             // Photo preview
             const editForm = document.getElementById('editTeacherForm');
@@ -1237,6 +1340,44 @@
         } catch (err) {
             await alert(err.message);
             submitBtn.textContent = 'Update Teacher'; submitBtn.disabled = false;
+        }
+    }
+
+    function openQuickSalaryModal(teacherId, teacherName, currentSalary, currentRank) {
+        document.getElementById('qs_teacher_id').value = teacherId;
+        document.getElementById('qs_teacher_name').textContent = teacherName;
+        document.getElementById('qs_base_salary').value = currentSalary && currentSalary > 0 ? parseFloat(currentSalary).toFixed(2) : '';
+        document.getElementById('qs_position_rank').value = currentRank || '';
+        openModal('quickSalaryModal');
+        setTimeout(() => document.getElementById('qs_base_salary').focus(), 100);
+    }
+
+    async function submitQuickSalary(e) {
+        e.preventDefault();
+        const btn = document.getElementById('qs_submit_btn');
+        const teacherId = document.getElementById('qs_teacher_id').value;
+        const baseSalary = document.getElementById('qs_base_salary').value;
+        const positionRank = document.getElementById('qs_position_rank').value;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph ph-spinner animate-spin"></i> Saving...';
+
+        try {
+            const res = await window.fetchApi(`{{ url('/api-web/teachers') }}/${teacherId}/salary`, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    base_salary: baseSalary,
+                    position_rank: positionRank
+                })
+            });
+
+            closeModal('quickSalaryModal');
+            if (window.showToast) window.showToast('Salary saved successfully!', 'success');
+            setTimeout(() => window.location.reload(), 500);
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ph ph-check-circle"></i> Save Salary';
+            alert(err.message || 'Failed to save salary');
         }
     }
 

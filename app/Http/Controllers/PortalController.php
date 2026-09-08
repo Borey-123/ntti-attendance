@@ -243,14 +243,36 @@ class PortalController extends Controller
             }
         }
 
-        // ── 2. Today's Teaching Schedule ──
+        // ── 2. Today's & Weekly Teaching Schedule ──
         $todayDayOfWeek = now()->format('l'); // Monday, Tuesday, etc.
         $todaySchedules = \App\Models\TeacherSchedule::where('teacher_id', $teacher->id)
             ->where('day_of_week', $todayDayOfWeek)
             ->orderBy('start_time')
             ->get();
 
-        // ── 3. Recent Leave Requests History ──
+        $weeklySchedules = \App\Models\TeacherSchedule::where('teacher_id', $teacher->id)
+            ->orderByRaw("FIELD(day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')")
+            ->orderBy('start_time')
+            ->get()
+            ->groupBy('day_of_week');
+
+        // Department colleagues for substitute requests
+        $departmentColleagues = Teacher::where('department', $teacher->department)
+            ->where('id', '!=', $teacher->id)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
+
+        // ── 3. Teaching Hours & Overtime Tracker ──
+        $targetTeachingHours = (float)\App\Models\Setting::getValue('monthly_target_teaching_hours', '60');
+        $actualTeachingHours = round($totalWorkedMinutes / 60, 1);
+        $overtimeHours       = max(0, round($actualTeachingHours - $targetTeachingHours, 1));
+        $teachingHoursRate   = $targetTeachingHours > 0 ? min(100, round(($actualTeachingHours / $targetTeachingHours) * 100)) : 0;
+
+        $academicYear     = \App\Models\Setting::getValue('academic_year', '2025-2026');
+        $academicSemester = \App\Models\Setting::getValue('academic_semester', 'Semester 1');
+
+        // ── 4. Recent Leave Requests History ──
         $leaveRequestsHistory = \App\Models\LeaveRequest::where('teacher_id', $teacher->id)
             ->orderBy('created_at', 'desc')
             ->take(5)
@@ -260,13 +282,76 @@ class PortalController extends Controller
             $q->whereNull('expires_at')->orWhere('expires_at', '>=', now()->toDateString());
         })->latest()->take(5)->get();
 
+        // ── 5. Personal Notification Drawer Compiler ──
+        $personalNotifications = collect();
+
+        foreach ($leaveRequestsHistory as $l) {
+            $personalNotifications->push([
+                'id'         => 'leave_' . $l->id,
+                'type'       => 'leave',
+                'title'      => __('Leave Request') . ' (' . ucfirst($l->leave_type) . ')',
+                'message'    => __('Status') . ': ' . ucfirst($l->status) . ' (' . Carbon::parse($l->start_date)->format('M d') . ' - ' . Carbon::parse($l->end_date)->format('M d') . ')',
+                'time'       => $l->updated_at ? $l->updated_at->diffForHumans() : $l->created_at->diffForHumans(),
+                'status'     => $l->status,
+                'icon'       => 'ph-calendar-check',
+                'created_at' => $l->updated_at ?: $l->created_at
+            ]);
+        }
+
+        foreach ($corrections as $c) {
+            $personalNotifications->push([
+                'id'         => 'correction_' . $c->id,
+                'type'       => 'correction',
+                'title'      => __('Attendance Dispute'),
+                'message'    => __('Date') . ': ' . Carbon::parse($c->date)->format('M d') . ' (' . ucfirst($c->shift) . ') ' . __('is') . ' ' . ucfirst($c->status),
+                'time'       => $c->updated_at ? $c->updated_at->diffForHumans() : $c->created_at->diffForHumans(),
+                'status'     => $c->status,
+                'icon'       => 'ph-shield-check',
+                'created_at' => $c->updated_at ?: $c->created_at
+            ]);
+        }
+
+        $assignedSubstitutes = \App\Models\TeacherSchedule::where('substitute_teacher_id', $teacher->id)
+            ->with('teacher')
+            ->get();
+        foreach ($assignedSubstitutes as $sub) {
+            $subTeacherName = $sub->teacher->name ?? 'Colleague';
+            $personalNotifications->push([
+                'id'         => 'substitute_' . $sub->id,
+                'type'       => 'substitute',
+                'title'      => __('Substitute Teaching Notice'),
+                'message'    => __('Assigned to cover') . " {$sub->subject_name} (" . __('Room') . " {$sub->room_number}) " . __('for') . " {$subTeacherName} " . __('on') . " {$sub->day_of_week}.",
+                'time'       => $sub->updated_at ? $sub->updated_at->diffForHumans() : 'Active',
+                'status'     => 'approved',
+                'icon'       => 'ph-arrows-left-right',
+                'created_at' => $sub->updated_at ?: now()
+            ]);
+        }
+
+        foreach ($portalAnnouncements as $ann) {
+            $personalNotifications->push([
+                'id'         => 'ann_' . $ann->id,
+                'type'       => 'announcement',
+                'title'      => app()->getLocale() === 'km' && $ann->title_kh ? $ann->title_kh : $ann->title,
+                'message'    => \Illuminate\Support\Str::limit(app()->getLocale() === 'km' && $ann->content_kh ? $ann->content_kh : $ann->content, 90),
+                'time'       => $ann->created_at->diffForHumans(),
+                'status'     => $ann->priority,
+                'icon'       => 'ph-megaphone',
+                'created_at' => $ann->created_at
+            ]);
+        }
+
+        $personalNotifications = $personalNotifications->sortByDesc('created_at')->values();
+
         $departments = \App\Models\Department::all();
         return view('portal.index', compact(
             'teacher', 'history', 'stats', 'error', 'departments', 'calendar', 'corrections',
             'todayRecord', 'upcomingHolidays', 'calendarMonth', 'calendarYear', 'calendarLabel',
             'presentToday', 'totalTeachers', 'isOnline',
             'totalWorkedMinutes', 'avgArrivalTime', 'onTimeStreak', 'todaySchedules', 'leaveRequestsHistory',
-            'portalAnnouncements'
+            'portalAnnouncements', 'weeklySchedules', 'departmentColleagues',
+            'targetTeachingHours', 'actualTeachingHours', 'overtimeHours', 'teachingHoursRate',
+            'academicYear', 'academicSemester', 'personalNotifications'
         ));
     }
 
@@ -861,4 +946,270 @@ class PortalController extends Controller
         
         return $inTime . ' - <span class="status-missing">No Out</span>';
     }
+
+    /**
+     * Submit a class swap or substitute request.
+     */
+    public function storeSubstituteRequest(Request $request)
+    {
+        $teacherId = session('portal_teacher_id');
+        if (!$teacherId) {
+            return response()->json(['status' => 'error', 'message' => __('Unauthorized. Please log in first.')], 401);
+        }
+
+        $request->validate([
+            'schedule_id'           => 'required|exists:teacher_schedules,id',
+            'substitute_teacher_id' => 'required|exists:teachers,id|different:' . $teacherId,
+            'date'                  => 'required|date',
+            'reason'                => 'required|string|max:500',
+        ]);
+
+        $teacher = Teacher::find($teacherId);
+        $schedule = \App\Models\TeacherSchedule::where('id', $request->schedule_id)
+            ->where('teacher_id', $teacher->id)
+            ->first();
+
+        if (!$schedule) {
+            return response()->json(['status' => 'error', 'message' => __('Schedule slot not found or not owned by you.')], 404);
+        }
+
+        $substitute = Teacher::find($request->substitute_teacher_id);
+        if (!$substitute || $substitute->status !== 'active') {
+            return response()->json(['status' => 'error', 'message' => __('Selected substitute teacher is inactive or unavailable.')], 400);
+        }
+
+        // Assign substitute on schedule
+        $schedule->update([
+            'substitute_teacher_id' => $substitute->id
+        ]);
+
+        \App\Models\SecurityLog::recordPortal(
+            'Substitute Request',
+            "Teacher: {$teacher->name} -> Sub: {$substitute->name}",
+            "Subject: {$schedule->subject_name} | Date: {$request->date} | Reason: {$request->reason}"
+        );
+
+        // Send Telegram Notification to Substitute Colleague if linked
+        if (!empty($substitute->telegram_chat_id)) {
+            $botToken = \App\Models\Setting::getValue('telegram_bot_token');
+            if ($botToken) {
+                try {
+                    $msg = "📋 *NTTI Academic Notice: Substitute Assignment*\n"
+                         . "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n"
+                         . "👤 *Requester:* " . ($teacher->name_kh ?: $teacher->name) . "\n"
+                         . "📚 *Subject:* {$schedule->subject_name}\n"
+                         . "🚪 *Room:* {$schedule->room_number}\n"
+                         . "🕒 *Time:* " . substr($schedule->start_time, 0, 5) . " - " . substr($schedule->end_time, 0, 5) . "\n"
+                         . "📅 *Date:* {$request->date} ({$schedule->day_of_week})\n"
+                         . "💬 *Reason:* {$request->reason}\n\n"
+                         . "⚡ *Action:* Please check your NTTI Teacher Portal.";
+
+                    \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+                        'chat_id'    => $substitute->telegram_chat_id,
+                        'text'       => $msg,
+                        'parse_mode' => 'Markdown'
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Substitute Telegram error: ' . $e->getMessage());
+                }
+            }
+        }
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => __('Substitute request registered successfully! Colleague has been notified.')
+        ]);
+    }
+
+    /**
+     * High-fidelity official attendance voucher/slip with NTTI seal.
+     */
+    public function attendanceSlip(Request $request)
+    {
+        $teacherId = session('portal_teacher_id');
+        if (!$teacherId) {
+            return redirect()->route('portal.index')->with('error', __('Unauthorized. Please login first.'));
+        }
+
+        $teacher = Teacher::findOrFail($teacherId);
+        $month = (int)$request->input('month', now()->month);
+        $year  = (int)$request->input('year', now()->year);
+        $targetDate   = Carbon::createFromDate($year, $month, 1);
+        $startOfMonth = $targetDate->copy()->startOfMonth();
+        $endOfMonth   = $targetDate->copy()->endOfMonth();
+
+        $records = Attendance::where('teacher_id', $teacher->id)
+            ->whereBetween('date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
+            ->orderBy('date', 'asc')
+            ->get();
+
+        $holidays = \App\Models\Holiday::whereBetween('date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
+            ->get()->keyBy(fn($h) => is_string($h->date) ? substr($h->date, 0, 10) : $h->date->format('Y-m-d'));
+
+        $totalWorkingDays = 0;
+        $cur = $startOfMonth->copy();
+        $today = now();
+        $limitDate = $targetDate->isSameMonth($today) ? $today : $endOfMonth;
+        while ($cur <= $limitDate) {
+            if (!$cur->isWeekend() && !$holidays->has($cur->toDateString())) {
+                $totalWorkingDays++;
+            }
+            $cur->addDay();
+        }
+
+        $totalPresent = 0;
+        $totalLate    = 0;
+        $totalMinutes = 0;
+        foreach ($records as $r) {
+            if ($r->morning_status === 'late' || $r->afternoon_status === 'late') {
+                $totalLate++;
+            } elseif ($r->morning_in || $r->afternoon_in) {
+                $totalPresent++;
+            }
+
+            if ($r->morning_in && $r->morning_out) {
+                $totalMinutes += Carbon::createFromTimeString($r->morning_in)->diffInMinutes(Carbon::createFromTimeString($r->morning_out));
+            }
+            if ($r->afternoon_in && $r->afternoon_out) {
+                $totalMinutes += Carbon::createFromTimeString($r->afternoon_in)->diffInMinutes(Carbon::createFromTimeString($r->afternoon_out));
+            }
+        }
+        $totalAbsent = max(0, $totalWorkingDays - ($totalPresent + $totalLate));
+        $targetHours = (float)\App\Models\Setting::getValue('monthly_target_teaching_hours', '60');
+        $actualHours = round($totalMinutes / 60, 1);
+        $overtimeHours = max(0, round($actualHours - $targetHours, 1));
+
+        $uName = \App\Models\Setting::getValue('university_name', 'National Technical Training Institute');
+        $uLogo = \App\Models\Setting::getAssetUrl('university_logo', '/images/ntti_logo.png');
+        $academicYear = \App\Models\Setting::getValue('academic_year', '2025-2026');
+        $academicSemester = \App\Models\Setting::getValue('academic_semester', 'Semester 1');
+
+        return view('portal.slip', compact(
+            'teacher', 'month', 'year', 'targetDate', 'records', 'totalWorkingDays',
+            'totalPresent', 'totalLate', 'totalAbsent', 'actualHours', 'overtimeHours',
+            'uName', 'uLogo', 'academicYear', 'academicSemester'
+        ));
+    }
+
+    /**
+     * Export timetable as .ics calendar file for Google / Apple Calendar.
+     */
+    public function exportCalendarIcs(Request $request)
+    {
+        $teacherId = session('portal_teacher_id');
+        if (!$teacherId) {
+            return redirect()->route('portal.index')->with('error', __('Unauthorized.'));
+        }
+
+        $teacher = Teacher::findOrFail($teacherId);
+        $schedules = \App\Models\TeacherSchedule::where('teacher_id', $teacher->id)->get();
+
+        $dayMap = [
+            'Monday' => 'MO', 'Tuesday' => 'TU', 'Wednesday' => 'WE',
+            'Thursday' => 'TH', 'Friday' => 'FR', 'Saturday' => 'SA', 'Sunday' => 'SU',
+        ];
+
+        $ics = "BEGIN:VCALENDAR\r\n";
+        $ics .= "VERSION:2.0\r\n";
+        $ics .= "PRODID:-//NTTI//Teacher Timetable//EN\r\n";
+        $ics .= "CALSCALE:GREGORIAN\r\n";
+        $ics .= "METHOD:PUBLISH\r\n";
+        $ics .= "X-WR-CALNAME:NTTI Classes - " . ($teacher->name) . "\r\n";
+        $ics .= "X-WR-TIMEZONE:Asia/Phnom_Penh\r\n";
+
+        foreach ($schedules as $s) {
+            $byDay = $dayMap[$s->day_of_week] ?? 'MO';
+            $startTime = str_replace(':', '', substr($s->start_time, 0, 5)) . '00';
+            $endTime   = str_replace(':', '', substr($s->end_time, 0, 5)) . '00';
+            $dtStart   = now()->startOfWeek()->format('Ymd') . 'T' . $startTime;
+            $dtEnd     = now()->startOfWeek()->format('Ymd') . 'T' . $endTime;
+
+            $ics .= "BEGIN:VEVENT\r\n";
+            $ics .= "UID:ntti-sched-" . $s->id . "@ntti.edu.kh\r\n";
+            $ics .= "DTSTAMP:" . gmdate('Ymd\THis\Z') . "\r\n";
+            $ics .= "DTSTART;TZID=Asia/Phnom_Penh:" . $dtStart . "\r\n";
+            $ics .= "DTEND;TZID=Asia/Phnom_Penh:" . $dtEnd . "\r\n";
+            $ics .= "RRULE:FREQ=WEEKLY;BYDAY=" . $byDay . "\r\n";
+            $ics .= "SUMMARY:" . $s->subject_name . " (" . $s->room_number . ")\r\n";
+            $ics .= "LOCATION:Room " . $s->room_number . ", NTTI\r\n";
+            $ics .= "DESCRIPTION:Subject: " . $s->subject_name . " | Lecturer: " . $teacher->name . "\r\n";
+            $ics .= "STATUS:CONFIRMED\r\n";
+            $ics .= "END:VEVENT\r\n";
+        }
+
+        $ics .= "END:VCALENDAR\r\n";
+
+        $filename = "ntti_timetable_" . $teacher->employee_id . ".ics";
+        return response($ics, 200, [
+            'Content-Type'        => 'text/calendar; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    /**
+     * Register device biometric unlock token.
+     */
+    public function registerBiometric(Request $request)
+    {
+        $teacherId = session('portal_teacher_id');
+        if (!$teacherId) {
+            return response()->json(['success' => false, 'message' => __('Unauthorized.')], 401);
+        }
+
+        $request->validate([
+            'device_id'   => 'required|string',
+            'device_name' => 'nullable|string',
+        ]);
+
+        $teacher = Teacher::find($teacherId);
+        $biometricSecret = hash('sha256', $teacher->id . '_' . $request->device_id . '_' . config('app.key'));
+        
+        \App\Models\SecurityLog::recordPortal(
+            'Biometric Registered',
+            'Teacher ID: ' . $teacher->employee_id,
+            'Enabled biometric 1-tap unlock for: ' . ($request->device_name ?: 'Mobile Device')
+        );
+
+        return response()->json([
+            'success'      => true,
+            'message'      => __('Biometric unlock successfully paired with this device!'),
+            'token'        => $biometricSecret,
+            'employee_id'  => $teacher->employee_id,
+            'teacher_name' => $teacher->name,
+        ]);
+    }
+
+    /**
+     * Verify device biometric token and log teacher in.
+     */
+    public function biometricLogin(Request $request)
+    {
+        $request->validate([
+            'employee_id' => 'required|string',
+            'token'       => 'required|string',
+            'device_id'   => 'required|string',
+        ]);
+
+        $teacher = Teacher::where('employee_id', $request->employee_id)->where('status', 'active')->first();
+        if (!$teacher) {
+            return response()->json(['success' => false, 'message' => __('Teacher not found or inactive.')], 404);
+        }
+
+        $expectedSecret = hash('sha256', $teacher->id . '_' . $request->device_id . '_' . config('app.key'));
+        if (!hash_equals($expectedSecret, $request->token)) {
+            return response()->json(['success' => false, 'message' => __('Biometric verification expired or mismatch. Please enter your PIN.')], 401);
+        }
+
+        session(['portal_teacher_id' => $teacher->id]);
+        session()->regenerate();
+
+        \App\Models\SecurityLog::recordPortal('Biometric Login', 'Teacher ID: ' . $teacher->employee_id, 'Authenticated via device fingerprint/Face ID.');
+
+        return response()->json([
+            'success'  => true,
+            'message'  => __('Biometric authentication successful!'),
+            'redirect' => route('portal.index')
+        ]);
+    }
 }
+

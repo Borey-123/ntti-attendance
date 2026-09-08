@@ -51,28 +51,33 @@ class SettingController extends Controller
         $glassNoise         = Setting::getValue('glass_noise', 'on');
         $liveRadarSize      = Setting::getValue('live_radar_size', '360');
 
+        $isTrue = function($key, $default = 'true') {
+            $val = Setting::getValue($key, $default);
+            return in_array(strtolower((string)$val), ['1', 'true', 'on', 'yes'], true);
+        };
+
         // Smart Kiosk Settings
         $kioskStationName      = Setting::getValue('kiosk_station_name', 'SMART ATTENDANCE KIOSK STATION · ស្ថានីយស្កេនវៃឆ្លាត');
         $kioskDefaultTab        = Setting::getValue('kiosk_default_tab', 'camera');
         $kioskQrRotation        = Setting::getValue('kiosk_qr_rotation', '20');
-        $kioskVoiceEnabled      = Setting::getValue('kiosk_voice_enabled', 'on');
+        $kioskVoiceEnabled      = $isTrue('kiosk_voice_enabled', 'true');
         $kioskVoiceSpeed        = Setting::getValue('kiosk_voice_speed', '1.0');
-        $kioskConfetti          = Setting::getValue('kiosk_confetti', 'on');
-        $kioskShowAnnouncements = Setting::getValue('kiosk_show_announcements', 'on');
+        $kioskConfetti          = $isTrue('kiosk_confetti', 'true');
+        $kioskShowAnnouncements = $isTrue('kiosk_show_announcements', 'true');
 
         // GPS Geofencing Settings
         $campusLatitude         = Setting::getValue('campus_latitude', '11.5564');
         $campusLongitude        = Setting::getValue('campus_longitude', '104.8885');
         $campusGpsRadius        = Setting::getValue('campus_gps_radius', '300');
-        $enforceGpsGeofence     = Setting::getValue('enforce_gps_geofence', 'false');
+        $enforceGpsGeofence     = $isTrue('enforce_gps_geofence', 'false');
 
         // Telegram Ecosystem & Triggers
         $telegramChatId         = Setting::getValue('telegram_chat_id', '');
         $telegramChannelId      = Setting::getValue('telegram_channel_id', '');
-        $telegramNotifyCheckin  = Setting::getValue('telegram_notify_checkin', 'on');
-        $telegramNotifyCheckout = Setting::getValue('telegram_notify_checkout', 'on');
-        $telegramNotifyLate     = Setting::getValue('telegram_notify_late', 'on');
-        $telegramNotifyLeave    = Setting::getValue('telegram_notify_leave', 'on');
+        $telegramNotifyCheckin  = $isTrue('telegram_notify_checkin', 'true');
+        $telegramNotifyCheckout = $isTrue('telegram_notify_checkout', 'true');
+        $telegramNotifyLate     = $isTrue('telegram_notify_late', 'true');
+        $telegramNotifyLeave    = $isTrue('telegram_notify_leave', 'true');
 
         // Academic Term & Shift Grace Period
         $academicYear           = Setting::getValue('academic_year', '2025-2026');
@@ -99,6 +104,8 @@ class SettingController extends Controller
 
     public function update(Request $request)
     {
+        $section = $request->input('settings_section');
+
         $request->validate([
             'university_logo' => 'nullable|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
             'login_bg' => 'nullable|mimes:jpeg,png,jpg,gif,svg,webp|max:5120',
@@ -114,190 +121,207 @@ class SettingController extends Controller
             'afternoon_shift_start' => 'nullable|string',
             'afternoon_shift_end' => 'nullable|string',
             'scan_alert_duration' => 'nullable|integer|min:1|max:60',
-            'university_website' => 'nullable|url|max:255',
-            'university_facebook' => 'nullable|url|max:255',
-            'enable_auto_checkout' => 'nullable|string|in:on,off',
+            'university_website' => 'nullable|string|max:255',
+            'university_facebook' => 'nullable|string|max:255',
+            'enable_auto_checkout' => 'nullable|string',
             'auto_checkout_delay' => 'nullable|integer|min:0|max:1440',
             'telegram_bot_token' => 'nullable|string',
+            'campus_latitude' => 'nullable|numeric',
+            'campus_longitude' => 'nullable|numeric',
+            'campus_gps_radius' => 'nullable|numeric|min:10',
+            'kiosk_station_name' => 'nullable|string|max:255',
+            'kiosk_default_tab' => 'nullable|string|in:camera,rfid,screen_qr',
+            'kiosk_qr_rotation' => 'nullable|integer|min:5|max:120',
+            'kiosk_voice_speed' => 'nullable|string',
+            'academic_year' => 'nullable|string|max:50',
+            'academic_semester' => 'nullable|string|max:50',
+            'late_grace_period' => 'nullable|integer|min:0|max:60',
+            'early_checkin_window' => 'nullable|integer|min:0|max:180',
         ]);
 
         try {
-            if ($request->has('university_name')) {
-                Setting::updateOrCreate(['key' => 'university_name'], ['value' => $request->university_name]);
-            }
-            if ($request->has('morning_late_cutoff')) {
-                Setting::updateOrCreate(['key' => 'morning_late_cutoff'], ['value' => $request->morning_late_cutoff]);
-            }
-            if ($request->has('afternoon_late_cutoff')) {
-                Setting::updateOrCreate(['key' => 'afternoon_late_cutoff'], ['value' => $request->afternoon_late_cutoff]);
-            }
-            
-            if ($request->has('authorized_ip')) {
-                Setting::updateOrCreate(['key' => 'authorized_ip'], ['value' => $request->authorized_ip ?? '']);
-            }
-            
-            if ($request->has('maintenance_mode')) {
-                Setting::updateOrCreate(['key' => 'maintenance_mode'], ['value' => $request->maintenance_mode]);
-            }
-            
-            if ($request->has('working_days')) {
-                Setting::updateOrCreate(['key' => 'working_days'], ['value' => json_encode($request->working_days ?? [])]);
-            }
-
-            if ($request->has('system_open_time')) {
-                Setting::updateOrCreate(['key' => 'system_open_time'], ['value' => $request->system_open_time]);
-            }
-            if ($request->has('system_close_time')) {
-                Setting::updateOrCreate(['key' => 'system_close_time'], ['value' => $request->system_close_time]);
-            }
-            if ($request->has('morning_shift_start')) {
-                Setting::updateOrCreate(['key' => 'morning_shift_start'], ['value' => $request->morning_shift_start]);
-            }
-            if ($request->has('morning_shift_end')) {
-                Setting::updateOrCreate(['key' => 'morning_shift_end'], ['value' => $request->morning_shift_end]);
-            }
-            if ($request->has('afternoon_shift_start')) {
-                Setting::updateOrCreate(['key' => 'afternoon_shift_start'], ['value' => $request->afternoon_shift_start]);
-            }
-            if ($request->has('afternoon_shift_end')) {
-                Setting::updateOrCreate(['key' => 'afternoon_shift_end'], ['value' => $request->afternoon_shift_end]);
-            }
-            if ($request->has('scan_alert_duration')) {
-                Setting::updateOrCreate(['key' => 'scan_alert_duration'], ['value' => $request->scan_alert_duration]);
-            }
-
-            if ($request->has('university_website')) {
-                Setting::updateOrCreate(['key' => 'university_website'], ['value' => $request->university_website ?? '']);
-            }
-
-            if ($request->has('university_facebook')) {
-                Setting::updateOrCreate(['key' => 'university_facebook'], ['value' => $request->university_facebook ?? '']);
-            }
-
-            if ($request->has('enable_auto_checkout')) {
-                Setting::updateOrCreate(['key' => 'enable_auto_checkout'], ['value' => $request->enable_auto_checkout]);
-            }
-
-            if ($request->has('auto_checkout_delay')) {
-                Setting::updateOrCreate(['key' => 'auto_checkout_delay'], ['value' => $request->auto_checkout_delay]);
-            }
-
-            if ($request->has('campus_latitude')) {
-                Setting::updateOrCreate(['key' => 'campus_latitude'], ['value' => $request->campus_latitude]);
-                Setting::updateOrCreate(['key' => 'campus_longitude'], ['value' => $request->campus_longitude ?? '104.8885']);
-                Setting::updateOrCreate(['key' => 'campus_gps_radius'], ['value' => $request->campus_gps_radius ?? '300']);
-                
-                $enforceGps = ($request->has('enforce_gps_geofence') && in_array($request->enforce_gps_geofence, ['true', '1', 'on'])) ? 'true' : 'false';
-                Setting::updateOrCreate(['key' => 'enforce_gps_geofence'], ['value' => $enforceGps]);
-            }
-
-            // Kiosk Settings Save
-            if ($request->has('kiosk_station_name')) {
-                Setting::updateOrCreate(['key' => 'kiosk_station_name'], ['value' => $request->kiosk_station_name]);
-            }
-            if ($request->has('kiosk_default_tab')) {
-                Setting::updateOrCreate(['key' => 'kiosk_default_tab'], ['value' => $request->kiosk_default_tab]);
-            }
-            if ($request->has('kiosk_qr_rotation')) {
-                Setting::updateOrCreate(['key' => 'kiosk_qr_rotation'], ['value' => $request->kiosk_qr_rotation]);
-            }
-            if ($request->has('kiosk_voice_speed')) {
-                Setting::updateOrCreate(['key' => 'kiosk_voice_speed'], ['value' => $request->kiosk_voice_speed]);
-            }
-            Setting::updateOrCreate(['key' => 'kiosk_voice_enabled'], ['value' => $request->has('kiosk_voice_enabled') ? 'on' : 'off']);
-            Setting::updateOrCreate(['key' => 'kiosk_confetti'], ['value' => $request->has('kiosk_confetti') ? 'on' : 'off']);
-            Setting::updateOrCreate(['key' => 'kiosk_show_announcements'], ['value' => $request->has('kiosk_show_announcements') ? 'on' : 'off']);
-
-            // Telegram Broadcast Settings Save
-            if ($request->has('telegram_chat_id')) {
-                Setting::updateOrCreate(['key' => 'telegram_chat_id'], ['value' => $request->telegram_chat_id ?? '']);
-            }
-            if ($request->has('telegram_channel_id')) {
-                Setting::updateOrCreate(['key' => 'telegram_channel_id'], ['value' => $request->telegram_channel_id ?? '']);
-            }
-            Setting::updateOrCreate(['key' => 'telegram_notify_checkin'], ['value' => $request->has('telegram_notify_checkin') ? 'on' : 'off']);
-            Setting::updateOrCreate(['key' => 'telegram_notify_checkout'], ['value' => $request->has('telegram_notify_checkout') ? 'on' : 'off']);
-            Setting::updateOrCreate(['key' => 'telegram_notify_late'], ['value' => $request->has('telegram_notify_late') ? 'on' : 'off']);
-            Setting::updateOrCreate(['key' => 'telegram_notify_leave'], ['value' => $request->has('telegram_notify_leave') ? 'on' : 'off']);
-
-            // Academic Term & Grace Period Save
-            if ($request->has('academic_year')) {
-                Setting::updateOrCreate(['key' => 'academic_year'], ['value' => $request->academic_year]);
-            }
-            if ($request->has('academic_semester')) {
-                Setting::updateOrCreate(['key' => 'academic_semester'], ['value' => $request->academic_semester]);
-            }
-            if ($request->has('late_grace_period')) {
-                Setting::updateOrCreate(['key' => 'late_grace_period'], ['value' => $request->late_grace_period]);
-            }
-            if ($request->has('early_checkin_window')) {
-                Setting::updateOrCreate(['key' => 'early_checkin_window'], ['value' => $request->early_checkin_window]);
-            }
-
-            if ($request->has('telegram_bot_token')) {
-                $token = $request->telegram_bot_token;
-                Setting::updateOrCreate(['key' => 'telegram_bot_token'], ['value' => $token]);
-                if (!empty($token)) {
-                    try {
-                        $response = \Illuminate\Support\Facades\Http::get("https://api.telegram.org/bot{$token}/getMe");
-                        if ($response->successful() && $response->json('ok')) {
-                            $username = $response->json('result.username');
-                            if ($username) {
-                                Setting::updateOrCreate(['key' => 'telegram_bot_username'], ['value' => $username]);
-                            }
-                            
-                            // Set webhook
-                            $webhookUrl = url('api/telegram/webhook');
-                            if (strpos($webhookUrl, 'http://') === 0 && !app()->environment('local')) {
-                                $webhookUrl = str_replace('http://', 'https://', $webhookUrl);
-                            } else {
-                                $webhookUrl = str_replace('http://', 'https://', $webhookUrl);
-                            }
-                            
-                            \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$token}/setWebhook", [
-                                'url' => $webhookUrl
-                            ]);
-                        }
-                    } catch (\Exception $e) {
-                        // Suppress network errors
+            // ── SECTION: System Identity ──
+            if (!$section || $section === 'identity') {
+                if ($request->has('university_name')) {
+                    Setting::updateOrCreate(['key' => 'university_name'], ['value' => $request->university_name]);
+                }
+                if ($request->has('university_website')) {
+                    Setting::updateOrCreate(['key' => 'university_website'], ['value' => $request->university_website ?? '']);
+                }
+                if ($request->has('university_facebook')) {
+                    Setting::updateOrCreate(['key' => 'university_facebook'], ['value' => $request->university_facebook ?? '']);
+                }
+                if ($request->hasFile('university_logo')) {
+                    $file = $request->file('university_logo');
+                    if ($file->isValid()) {
+                        $mime = $file->getMimeType();
+                        $base64 = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+                        Setting::updateOrCreate(['key' => 'university_logo'], ['value' => $base64]);
                     }
-                } else {
-                    Setting::updateOrCreate(['key' => 'telegram_bot_username'], ['value' => '']);
+                }
+                if ($request->hasFile('login_bg')) {
+                    $file = $request->file('login_bg');
+                    if ($file->isValid()) {
+                        $mime = $file->getMimeType();
+                        $base64 = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+                        Setting::updateOrCreate(['key' => 'login_bg'], ['value' => $base64]);
+                    }
                 }
             }
 
-
-            if ($request->hasFile('university_logo')) {
-                $file = $request->file('university_logo');
-                if ($file->isValid()) {
-                    $mime = $file->getMimeType();
-                    $base64 = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
-                    Setting::updateOrCreate(
-                        ['key' => 'university_logo'],
-                        ['value' => $base64]
-                    );
+            // ── SECTION: Attendance Rules & Terms ──
+            if (!$section || $section === 'rules') {
+                if ($request->has('morning_late_cutoff')) {
+                    Setting::updateOrCreate(['key' => 'morning_late_cutoff'], ['value' => $request->morning_late_cutoff]);
+                }
+                if ($request->has('afternoon_late_cutoff')) {
+                    Setting::updateOrCreate(['key' => 'afternoon_late_cutoff'], ['value' => $request->afternoon_late_cutoff]);
+                }
+                if ($request->has('morning_shift_start')) {
+                    Setting::updateOrCreate(['key' => 'morning_shift_start'], ['value' => $request->morning_shift_start]);
+                }
+                if ($request->has('morning_shift_end')) {
+                    Setting::updateOrCreate(['key' => 'morning_shift_end'], ['value' => $request->morning_shift_end]);
+                }
+                if ($request->has('afternoon_shift_start')) {
+                    Setting::updateOrCreate(['key' => 'afternoon_shift_start'], ['value' => $request->afternoon_shift_start]);
+                }
+                if ($request->has('afternoon_shift_end')) {
+                    Setting::updateOrCreate(['key' => 'afternoon_shift_end'], ['value' => $request->afternoon_shift_end]);
+                }
+                if ($request->has('academic_year')) {
+                    Setting::updateOrCreate(['key' => 'academic_year'], ['value' => $request->academic_year]);
+                }
+                if ($request->has('academic_semester')) {
+                    Setting::updateOrCreate(['key' => 'academic_semester'], ['value' => $request->academic_semester]);
+                }
+                if ($request->has('late_grace_period')) {
+                    Setting::updateOrCreate(['key' => 'late_grace_period'], ['value' => $request->late_grace_period]);
+                }
+                if ($request->has('early_checkin_window')) {
+                    Setting::updateOrCreate(['key' => 'early_checkin_window'], ['value' => $request->early_checkin_window]);
+                }
+                if ($section === 'rules' || $request->has('enable_auto_checkout')) {
+                    $autoCheck = $request->input('enable_auto_checkout');
+                    Setting::updateOrCreate(['key' => 'enable_auto_checkout'], ['value' => ($autoCheck === 'on' || $autoCheck === 'true' || $autoCheck === '1') ? 'on' : 'off']);
+                }
+                if ($request->has('auto_checkout_delay')) {
+                    Setting::updateOrCreate(['key' => 'auto_checkout_delay'], ['value' => $request->auto_checkout_delay]);
+                }
+                if ($request->has('working_days')) {
+                    Setting::updateOrCreate(['key' => 'working_days'], ['value' => json_encode($request->working_days ?? [])]);
                 }
             }
 
-            if ($request->hasFile('login_bg')) {
-                $file = $request->file('login_bg');
-                if ($file->isValid()) {
-                    $mime = $file->getMimeType();
-                    $base64 = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
-                    Setting::updateOrCreate(
-                        ['key' => 'login_bg'],
-                        ['value' => $base64]
-                    );
+            // ── SECTION: Smart Kiosk Terminal ──
+            if (!$section || $section === 'kiosk') {
+                if ($request->has('kiosk_station_name')) {
+                    Setting::updateOrCreate(['key' => 'kiosk_station_name'], ['value' => $request->kiosk_station_name]);
+                }
+                if ($request->has('kiosk_default_tab')) {
+                    Setting::updateOrCreate(['key' => 'kiosk_default_tab'], ['value' => $request->kiosk_default_tab]);
+                }
+                if ($request->has('kiosk_qr_rotation')) {
+                    Setting::updateOrCreate(['key' => 'kiosk_qr_rotation'], ['value' => $request->kiosk_qr_rotation]);
+                }
+                if ($request->has('kiosk_voice_speed')) {
+                    Setting::updateOrCreate(['key' => 'kiosk_voice_speed'], ['value' => $request->kiosk_voice_speed]);
+                }
+                if ($section === 'kiosk' || $request->has('kiosk_voice_enabled')) {
+                    Setting::updateOrCreate(['key' => 'kiosk_voice_enabled'], ['value' => $request->has('kiosk_voice_enabled') ? 'true' : 'false']);
+                }
+                if ($section === 'kiosk' || $request->has('kiosk_confetti')) {
+                    Setting::updateOrCreate(['key' => 'kiosk_confetti'], ['value' => $request->has('kiosk_confetti') ? 'true' : 'false']);
+                }
+                if ($section === 'kiosk' || $request->has('kiosk_show_announcements')) {
+                    Setting::updateOrCreate(['key' => 'kiosk_show_announcements'], ['value' => $request->has('kiosk_show_announcements') ? 'true' : 'false']);
+                }
+            }
+
+            // ── SECTION: Campus GPS Geofence ──
+            if (!$section || $section === 'geofence') {
+                if ($request->has('campus_latitude')) {
+                    Setting::updateOrCreate(['key' => 'campus_latitude'], ['value' => $request->campus_latitude]);
+                }
+                if ($request->has('campus_longitude')) {
+                    Setting::updateOrCreate(['key' => 'campus_longitude'], ['value' => $request->campus_longitude ?? '104.8885']);
+                }
+                if ($request->has('campus_gps_radius')) {
+                    Setting::updateOrCreate(['key' => 'campus_gps_radius'], ['value' => $request->campus_gps_radius ?? '300']);
+                }
+                if ($section === 'geofence' || $request->has('enforce_gps_geofence')) {
+                    Setting::updateOrCreate(['key' => 'enforce_gps_geofence'], ['value' => $request->has('enforce_gps_geofence') ? 'true' : 'false']);
+                }
+            }
+
+            // ── SECTION: Telegram Ecosystem & Alerts ──
+            if (!$section || $section === 'telegram') {
+                if ($request->has('telegram_chat_id')) {
+                    Setting::updateOrCreate(['key' => 'telegram_chat_id'], ['value' => $request->telegram_chat_id ?? '']);
+                }
+                if ($request->has('telegram_channel_id')) {
+                    Setting::updateOrCreate(['key' => 'telegram_channel_id'], ['value' => $request->telegram_channel_id ?? '']);
+                }
+                if ($request->has('telegram_bot_token')) {
+                    $token = $request->telegram_bot_token;
+                    Setting::updateOrCreate(['key' => 'telegram_bot_token'], ['value' => $token]);
+                    if (!empty($token)) {
+                        try {
+                            $response = \Illuminate\Support\Facades\Http::get("https://api.telegram.org/bot{$token}/getMe");
+                            if ($response->successful() && $response->json('ok')) {
+                                $username = $response->json('result.username');
+                                if ($username) {
+                                    Setting::updateOrCreate(['key' => 'telegram_bot_username'], ['value' => $username]);
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            // Suppress network errors
+                        }
+                    } else {
+                        Setting::updateOrCreate(['key' => 'telegram_bot_username'], ['value' => '']);
+                    }
+                }
+                if ($section === 'telegram' || $request->has('telegram_notify_checkin')) {
+                    Setting::updateOrCreate(['key' => 'telegram_notify_checkin'], ['value' => $request->has('telegram_notify_checkin') ? 'true' : 'false']);
+                }
+                if ($section === 'telegram' || $request->has('telegram_notify_checkout')) {
+                    Setting::updateOrCreate(['key' => 'telegram_notify_checkout'], ['value' => $request->has('telegram_notify_checkout') ? 'true' : 'false']);
+                }
+                if ($section === 'telegram' || $request->has('telegram_notify_late')) {
+                    Setting::updateOrCreate(['key' => 'telegram_notify_late'], ['value' => $request->has('telegram_notify_late') ? 'true' : 'false']);
+                }
+                if ($section === 'telegram' || $request->has('telegram_notify_leave')) {
+                    Setting::updateOrCreate(['key' => 'telegram_notify_leave'], ['value' => $request->has('telegram_notify_leave') ? 'true' : 'false']);
+                }
+            }
+
+            // ── SECTION: Security & Hardware ──
+            if (!$section || $section === 'security') {
+                if ($request->has('authorized_ip')) {
+                    Setting::updateOrCreate(['key' => 'authorized_ip'], ['value' => $request->authorized_ip ?? '']);
+                }
+                if ($request->has('maintenance_mode')) {
+                    Setting::updateOrCreate(['key' => 'maintenance_mode'], ['value' => $request->maintenance_mode]);
+                }
+                if ($request->has('system_open_time')) {
+                    Setting::updateOrCreate(['key' => 'system_open_time'], ['value' => $request->system_open_time]);
+                }
+                if ($request->has('system_close_time')) {
+                    Setting::updateOrCreate(['key' => 'system_close_time'], ['value' => $request->system_close_time]);
+                }
+                if ($request->has('scan_alert_duration')) {
+                    Setting::updateOrCreate(['key' => 'scan_alert_duration'], ['value' => $request->scan_alert_duration]);
                 }
             }
 
             Setting::updateOrCreate(['key' => 'settings_updated_at'], ['value' => time()]);
 
-            SecurityLog::record('Updated System Settings', 'Configuration');
+            SecurityLog::record('Updated System Settings' . ($section ? ' (' . ucfirst($section) . ')' : ''), 'Configuration');
 
-            return back()->with('success', 'Settings updated successfully.');
+            $targetTab = $section ? 'section-' . $section : ($request->input('active_tab') ?: 'section-identity');
+            return redirect()->route('settings.index', ['tab' => $targetTab])->with('success', __('Settings updated successfully.'));
         } catch (\Exception $e) {
-            \Log::error('Logo upload error: ' . $e->getMessage());
+            \Log::error('Settings update error: ' . $e->getMessage());
             return back()->with('error', 'An error occurred while saving settings: ' . $e->getMessage());
         }
     }
@@ -338,7 +362,7 @@ class SettingController extends Controller
         SecurityLog::record('Updated System Appearance', 'Theme');
 
         // Also clear the user's localStorage theme so server default takes effect
-        return back()->with('success', 'Appearance settings saved. Refresh any open pages to apply the new theme.');
+        return redirect()->route('settings.index', ['tab' => 'section-appearance'])->with('success', __('Appearance settings saved successfully.'));
     }
 
     public function updateAdmin(Request $request, User $user)
@@ -369,7 +393,7 @@ class SettingController extends Controller
 
         SecurityLog::record('Updated Admin Account', $user->name . ' (' . $user->email . ')');
 
-        return back()->with('success', __('Admin account updated successfully.'));
+        return redirect()->route('settings.index', ['tab' => 'section-admins'])->with('success', __('Admin account updated successfully.'));
     }
 
     public function storeAdmin(Request $request)
@@ -398,7 +422,7 @@ class SettingController extends Controller
 
         SecurityLog::record('Created Admin User', $user->name);
 
-        return back()->with('success', 'Admin created successfully.');
+        return redirect()->route('settings.index', ['tab' => 'section-admins'])->with('success', __('Admin created successfully.'));
     }
 
     public function resetAdminPassword(Request $request, User $user)
@@ -415,7 +439,7 @@ class SettingController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        return back()->with('success', 'Admin password reset successfully.');
+        return redirect()->route('settings.index', ['tab' => 'section-admins'])->with('success', __('Admin password reset successfully.'));
     }
 
     public function destroyAdmin(User $user)
@@ -431,7 +455,7 @@ class SettingController extends Controller
         SecurityLog::record('Deleted Admin User', $user->name);
         $user->delete();
 
-        return back()->with('success', 'Administrator deleted successfully.');
+        return redirect()->route('settings.index', ['tab' => 'section-admins'])->with('success', __('Administrator deleted successfully.'));
     }
 
     public function downloadBackup()
@@ -570,7 +594,7 @@ class SettingController extends Controller
         }
         
         $correction->save();
-        return back()->with('success', 'Correction request ' . $request->action . 'd successfully.');
+        return redirect()->route('settings.index', ['tab' => 'section-corrections'])->with('success', __('Correction request ' . $request->action . 'd successfully.'));
     }
 
     public function fetchTelegramChats()

@@ -1509,10 +1509,48 @@
         </div>
     </div>
 
+    {{-- Global Network Offline Banner (Works on HTTP, HTTPS, and Localhost) --}}
+    <div id="globalOfflineBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 9999999; background: linear-gradient(90deg, #ef4444, #dc2626); color: #fff; padding: 0.65rem 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.4); font-weight: 700; font-size: 0.9rem; align-items: center; justify-content: space-between; transition: all 0.3s ease;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <i class="ph ph-wifi-slash" style="font-size: 1.25rem;"></i>
+            <span>{{ __('No Internet Connection. Running in Offline Mode.') }}</span>
+        </div>
+        <div style="display: flex; gap: 0.6rem; align-items: center;">
+            <a href="{{ route('offline') }}" style="background: rgba(255,255,255,0.25); color: white; padding: 0.25rem 0.75rem; border-radius: 0.5rem; text-decoration: none; font-size: 0.8rem; font-weight: 700;">
+                {{ __('View Offline Page') }}
+            </a>
+            <button type="button" onclick="document.getElementById('globalOfflineBanner').style.display='none'" style="background:none; border:none; color:white; font-size:1.3rem; cursor:pointer; line-height:1;">&times;</button>
+        </div>
+    </div>
+
     <script>
+        function checkGlobalNetwork() {
+            const banner = document.getElementById('globalOfflineBanner');
+            if (!navigator.onLine) {
+                if (banner) banner.style.display = 'flex';
+            } else {
+                if (banner) banner.style.display = 'none';
+            }
+        }
+        window.addEventListener('online', () => {
+            checkGlobalNetwork();
+            if (window.showToast) window.showToast('{{ __("Internet connection restored!") }}', 'success');
+        });
+        window.addEventListener('offline', () => {
+            checkGlobalNetwork();
+            if (window.showToast) window.showToast('{{ __("Internet disconnected. Running in offline mode.") }}', 'warning');
+        });
+        checkGlobalNetwork();
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW reg failed', err));
+                if (window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then(reg => console.log('NTTI PWA: ServiceWorker active', reg.scope))
+                        .catch(err => console.warn('NTTI PWA: ServiceWorker reg failed', err));
+                } else {
+                    console.info('NTTI PWA Notice: ServiceWorker registration requires HTTPS or localhost. If testing on plain HTTP IP (e.g. 66.42.61.106), browsers block ServiceWorkers by default. For full PWA install, configure SSL/domain or chrome://flags/#unsafely-treat-insecure-origin-as-secure.');
+                }
             });
         }
     </script>

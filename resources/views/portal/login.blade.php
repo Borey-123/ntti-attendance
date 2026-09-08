@@ -342,6 +342,23 @@
                         {{ __('View Attendance') }}
                     </button>
                 </div>
+
+                {{-- Biometric Quick Login Container --}}
+                <div id="biometricQuickLoginContainer" style="display: none; margin-top: 1.25rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div style="flex: 1; height: 1px; background: var(--border);"></div>
+                        <span style="font-size: 0.72rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">{{ __('OR QUICK UNLOCK') }}</span>
+                        <div style="flex: 1; height: 1px; background: var(--border);"></div>
+                    </div>
+                    <button type="button" id="btnBiometricQuickLogin" onclick="handleBiometricQuickLogin()"
+                            style="width: 100%; padding: 0.95rem 1.25rem; border-radius: 1.25rem; border: 1.5px solid rgba(var(--primary-rgb), 0.4); background: rgba(var(--primary-rgb), 0.08); color: var(--text-main); font-weight: 700; font-size: 0.92rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.75rem; transition: all 0.25s ease;"
+                            onmouseover="this.style.background='rgba(var(--primary-rgb), 0.16)'; this.style.borderColor='var(--primary)';"
+                            onmouseout="this.style.background='rgba(var(--primary-rgb), 0.08)'; this.style.borderColor='rgba(var(--primary-rgb), 0.4)';">
+                        <i class="ph ph-fingerprint" style="font-size: 1.4rem; color: var(--primary);"></i>
+                        <span id="biometricBtnText">{{ __('Unlock with Biometrics / Face ID') }}</span>
+                    </button>
+                    <div id="biometricStatusMsg" style="margin-top: 0.5rem; text-align: center; font-size: 0.78rem; color: var(--text-sub);"></div>
+                </div>
             </form>
         </div>
     </div>
@@ -414,6 +431,100 @@
                 }
             });
         });
+
+        // ── Biometric Quick Login Check & Handler ──
+        (function initBiometricQuickLogin() {
+            try {
+                const token = localStorage.getItem('portal_biometric_token');
+                const teacherName = localStorage.getItem('portal_biometric_teacher_name');
+                const teacherEmpId = localStorage.getItem('portal_biometric_emp_id');
+                const container = document.getElementById('biometricQuickLoginContainer');
+                const btnText = document.getElementById('biometricBtnText');
+
+                if (token && container) {
+                    container.style.display = 'block';
+                    if (teacherName && btnText) {
+                        btnText.textContent = `🔓 {{ __('Unlock as') }} ${teacherName}`;
+                    }
+                    const empInput = document.getElementById('employee_id');
+                    if (empInput && !empInput.value && teacherEmpId) {
+                        empInput.value = teacherEmpId;
+                    }
+                }
+            } catch (e) {
+                console.warn('Biometric storage check failed:', e);
+            }
+        })();
+
+        async function handleBiometricQuickLogin() {
+            const token = localStorage.getItem('portal_biometric_token');
+            const empId = localStorage.getItem('portal_biometric_emp_id');
+            const deviceId = localStorage.getItem('portal_device_id');
+            const statusMsg = document.getElementById('biometricStatusMsg');
+            const btn = document.getElementById('btnBiometricQuickLogin');
+
+            if (!token || !empId || !deviceId) {
+                // Clear stale/incomplete data
+                localStorage.removeItem('portal_biometric_token');
+                localStorage.removeItem('portal_biometric_emp_id');
+                localStorage.removeItem('portal_biometric_teacher_name');
+                document.getElementById('biometricQuickLoginContainer').style.display = 'none';
+                alert('{{ __('Biometric credentials are incomplete. Please login with PIN and enable Biometrics again from the Portal.') }}');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+            if (statusMsg) {
+                statusMsg.style.color = 'var(--primary)';
+                statusMsg.innerHTML = '<i class="ph ph-spinner ph-spin"></i> {{ __('Verifying biometrics...') }}';
+            }
+
+            try {
+                const res = await fetch("{{ route('portal.biometric.login') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    // Send ALL 3 required fields: token + employee_id + device_id
+                    body: JSON.stringify({
+                        token: token,
+                        employee_id: empId,
+                        device_id: deviceId
+                    })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    if (statusMsg) {
+                        statusMsg.style.color = 'var(--success)';
+                        statusMsg.innerHTML = '&#10003; {{ __('Verified! Logging in...') }}';
+                    }
+                    window.location.href = data.redirect || "{{ route('portal.index') }}";
+                } else {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    if (statusMsg) {
+                        statusMsg.style.color = 'var(--danger)';
+                        statusMsg.textContent = data.message || '{{ __('Biometric verification failed. Please login with PIN.') }}';
+                    }
+                    // If expired/mismatch, clear stored credentials
+                    if (res.status === 401) {
+                        localStorage.removeItem('portal_biometric_token');
+                        document.getElementById('biometricQuickLoginContainer').style.display = 'none';
+                    }
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                if (statusMsg) {
+                    statusMsg.style.color = 'var(--danger)';
+                    statusMsg.textContent = '{{ __('Connection error. Please try logging in with PIN.') }}';
+                }
+            }
+        }
     </script>
 </body>
 </html>

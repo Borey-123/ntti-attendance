@@ -24,9 +24,15 @@ const NEVER_CACHE = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(STATIC_CACHE)
-      .then(cache => cache.addAll(STATIC_ASSETS.filter(url => url !== '/offline' || true))
-        .catch(() => cache.addAll(['/', '/manifest.json']))
-      )
+      .then(async cache => {
+        for (const url of STATIC_ASSETS) {
+          try {
+            await cache.add(url);
+          } catch (e) {
+            console.warn('[SW] Could not pre-cache:', url, e.message);
+          }
+        }
+      })
       .then(() => self.skipWaiting())
   );
 });

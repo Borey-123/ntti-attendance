@@ -22,15 +22,46 @@
 
 /* ── Sidebar Navigation ── */
 .settings-sidebar {
-    width: 280px;
+    width: 290px;
     background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(10px);
     border: 1px solid var(--border);
     border-radius: 1.5rem;
-    padding: 1rem;
+    padding: 1.25rem 1rem;
     position: sticky;
     top: 20px;
     flex-shrink: 0;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb), 0.3) transparent;
+}
+
+.settings-sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+.settings-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.settings-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb), 0.25);
+    border-radius: 10px;
+}
+.settings-sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}
+
+.settings-nav-group-title {
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-secondary);
+    padding: 0.8rem 1rem 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.8;
 }
 
 .settings-nav-item {
@@ -384,14 +415,38 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
     $uLogo = \App\Models\Setting::getValue('university_logo', '');
 @endphp
 
-<div style="margin-bottom: 2.5rem;">
+<div style="margin-bottom: 2rem;">
     <h1 class="page-title">{{ __('Settings Hub') }}</h1>
     <p style="color: var(--text-secondary);">{{ __('Configure core system parameters, security protocols, and visual branding.') }}</p>
 </div>
 
+{{-- Flash Alert Banners --}}
+@if(session('success'))
+    <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 1.25rem; padding: 1.2rem 1.75rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; color: #10b981; animation: slideUp 0.3s ease;">
+        <i class="ph ph-check-circle" style="font-size: 1.8rem; flex-shrink: 0;"></i>
+        <div>
+            <div style="font-weight: 800; font-size: 1.05rem;">{{ __('Changes Saved Successfully') }}</div>
+            <div style="font-size: 0.88rem; opacity: 0.9; margin-top: 0.2rem;">{{ session('success') }}</div>
+        </div>
+    </div>
+@endif
+
+@if(session('error') || (isset($errors) && $errors->any()))
+    <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 1.25rem; padding: 1.2rem 1.75rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; color: #ef4444; animation: slideUp 0.3s ease;">
+        <i class="ph ph-warning-circle" style="font-size: 1.8rem; flex-shrink: 0;"></i>
+        <div>
+            <div style="font-weight: 800; font-size: 1.05rem;">{{ __('Unable to Save Settings') }}</div>
+            <div style="font-size: 0.88rem; opacity: 0.9; margin-top: 0.2rem;">{{ session('error') ?? ($errors->first()) }}</div>
+        </div>
+    </div>
+@endif
+
 <div class="settings-container">
     {{-- ── Sidebar Navigation ── --}}
     <div class="settings-sidebar">
+        <div class="settings-nav-group-title">
+            <i class="ph ph-gear-six"></i> {{ __('Core System') }}
+        </div>
         <div class="settings-nav-item active" data-target="section-identity">
             <i class="ph ph-buildings"></i> {{ __('System Identity') }}
         </div>
@@ -400,6 +455,10 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
         </div>
         <div class="settings-nav-item" data-target="section-kiosk">
             <i class="ph ph-monitor"></i> {{ __('Smart Kiosk Terminal') }}
+        </div>
+
+        <div class="settings-nav-group-title" style="margin-top: 0.8rem;">
+            <i class="ph ph-shield-check"></i> {{ __('Network & Hardware') }}
         </div>
         <div class="settings-nav-item" data-target="section-geofence">
             <i class="ph ph-map-pin"></i> {{ __('Campus GPS Geofence') }}
@@ -412,6 +471,10 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
         </div>
         <div class="settings-nav-item" data-target="section-backup">
             <i class="ph ph-database"></i> {{ __('Backup & Maintenance') }}
+        </div>
+
+        <div class="settings-nav-group-title" style="margin-top: 0.8rem;">
+            <i class="ph ph-palette"></i> {{ __('Appearance & Operations') }}
         </div>
         <div class="settings-nav-item" data-target="section-appearance">
             <i class="ph ph-palette"></i> {{ __('System Appearance') }}
@@ -439,6 +502,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                 </div>
                 <form action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data">
                     @csrf
+                    <input type="hidden" name="settings_section" value="identity">
                     <div class="form-group">
                         <label>{{ __('Institution Name') }}</label>
                         <input type="text" name="university_name" class="form-control" value="{{ $universityName }}" required>
@@ -493,7 +557,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                 </div>
                 <form action="{{ route('settings.update') }}" method="POST">
                     @csrf
-                    <input type="hidden" name="university_name" value="{{ $universityName }}">
+                    <input type="hidden" name="settings_section" value="rules">
                     
                     <h3 style="font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 1.5rem;"><i class="ph ph-graduation-cap" style="margin-right:0.4rem;"></i>{{ __('Academic Term & Grace Period') }}</h3>
                     <div class="form-grid">
@@ -570,7 +634,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                         </div>
                         <label class="toggle-switch">
                             <input type="hidden" name="enable_auto_checkout" value="off">
-                            <input type="checkbox" name="enable_auto_checkout" value="on" {{ $enableAutoCheckout === 'on' ? 'checked' : '' }}>
+                            <input type="checkbox" name="enable_auto_checkout" value="on" {{ $enableAutoCheckout ? 'checked' : '' }}>
                             <span class="slider"></span>
                         </label>
                     </div>
@@ -618,7 +682,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                 </div>
                 <form action="{{ route('settings.update') }}" method="POST">
                     @csrf
-                    <input type="hidden" name="university_name" value="{{ $universityName }}">
+                    <input type="hidden" name="settings_section" value="kiosk">
 
                     <div class="form-grid">
                         <div class="form-group">
@@ -669,7 +733,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                                 <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Speak teacher name in Khmer and English upon successful scan.') }}</p>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="kiosk_voice_enabled" value="true" {{ ($kioskVoiceEnabled ?? 'true') === 'true' ? 'checked' : '' }}>
+                                <input type="checkbox" name="kiosk_voice_enabled" value="true" {{ $kioskVoiceEnabled ? 'checked' : '' }}>
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -680,7 +744,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                                 <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Display celebratory particle confetti upon on-time attendance scans.') }}</p>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="kiosk_confetti" value="true" {{ ($kioskConfetti ?? 'true') === 'true' ? 'checked' : '' }}>
+                                <input type="checkbox" name="kiosk_confetti" value="true" {{ $kioskConfetti ? 'checked' : '' }}>
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -691,7 +755,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                                 <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-secondary);">{{ __('Show scrolling institutional alerts and news on the terminal bottom.') }}</p>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="kiosk_show_announcements" value="true" {{ ($kioskShowAnnouncements ?? 'true') === 'true' ? 'checked' : '' }}>
+                                <input type="checkbox" name="kiosk_show_announcements" value="true" {{ $kioskShowAnnouncements ? 'checked' : '' }}>
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -715,7 +779,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                 </div>
                 <form action="{{ route('settings.update') }}" method="POST">
                     @csrf
-                    <input type="hidden" name="university_name" value="{{ $universityName }}">
+                    <input type="hidden" name="settings_section" value="geofence">
                     
                     <div style="background: rgba(var(--primary-rgb), 0.04); border: 1px dashed rgba(var(--primary-rgb), 0.2); border-radius: 1rem; padding: 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
                         <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -762,7 +826,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                                 <p style="margin:0; font-size:0.75rem; color:var(--text-secondary);">{{ __('Block mobile check-ins outside radius.') }}</p>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="enforce_gps_geofence" value="true" {{ ($enforceGpsGeofence ?? 'true') === 'true' ? 'checked' : '' }}>
+                                <input type="checkbox" name="enforce_gps_geofence" value="true" {{ $enforceGpsGeofence ? 'checked' : '' }}>
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -797,7 +861,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                 </div>
                 <form action="{{ route('settings.update') }}" method="POST">
                     @csrf
-                    <input type="hidden" name="university_name" value="{{ $universityName }}">
+                    <input type="hidden" name="settings_section" value="telegram">
 
                     <div class="form-grid">
                         <div class="form-group">
@@ -835,7 +899,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                                 <p style="margin: 0.2rem 0 0; font-size: 0.75rem; color: var(--text-secondary);">{{ __('Notify when teacher checks in.') }}</p>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="telegram_notify_checkin" value="true" {{ ($telegramNotifyCheckin ?? 'true') === 'true' ? 'checked' : '' }}>
+                                <input type="checkbox" name="telegram_notify_checkin" value="true" {{ $telegramNotifyCheckin ? 'checked' : '' }}>
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -846,7 +910,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                                 <p style="margin: 0.2rem 0 0; font-size: 0.75rem; color: var(--text-secondary);">{{ __('Notify when teacher checks out.') }}</p>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="telegram_notify_checkout" value="true" {{ ($telegramNotifyCheckout ?? 'true') === 'true' ? 'checked' : '' }}>
+                                <input type="checkbox" name="telegram_notify_checkout" value="true" {{ $telegramNotifyCheckout ? 'checked' : '' }}>
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -857,7 +921,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                                 <p style="margin: 0.2rem 0 0; font-size: 0.75rem; color: var(--text-secondary);">{{ __('Special alert when teacher arrives late.') }}</p>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="telegram_notify_late" value="true" {{ ($telegramNotifyLate ?? 'true') === 'true' ? 'checked' : '' }}>
+                                <input type="checkbox" name="telegram_notify_late" value="true" {{ $telegramNotifyLate ? 'checked' : '' }}>
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -868,7 +932,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                                 <p style="margin: 0.2rem 0 0; font-size: 0.75rem; color: var(--text-secondary);">{{ __('Notify admins on teacher leave submission.') }}</p>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="telegram_notify_leave" value="true" {{ ($telegramNotifyLeave ?? 'true') === 'true' ? 'checked' : '' }}>
+                                <input type="checkbox" name="telegram_notify_leave" value="true" {{ $telegramNotifyLeave ? 'checked' : '' }}>
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -892,7 +956,7 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                 </div>
                 <form action="{{ route('settings.update') }}" method="POST">
                     @csrf
-                    <input type="hidden" name="university_name" value="{{ $universityName }}">
+                    <input type="hidden" name="settings_section" value="security">
                     
                     <h3 style="font-size: 0.9rem; font-weight: 800; color: #a855f7; margin-bottom: 1.5rem;"><i class="ph ph-shield-check" style="margin-right:0.4rem;"></i> {{ __('Two-Factor Authentication (2FA)') }}</h3>
                     <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(168, 85, 247, 0.05); padding: 1.5rem; border-radius: 1rem; border: 1px solid rgba(168, 85, 247, 0.2); margin-bottom: 2rem;">
@@ -1039,9 +1103,10 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                             <span style="font-size: 0.75rem; color: var(--text-secondary); display: block;">Server Timezone</span>
                             <span style="font-size: 0.95rem; font-weight: 700; font-family: monospace;">{{ config('app.timezone') }}</span>
                         </div>
+                    </div>
                 </div>
             </div>
-        </div>
+        </div> {{-- Closes section-backup --}}
 
         {{-- Hidden Form for System Cleanup --}}
         <form id="systemCleanupForm" action="{{ route('settings.cleanup') }}" method="POST" style="display: none;">
@@ -1598,27 +1663,50 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
 @push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 <script>
-// ── Settings Hub Navigation ────────────────────
+// ── Settings Hub Navigation & Tab Management ──
+function switchSettingsTab(targetId, updateHistory = true) {
+    const targetEl = document.getElementById(targetId);
+    const targetNav = document.querySelector(`[data-target="${targetId}"]`);
+    if (!targetEl || !targetNav) return;
+
+    // Toggle Nav items
+    document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'));
+    targetNav.classList.add('active');
+
+    // Toggle Sections
+    document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+    targetEl.classList.add('active');
+
+    // Save state in localStorage
+    localStorage.setItem('settings_tab', targetId);
+
+    // Update URL query string without page reload
+    if (updateHistory) {
+        const url = new URL(window.location);
+        url.searchParams.set('tab', targetId);
+        window.history.replaceState({}, '', url);
+    }
+
+    // Refresh leaflet map if geofence tab is activated
+    if (targetId === 'section-geofence' && typeof geofenceMap !== 'undefined' && geofenceMap) {
+        setTimeout(() => geofenceMap.invalidateSize(), 200);
+    }
+}
+
 document.querySelectorAll('.settings-nav-item').forEach(item => {
     item.addEventListener('click', () => {
-        // Toggle Nav
-        document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
-
-        // Toggle Section
         const target = item.getAttribute('data-target');
-        document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
-        document.getElementById(target).classList.add('active');
-        
-        // Save state
-        localStorage.setItem('settings_tab', target);
+        switchSettingsTab(target, true);
     });
 });
 
-// Restore state
-const savedTab = localStorage.getItem('settings_tab');
-if (savedTab && document.getElementById(savedTab)) {
-    document.querySelector(`[data-target="${savedTab}"]`).click();
+// Restore active tab: URL query param has highest priority (e.g. redirected from save), then localStorage
+const urlParams = new URLSearchParams(window.location.search);
+const tabFromUrl = urlParams.get('tab');
+const initialTab = tabFromUrl || localStorage.getItem('settings_tab') || 'section-identity';
+
+if (initialTab && document.getElementById(initialTab)) {
+    switchSettingsTab(initialTab, false);
 }
 
 // ── Reset Form Toggle ───────────────────────────

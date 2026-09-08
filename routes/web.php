@@ -134,6 +134,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/api-web/teachers/{teacher}', [TeacherController::class, 'update'])->name('api.teachers.update');
     Route::delete('/api-web/teachers/{teacher}', [TeacherController::class, 'destroy'])->name('api.teachers.destroy');
     Route::post('/api-web/teachers/{teacher}/reset-pin', [TeacherController::class, 'resetPin'])->name('api.teachers.reset-pin');
+    Route::patch('/api-web/teachers/{teacher}/salary', [TeacherController::class, 'updateSalary'])->name('api.teachers.update-salary');
 
     Route::get('/api-web/rfid-cards', [RfidCardController::class, 'index'])->name('api.rfid.list');
     Route::post('/api-web/rfid-cards', [RfidCardController::class, 'store'])->name('api.rfid.store');

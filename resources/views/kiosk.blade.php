@@ -24,10 +24,10 @@
         $uName = \App\Models\Setting::getValue('university_name', 'វិទ្យាស្ថានជាតិបណ្តុះបណ្តាលបច្ចេកទេស');
         $stationName = $kioskSettings['station_name'] ?? \App\Models\Setting::getValue('kiosk_station_name', 'SMART ATTENDANCE KIOSK STATION · ស្ថានីយស្កេនវៃឆ្លាត');
         $defaultTab = $kioskSettings['default_tab'] ?? \App\Models\Setting::getValue('kiosk_default_tab', 'camera');
-        $voiceEnabled = $kioskSettings['voice_enabled'] ?? (\App\Models\Setting::getValue('kiosk_voice_enabled', 'true') === 'true');
+        $voiceEnabled = $kioskSettings['voice_enabled'] ?? in_array(strtolower((string)\App\Models\Setting::getValue('kiosk_voice_enabled', 'true')), ['true', 'on', '1'], true);
         $voiceSpeed = $kioskSettings['voice_speed'] ?? (float)\App\Models\Setting::getValue('kiosk_voice_speed', 1.0);
-        $confettiEnabled = $kioskSettings['confetti'] ?? (\App\Models\Setting::getValue('kiosk_confetti', 'true') === 'true');
-        $showAnnouncements = $kioskSettings['announcements'] ?? (\App\Models\Setting::getValue('kiosk_show_announcements', 'true') === 'true');
+        $confettiEnabled = $kioskSettings['confetti'] ?? in_array(strtolower((string)\App\Models\Setting::getValue('kiosk_confetti', 'true')), ['true', 'on', '1'], true);
+        $showAnnouncements = $kioskSettings['announcements'] ?? in_array(strtolower((string)\App\Models\Setting::getValue('kiosk_show_announcements', 'true')), ['true', 'on', '1'], true);
         $qrRotation = $kioskSettings['qr_rotation'] ?? (int)\App\Models\Setting::getValue('kiosk_qr_rotation', 20);
     @endphp
 

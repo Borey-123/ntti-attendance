@@ -54,6 +54,8 @@ class TeacherController extends Controller
             'telegram_chat_id' => 'nullable|string|max:255',
             'is_geofence_exempt' => 'nullable|boolean',
             'photo' => 'nullable|image|max:2048',
+            'base_salary' => 'nullable|numeric|min:0',
+            'position_rank' => 'nullable|string|max:100',
         ]);
 
         if ($request->has('is_geofence_exempt')) {
@@ -101,6 +103,8 @@ class TeacherController extends Controller
             'telegram_chat_id' => 'nullable|string|max:255',
             'is_geofence_exempt' => 'nullable|boolean',
             'photo' => 'nullable|image|max:2048',
+            'base_salary' => 'nullable|numeric|min:0',
+            'position_rank' => 'nullable|string|max:100',
         ]);
 
         if ($request->has('is_geofence_exempt')) {
@@ -126,6 +130,23 @@ class TeacherController extends Controller
         SecurityLog::record('Updated Teacher', $teacher->name, "ID: {$teacher->employee_id}");
         
         return response()->json(['status' => 'success', 'teacher' => $teacher]);
+    }
+
+    public function updateSalary(Request $request, Teacher $teacher): JsonResponse
+    {
+        $validated = $request->validate([
+            'base_salary' => 'required|numeric|min:0',
+            'position_rank' => 'nullable|string|max:100',
+        ]);
+
+        $teacher->update($validated);
+        SecurityLog::record('Updated Teacher Salary', $teacher->name, "Base Salary: $" . number_format($teacher->base_salary, 2));
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Salary updated successfully',
+            'teacher' => $teacher
+        ]);
     }
 
     public function destroy(Teacher $teacher): JsonResponse

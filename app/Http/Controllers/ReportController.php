@@ -18,7 +18,9 @@ class ReportController extends Controller
         }
         $departments = Department::all();
         $teachers = Teacher::orderBy('name')->get();
-        return view('reports.index', compact('departments', 'teachers'));
+        $academicYear     = \App\Models\Setting::getValue('academic_year', '2025-2026');
+        $academicSemester = \App\Models\Setting::getValue('academic_semester', 'Semester 1');
+        return view('reports.index', compact('departments', 'teachers', 'academicYear', 'academicSemester'));
     }
 
     public function getData(Request $request): JsonResponse
@@ -251,10 +253,14 @@ class ReportController extends Controller
         ];
         $reportTypeLabel = $reportTypeLabels[$exportType] ?? __('Attendance Report');
 
+        $academicYear     = \App\Models\Setting::getValue('academic_year', '2025-2026');
+        $academicSemester = \App\Models\Setting::getValue('academic_semester', 'Semester 1');
+
         // Document header
         $html .= '<table border="0" style="width:100%;border-collapse:collapse;">';
         $html .= '<tr><td colspan="10" class="tc"><div class="h-title">' . htmlspecialchars($uName) . '</div></td></tr>';
         $html .= '<tr><td colspan="10" class="tc"><div class="h-sub">' . $reportTypeLabel . '</div></td></tr>';
+        $html .= '<tr><td colspan="10" class="tc" style="color:#1a73e8;font-weight:bold;">' . __('Academic Year') . ': ' . htmlspecialchars($academicYear) . ' &nbsp;|&nbsp; ' . __('Semester') . ': ' . htmlspecialchars($academicSemester) . '</td></tr>';
         $html .= '<tr><td colspan="10" class="tc">' . __('Period') . ': ' . $from->format('d-m-Y') . ' ' . __('to') . ' ' . $to->format('d-m-Y') . '</td></tr>';
         $html .= '<tr><td colspan="10" class="tc" style="color:#555;">';
         $html .= __('Department') . ': ' . htmlspecialchars($deptLabel);
