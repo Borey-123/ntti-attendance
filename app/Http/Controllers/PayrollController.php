@@ -19,9 +19,24 @@ class PayrollController extends Controller
         $month      = $request->get('month', now()->format('Y-m'));
         $department = $request->get('department');
         $status     = $request->get('status');
+        $monthDate  = Carbon::parse($month)->startOfMonth()->format('Y-m-d');
+
+        // Ensure all active teachers have a payroll record for this month so no teacher is missing
+        $activeTeachers = Teacher::where('status', 'active')->get();
+        $existingTeacherIds = Payroll::where('month', $monthDate)->pluck('teacher_id')->toArray();
+        $missingTeachers = $activeTeachers->whereNotIn('id', $existingTeacherIds);
+
+        foreach ($missingTeachers as $t) {
+            $calc = Payroll::calculate($t, $monthDate);
+            Payroll::create(array_merge($calc, [
+                'teacher_id' => $t->id,
+                'month'      => $monthDate,
+                'status'     => 'draft',
+            ]));
+        }
 
         $query = Payroll::with(['teacher', 'academicPeriod'])
-            ->where('month', Carbon::parse($month)->startOfMonth()->format('Y-m-d'));
+            ->where('month', $monthDate);
 
         if ($department) {
             $query->whereHas('teacher', fn($q) => $q->where('department', $department));

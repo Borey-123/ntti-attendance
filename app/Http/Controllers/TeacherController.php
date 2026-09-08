@@ -143,14 +143,14 @@ class TeacherController extends Controller
         $teacher->update($validated);
         SecurityLog::record('Updated Teacher Salary', $teacher->name, "Base Salary: $" . number_format($teacher->base_salary, 2));
 
-        // Automatically update the current month payroll record so /payroll reflects immediately
+        // Automatically create or update current month payroll record so /payroll reflects immediately
         try {
             $currentMonth = now()->startOfMonth()->format('Y-m-d');
-            $existingPayroll = Payroll::where('teacher_id', $teacher->id)->where('month', $currentMonth)->first();
-            if ($existingPayroll) {
-                $calc = Payroll::calculate($teacher, $currentMonth);
-                $existingPayroll->update($calc);
-            }
+            $calc = Payroll::calculate($teacher, $currentMonth);
+            Payroll::updateOrCreate(
+                ['teacher_id' => $teacher->id, 'month' => $currentMonth],
+                array_merge($calc, ['status' => 'draft'])
+            );
         } catch (\Exception $e) {
             \Log::warning("Could not auto-sync payroll for teacher {$teacher->id}: " . $e->getMessage());
         }
