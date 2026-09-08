@@ -57,6 +57,7 @@
         }
 
         body, button, input, select, textarea { font-family: var(--font-family) !important; }
+        a, a:hover, a:focus, a:active { text-decoration: none !important; }
         .card, .stat-card, .btn, .form-control, .insight-card, .glass-panel, .panel-header, .alert, .badge {
             border-radius: var(--border-radius) !important;
         }

@@ -209,7 +209,7 @@ document.getElementById('settingsForm').addEventListener('submit', async functio
             body: JSON.stringify(payload),
         });
         const data = await res.json();
-        if (data.status === 'success') {
+        if (data.status === 'success' || data.success) {
             if (window.showToast) window.showToast('{{ __("Settings saved successfully!") }}', 'success');
             setTimeout(() => location.reload(), 500);
         } else {

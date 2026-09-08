@@ -282,7 +282,11 @@ class PayrollController extends Controller
             PayrollSetting::setValue($key, $value ?? 0);
         }
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'status'  => 'success',
+            'message' => __('Settings updated successfully.')
+        ]);
     }
 
     // ─── JSON list ───────────────────────────────────────────

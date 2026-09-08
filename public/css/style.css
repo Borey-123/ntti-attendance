@@ -88,10 +88,11 @@ html[lang="km"] textarea {
 a {
     color: var(--primary);
     text-decoration: none;
+    transition: all var(--transition-fast);
 }
 
 a:hover {
-    text-decoration: underline;
+    text-decoration: none;
 }
 
 /* ============================================================
