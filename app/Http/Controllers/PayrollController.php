@@ -194,11 +194,24 @@ class PayrollController extends Controller
     }
 
     // ─── PDF Payslip ─────────────────────────────────────────
-    public function exportPdf($id)
-    {
         $payroll     = Payroll::with(['teacher', 'academicPeriod', 'approvedByUser'])->findOrFail($id);
         $settings    = PayrollSetting::getAllMap();
         $khqr        = BakongKhqrService::generatePayrollKhqr($payroll);
+        
+        $qrBase64 = null;
+        if (!empty($khqr['qr_image_url'])) {
+            try {
+                $ctx = stream_context_create([
+                    'http' => ['timeout' => 3],
+                    'ssl'  => ['verify_peer' => false, 'verify_peer_name' => false]
+                ]);
+                $rawImg = @file_get_contents($khqr['qr_image_url'], false, $ctx);
+                if ($rawImg) {
+                    $qrBase64 = 'data:image/png;base64,' . base64_encode($rawImg);
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $attendances = \App\Models\Attendance::where('teacher_id', $payroll->teacher_id)
             ->whereBetween('date', [
                 $payroll->month->copy()->startOfMonth(),
@@ -207,11 +220,15 @@ class PayrollController extends Controller
             ->orderBy('date')
             ->get();
 
-        $pdf = Pdf::loadView('payroll.pdf_slip', compact('payroll', 'settings', 'attendances', 'khqr'))
-                  ->setPaper('a4', 'portrait');
+        $pdf = Pdf::loadView('payroll.pdf_slip', compact('payroll', 'settings', 'attendances', 'khqr', 'qrBase64'))
+                  ->setPaper('a4', 'portrait')
+                  ->setOption([
+                      'isRemoteEnabled'      => true,
+                      'isHtml5ParserEnabled' => true,
+                      'defaultFont'          => 'KhmerOSBattambang',
+                  ]);
 
         return $pdf->download("payslip_{$payroll->teacher->employee_id}_{$payroll->month->format('Y_m')}.pdf");
-    }
 
     // ─── Export CSV ──────────────────────────────────────────
     public function exportCsv(Request $request)
