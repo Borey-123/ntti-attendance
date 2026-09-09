@@ -194,6 +194,8 @@ class PayrollController extends Controller
     }
 
     // ─── PDF Payslip ─────────────────────────────────────────
+    public function exportPdf($id)
+    {
         $payroll     = Payroll::with(['teacher', 'academicPeriod', 'approvedByUser'])->findOrFail($id);
         $settings    = PayrollSetting::getAllMap();
         $khqr        = BakongKhqrService::generatePayrollKhqr($payroll);
@@ -229,6 +231,7 @@ class PayrollController extends Controller
                   ]);
 
         return $pdf->download("payslip_{$payroll->teacher->employee_id}_{$payroll->month->format('Y_m')}.pdf");
+    }
 
     // ─── Export CSV ──────────────────────────────────────────
     public function exportCsv(Request $request)
