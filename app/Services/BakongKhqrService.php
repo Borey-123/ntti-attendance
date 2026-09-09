@@ -92,6 +92,7 @@ class BakongKhqrService
         $billNo = 'PAY-' . str_pad((string)$payroll->id, 6, '0', STR_PAD_LEFT);
 
         $finalKhqr = null;
+        $libraryError = null;
 
         // 3. Attempt Generation using Official NBC-compliant BakongKHQR Library
         try {
@@ -110,41 +111,49 @@ class BakongKhqrService
                 $finalKhqr = $khqrResponse->data['qr'];
             }
         } catch (\Throwable $e) {
-            // Fallback to manual standard EMV assembly below
+            $libraryError = $e->getMessage();
+            \Log::warning('BakongKHQR library failed, using manual EMV fallback', [
+                'bakong_id' => $bakongId,
+                'error'     => $libraryError,
+            ]);
         }
 
-        // 4. Fallback Manual EMV Generation (Exact NBC Specification including Tag 99)
+        // 4. Fallback Manual EMV Generation (Exact NBC Specification)
         if (empty($finalKhqr)) {
             $currencyCode = $isKhr ? '116' : '840';
-            $amountStr = $isKhr ? (string)round($khrAmount) : (string)round($usdAmount, 2);
+            $amountStr = $isKhr ? (string)round($khrAmount) : number_format(round($usdAmount, 2), 2, '.', '');
 
-            // Tag 29 (Individual Merchant Account Information) -> ONLY Subtag 00
-            $tag29_sub00 = self::formatTlv('00', $bakongId);
-            $tag29       = self::formatTlv('29', $tag29_sub00);
+            // ── Tag 29: Individual Merchant Account Information ──────────────
+            // NBC KHQR Spec:
+            //   Subtag 00 = Global Unique Identifier → MUST be "com.p2pqrpay"
+            //   Subtag 01 = Bakong Account ID (e.g. "borey_rin@bkrt")
+            $tag29_sub00 = self::formatTlv('00', 'com.p2pqrpay');
+            $tag29_sub01 = self::formatTlv('01', $bakongId);
+            $tag29       = self::formatTlv('29', $tag29_sub00 . $tag29_sub01);
 
-            // Tag 62 (Additional Data Template)
-            $tag62_sub01 = self::formatTlv('01', $billNo);
-            $tag62_sub07 = self::formatTlv('07', 'NTTI');
+            // ── Tag 62: Additional Data Template ────────────────────────────
+            $tag62_sub01 = self::formatTlv('01', $billNo);   // Bill Number
+            $tag62_sub07 = self::formatTlv('07', 'NTTI');    // Terminal Label
             $tag62       = self::formatTlv('62', $tag62_sub01 . $tag62_sub07);
 
-            // Tag 99 (Timestamp millisecond - required by NBC to prevent expiry errors)
+            // ── Tag 99: Timestamp (prevents NBC replay-attack expiry errors) ─
             $timestampMs = (string)floor(microtime(true) * 1000);
             $tag99       = self::formatTlv('99', self::formatTlv('00', $timestampMs));
 
-            $payload = self::formatTlv('00', '01')                   // Tag 00: Format Indicator
-                     . self::formatTlv('01', '12')                   // Tag 01: Dynamic with Amount
-                     . $tag29                                        // Tag 29: Bakong Account
-                     . self::formatTlv('52', '5999')                 // Tag 52: MCC 5999 (General)
-                     . self::formatTlv('53', $currencyCode)          // Tag 53: Currency
-                     . self::formatTlv('54', $amountStr)             // Tag 54: Amount
-                     . self::formatTlv('58', 'KH')                   // Tag 58: Country
-                     . self::formatTlv('59', $accountName)           // Tag 59: Merchant Name
-                     . self::formatTlv('60', 'Phnom Penh')           // Tag 60: City
-                     . $tag62                                        // Tag 62: Bill & Terminal
-                     . $tag99;                                       // Tag 99: Current Timestamp
+            $payload = self::formatTlv('00', '01')           // Tag 00: Payload Format Indicator
+                     . self::formatTlv('01', '12')           // Tag 01: Point of Initiation = Dynamic
+                     . $tag29                                // Tag 29: Bakong Individual Account
+                     . self::formatTlv('52', '5999')         // Tag 52: Merchant Category Code
+                     . self::formatTlv('53', $currencyCode)  // Tag 53: Transaction Currency
+                     . self::formatTlv('54', $amountStr)     // Tag 54: Transaction Amount
+                     . self::formatTlv('58', 'KH')           // Tag 58: Country Code
+                     . self::formatTlv('59', $accountName)   // Tag 59: Merchant Name
+                     . self::formatTlv('60', 'Phnom Penh')   // Tag 60: Merchant City
+                     . $tag62                                // Tag 62: Additional Data
+                     . $tag99;                               // Tag 99: Timestamp
 
-            $toCrc = $payload . '6304';
-            $crc = self::calculateCrc16($toCrc);
+            $toCrc     = $payload . '6304';
+            $crc       = self::calculateCrc16($toCrc);
             $finalKhqr = $toCrc . $crc;
         }
 
