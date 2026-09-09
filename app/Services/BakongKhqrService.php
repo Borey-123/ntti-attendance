@@ -95,28 +95,30 @@ class BakongKhqrService
         $libraryError = null;
 
         // 3. Attempt Generation using Official NBC-compliant BakongKHQR Library
-        try {
-            $individualInfo = new IndividualInfo(
-                bakongAccountID: $bakongId,
-                merchantName: $accountName,
-                merchantCity: 'Phnom Penh',
-                currency: $khqrCurrency,
-                amount: $amountFloat,
-                billNumber: $billNo,
-                terminalLabel: 'NTTI'
-            );
-
-            $khqrResponse = BakongKHQR::generateIndividual($individualInfo);
-            if (!empty($khqrResponse->data['qr'])) {
-                $finalKhqr = $khqrResponse->data['qr'];
-            }
-        } catch (\Throwable $e) {
-            $libraryError = $e->getMessage();
-            \Log::warning('BakongKHQR library failed, using manual EMV fallback', [
-                'bakong_id' => $bakongId,
-                'error'     => $libraryError,
-            ]);
-        }
+        //    NOTE: The khqr-gateway library uses an older Tag 29 format where
+        //    Subtag 00 = bakong_id directly (without the mandatory "com.p2pqrpay" GUID).
+        //    ABA Mobile and modern NBC validators require Subtag 00 = "com.p2pqrpay"
+        //    and Subtag 01 = bakong_id (per NBC KHQR Individual Spec v1.1+).
+        //    We therefore skip the library and always use the manual EMV builder below.
+        //
+        // try {
+        //     $individualInfo = new IndividualInfo(
+        //         bakongAccountID: $bakongId,
+        //         merchantName: $accountName,
+        //         merchantCity: 'Phnom Penh',
+        //         currency: $khqrCurrency,
+        //         amount: $amountFloat,
+        //         billNumber: $billNo,
+        //         terminalLabel: 'NTTI'
+        //     );
+        //     $khqrResponse = BakongKHQR::generateIndividual($individualInfo);
+        //     if (!empty($khqrResponse->data['qr'])) {
+        //         $finalKhqr = $khqrResponse->data['qr'];
+        //     }
+        // } catch (\Throwable $e) {
+        //     $libraryError = $e->getMessage();
+        //     \Log::warning('BakongKHQR library failed', ['bakong_id' => $bakongId, 'error' => $libraryError]);
+        // }
 
         // 4. Fallback Manual EMV Generation (Exact NBC Specification)
         if (empty($finalKhqr)) {
