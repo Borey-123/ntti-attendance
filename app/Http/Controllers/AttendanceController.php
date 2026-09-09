@@ -24,11 +24,16 @@ class AttendanceController extends Controller
             $this->performAutoCheckout();
             $today = today()->toDateString();
             $search = $request->search;
+            $department = $request->department;
 
             // Base Query - Include teachers with 'active' status or NULL status
             $teacherBaseQuery = Teacher::where(function($q) {
                 $q->where('status', 'active')->orWhereNull('status');
             });
+
+            if (!empty($department)) {
+                $teacherBaseQuery->where('department', $department);
+            }
 
             $totalTeachers = (clone $teacherBaseQuery)->count();
             $totalRfidTeachers = (clone $teacherBaseQuery)->has('rfidCard')->count();
@@ -38,6 +43,11 @@ class AttendanceController extends Controller
             if ($search) {
                 $attendanceQuery->whereHas('teacher', function($q) use ($search) {
                     $q->where('name', 'LIKE', "%{$search}%")->orWhere('employee_id', 'LIKE', "%{$search}%");
+                });
+            }
+            if (!empty($department)) {
+                $attendanceQuery->whereHas('teacher', function($q) use ($department) {
+                    $q->where('department', $department);
                 });
             }
             $attendance = $attendanceQuery->orderBy('updated_at', 'desc')->get();
@@ -51,7 +61,6 @@ class AttendanceController extends Controller
                 });
             }
             
-            
             $absentTeachers = $absentQuery->get();
 
             // Shift-specific Absent Teachers
@@ -60,6 +69,33 @@ class AttendanceController extends Controller
 
             $aPresentIds = $attendance->filter(fn($a) => !empty($a->afternoon_in) || in_array($a->afternoon_status, ['present', 'late']))->pluck('teacher_id')->toArray();
             $afternoonAbsentTeachers = (clone $teacherBaseQuery)->whereNotIn('id', $aPresentIds)->get();
+
+            // Leave Requests tracking
+            $pendingLeaveCount = (int)\App\Models\LeaveRequest::where('status', 'pending')->count();
+            $approvedLeavesToday = \App\Models\LeaveRequest::where('status', 'approved')
+                ->whereDate('start_date', '<=', $today)
+                ->whereDate('end_date', '>=', $today)
+                ->with('teacher')
+                ->get();
+            $onLeaveTeacherIds = $approvedLeavesToday->pluck('teacher_id')->toArray();
+            $onLeaveTeachers = $absentTeachers->filter(fn($t) => in_array($t->id, $onLeaveTeacherIds))->values();
+            $unexcusedAbsentTeachers = $absentTeachers->filter(fn($t) => !in_array($t->id, $onLeaveTeacherIds))->values();
+            $onLeaveCount = (int)$onLeaveTeachers->count();
+
+            // Academic Period & Year
+            $activeAcademicYear = \App\Models\AcademicYear::getCurrent();
+            $activeAcademicPeriod = \App\Models\AcademicPeriod::active()->first();
+
+            // Payroll Summary for Current Month
+            $currentMonthStart = now()->startOfMonth();
+            $payrollQuery = \App\Models\Payroll::whereDate('month', $currentMonthStart);
+            $payrollStats = [
+                'total'         => (int)(clone $payrollQuery)->count(),
+                'draft'         => (int)(clone $payrollQuery)->where('status', 'draft')->count(),
+                'approved'      => (int)(clone $payrollQuery)->where('status', 'approved')->count(),
+                'paid'          => (int)(clone $payrollQuery)->where('status', 'paid')->count(),
+                'payout_amount' => (float)(clone $payrollQuery)->sum('net_salary'),
+            ];
 
             // Stats
             $presentCount = (int)$attendance->count();
@@ -95,7 +131,6 @@ class AttendanceController extends Controller
             $totalAdmins = (int)\App\Models\User::count();
             $departments = Department::all();
 
-
             // Apply Filters to the returned lists
             $filter = $request->filter;
             if ($filter === 'present') {
@@ -105,6 +140,9 @@ class AttendanceController extends Controller
                 $absentTeachers = collect();
             } elseif ($filter === 'absent') {
                 $attendance = collect();
+            } elseif ($filter === 'on_leave') {
+                $attendance = collect();
+                $absentTeachers = $onLeaveTeachers;
             } elseif ($filter === 'rfid') {
                 $attendance = $attendance->filter(fn($a) => $a->teacher && $a->teacher->rfidCard !== null)->values();
                 $absentTeachers = $absentTeachers->filter(fn($t) => $t->rfidCard !== null)->values();
@@ -174,6 +212,10 @@ class AttendanceController extends Controller
                     'present_count' => $presentCount,
                     'late_count' => $lateCount,
                     'absent_count' => $absentCount,
+                    'on_leave_count' => $onLeaveCount,
+                    'unexcused_absent_count' => $unexcusedAbsentCount,
+                    'pending_leave_count' => $pendingLeaveCount,
+                    'payroll_stats' => $payrollStats,
                     'total' => $totalTeachers,
                     'total_rfid_teachers' => $totalRfidTeachers,
                     'total_departments' => $totalDepartments,
@@ -190,7 +232,9 @@ class AttendanceController extends Controller
             return view('dashboard', compact(
                 'attendance', 'absentTeachers', 'morningAbsentTeachers', 'afternoonAbsentTeachers', 'presentCount', 'absentCount', 'lateCount',
                 'totalTeachers', 'totalRfidTeachers', 'totalDepartments', 'totalAdmins', 'checkinCount', 'totalScans', 'currentlyCheckedInCount', 
-                'currentlyCheckedOutCount', 'rate', 'trendData', 'topOnTime', 'topLate', 'departments'
+                'currentlyCheckedOutCount', 'rate', 'trendData', 'topOnTime', 'topLate', 'departments',
+                'pendingLeaveCount', 'approvedLeavesToday', 'onLeaveCount', 'unexcusedAbsentCount', 'onLeaveTeachers',
+                'activeAcademicYear', 'activeAcademicPeriod', 'payrollStats', 'department'
             ));
         } catch (\Exception $e) {
             \Log::error("Dashboard Error: " . $e->getMessage() . "\n" . $e->getTraceAsString());

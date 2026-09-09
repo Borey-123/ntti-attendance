@@ -150,11 +150,33 @@
                 elseif ($hour < 17) $greeting = __('Good Afternoon, Administrator');
                 else $greeting = __('Good Evening, Administrator');
             @endphp
-            <h1 id="greetingText" style="display: flex; align-items: center; gap: 0.75rem;">
+            <h1 id="greetingText" style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
                 {{ $greeting }}
                 <span class="hi-badge" style="display: inline-flex; align-items: center; justify-content: center; background: var(--primary); color: #000; font-size: 0.7rem; font-weight: 900; padding: 0.2rem 0.5rem; border-radius: 0.5rem; transform: rotate(12deg); animation: hiBounce 2s ease-in-out infinite;">{{ __('Hello') }}</span>
             </h1>
-            <p>{{ __('You have :count teachers across :depts departments under management.', ['count' => $totalTeachers ?? 0, 'depts' => $totalDepartments ?? 0]) }}</p>
+            <p style="margin-bottom: 0.5rem;">{{ __('You have :count teachers across :depts departments under management.', ['count' => $totalTeachers ?? 0, 'depts' => $totalDepartments ?? 0]) }}</p>
+
+            {{-- Academic Year & Active Period Pill + Pending Leaves Alert --}}
+            <div style="display: flex; align-items: center; gap: 0.65rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                @if(!empty($activeAcademicYear))
+                    <span style="display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(var(--primary-rgb), 0.12); color: var(--primary); border: 1px solid rgba(var(--primary-rgb), 0.28); padding: 0.3rem 0.75rem; border-radius: 999px; font-size: 0.8rem; font-weight: 700;">
+                        <i class="ph ph-graduation-cap" style="font-size:1rem;"></i>
+                        <span>{{ $activeAcademicYear->name_kh ?: $activeAcademicYear->name }}</span>
+                        @if(!empty($activeAcademicPeriod))
+                            <span style="opacity: 0.5;">&bull;</span>
+                            <span style="color: {{ $activeAcademicPeriod->color ?: 'var(--primary)' }};">{{ $activeAcademicPeriod->name_kh ?: $activeAcademicPeriod->name }}</span>
+                        @endif
+                    </span>
+                @endif
+
+                @if(!empty($pendingLeaveCount) && $pendingLeaveCount > 0)
+                    <a href="{{ route('settings.index') }}#leave-tab" style="display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.4); padding: 0.3rem 0.85rem; border-radius: 999px; font-size: 0.8rem; font-weight: 800; text-decoration: none; animation: pulse 2s infinite;" title="{{ __('Review pending leave requests') }}">
+                        <i class="ph ph-clock-countdown" style="font-size:1rem;"></i>
+                        <span>{{ $pendingLeaveCount }} {{ __('Pending Leave Requests') }}</span>
+                        <i class="ph ph-arrow-right" style="font-size:0.8rem;"></i>
+                    </a>
+                @endif
+            </div>
         </div>
 
         {{-- Permanent Recent Scan Card --}}
@@ -205,6 +227,13 @@
             <span class="qa-desc">{{ __('Manage smart cards') }}</span>
         </div>
     </a>
+    <a href="{{ route('payroll.index') }}" class="btn-quick-action">
+        <div class="qa-icon" style="background: rgba(225,29,72,0.1); color: #e11d48;"><i class="ph ph-wallet"></i></div>
+        <div class="qa-text">
+            <span class="qa-title">{{ __('Payroll & KHQR') }}</span>
+            <span class="qa-desc">{{ __('Salaries & Bakong payout') }}</span>
+        </div>
+    </a>
     <a href="{{ route('reports.index') }}" class="btn-quick-action">
         <div class="qa-icon" style="background: rgba(139,92,246,0.1); color: #8b5cf6;"><i class="ph ph-file-pdf"></i></div>
         <div class="qa-text">
@@ -212,6 +241,13 @@
             <span class="qa-desc">{{ __('View and export') }}</span>
         </div>
     </a>
+    <button type="button" onclick="triggerTelegramBriefing(this)" class="btn-quick-action" style="background: var(--bg-card); border: 1px solid var(--border); text-align: left; cursor: pointer; font-family: inherit;">
+        <div class="qa-icon" style="background: rgba(14,165,233,0.1); color: #0ea5e9;"><i class="ph ph-paper-plane-tilt" id="tgBtnIcon"></i></div>
+        <div class="qa-text">
+            <span class="qa-title">{{ __('Telegram Briefing') }}</span>
+            <span class="qa-desc" id="tgBtnDesc">{{ __('Send daily summary') }}</span>
+        </div>
+    </button>
     <a href="{{ route('settings.index') }}" class="btn-quick-action">
         <div class="qa-icon" style="background: rgba(245,158,11,0.1); color: #f59e0b;"><i class="ph ph-heartbeat"></i></div>
         <div class="qa-text">
@@ -267,6 +303,11 @@
                         <div style="font-size:0.7rem; font-weight:800; color:var(--text-muted); margin-bottom:0.5rem; text-transform:uppercase;">{{ __('Recent') }}</div>
                         <div class="psi-tooltip-item"><div class="psi-tooltip-avatar">C</div><span>Rithy S.</span></div>
                     </div>
+                </div>
+                <div class="psi stat-card" id="card-on_leave" onclick="setDashboardFilter('on_leave')" title="{{ __('Approved Leave Today') }}">
+                    <div class="psi-icon" style="background: rgba(139,92,246,0.1); color: #8b5cf6;"><i class="ph ph-suitcase-simple"></i></div>
+                    <div class="psi-val" id="stat-onleave" style="color: #8b5cf6;">{{ $onLeaveCount ?? 0 }}</div>
+                    <div class="psi-label">{{ __('On Leave') }}</div>
                 </div>
                 <div class="psi stat-card" id="card-absent" onclick="showShiftAbsentModal()">
                     <div class="psi-icon" style="background: rgba(239,68,68,0.1); color: #ef4444;"><i class="ph ph-x-circle"></i></div>
@@ -336,13 +377,16 @@
                 <div class="psg-bg-icon"><i class="ph ph-buildings" style="color: #6366f1;"></i></div>
             </div>
 
-            <div class="psg-item stat-card" id="card-admins" onclick="window.location.href='{{ route('settings.index') }}'">
-                <div class="psg-icon-wrap" style="background: linear-gradient(135deg, rgba(var(--primary-rgb),0.15), rgba(var(--primary-rgb),0.05));">
-                    <i class="ph ph-shield-check" style="color: var(--primary);"></i>
+            <div class="psg-item stat-card" id="card-payroll" onclick="window.location.href='{{ route('payroll.index') }}'">
+                <div class="psg-icon-wrap" style="background: linear-gradient(135deg, rgba(225,29,72,0.15), rgba(225,29,72,0.05));">
+                    <i class="ph ph-wallet" style="color: #e11d48;"></i>
                 </div>
-                <div class="psg-val" style="color: var(--primary);"><span id="stat-total-admins">{{ $totalAdmins ?? 0 }}</span> <span class="psg-trend">Safe</span></div>
-                <div class="psg-label">{{ __('System Admins') }}</div>
-                <div class="psg-bg-icon"><i class="ph ph-shield-check" style="color: var(--primary);"></i></div>
+                <div class="psg-val" style="color: #e11d48;">
+                    <span id="stat-payroll-paid">{{ $payrollStats['paid'] ?? 0 }}</span>/<span id="stat-payroll-total">{{ $payrollStats['total'] ?? 0 }}</span>
+                    <span class="psg-trend" style="background:rgba(225,29,72,0.12); color:#e11d48;">{{ ($payrollStats['paid'] ?? 0) > 0 && ($payrollStats['paid'] ?? 0) == ($payrollStats['total'] ?? 0) ? __('Paid') : __('Payroll') }}</span>
+                </div>
+                <div class="psg-label">{{ __('Monthly Payroll') }}</div>
+                <div class="psg-bg-icon"><i class="ph ph-wallet"></i></div>
             </div>
         </div>
     </div>
@@ -418,10 +462,31 @@
             </div>
         </div>
 
-        <form method="GET" action="{{ route('dashboard') }}" class="search-wrapper" style="width: 250px;">
-            <i class="ph ph-magnifying-glass"></i>
-            <input type="text" name="search" id="search-input" class="form-control" style="padding-top: 0.5rem !important; padding-bottom: 0.5rem !important;"
-                   placeholder="{{ __('Search teacher...') }}" value="{{ request('search') }}">
+        <form method="GET" action="{{ route('dashboard') }}" style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            {{-- Department Dropdown Filter --}}
+            <select name="department" id="department-filter" class="form-control" 
+                    style="padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; min-width: 170px; border-radius: 0.75rem; font-size: 0.85rem;"
+                    onchange="this.form.submit()">
+                <option value="">{{ __('All Departments') }}</option>
+                @foreach($departments as $dept)
+                    <option value="{{ $dept->name }}" {{ ($department ?? request('department')) == $dept->name ? 'selected' : '' }}>
+                        {{ app()->getLocale() == 'km' ? ($dept->name_kh ?: $dept->name) : $dept->name }}
+                    </option>
+                @endforeach
+            </select>
+
+            {{-- Search Input --}}
+            <div class="search-wrapper" style="width: 210px;">
+                <i class="ph ph-magnifying-glass"></i>
+                <input type="text" name="search" id="search-input" class="form-control" style="padding-top: 0.5rem !important; padding-bottom: 0.5rem !important;"
+                       placeholder="{{ __('Search teacher...') }}" value="{{ request('search') }}">
+            </div>
+            
+            @if(request('search') || request('department') || request('filter'))
+                <a href="{{ route('dashboard') }}" class="btn btn-secondary btn-sm" style="border-radius: 0.65rem; padding: 0.55rem 0.75rem;" title="{{ __('Reset Filters') }}">
+                    <i class="ph ph-x"></i>
+                </a>
+            @endif
         </form>
     </div>
     <div style="overflow-x:auto; max-height: 550px; overflow-y: auto; position: relative;">
@@ -1927,8 +1992,11 @@
                 shouldAnimate = true;
             }
 
+            const deptSelect = document.getElementById('department-filter');
+            const dept = encodeURIComponent(deptSelect?.value || '');
+
             const filter = activeDashboardFilter;
-            const data   = await window.fetchApi(`/api-web/attendance?search=${search}&filter=${filter}`, {
+            const data   = await window.fetchApi(`/api-web/attendance?search=${search}&filter=${filter}&department=${dept}`, {
                 headers: { 'Accept': 'application/json' }
             });
 
@@ -1957,6 +2025,13 @@
             updateStatValue('stat-present', data.present_count);
             updateStatValue('stat-late', data.late_count);
             updateStatValue('stat-absent', data.absent_count);
+            if (data.on_leave_count !== undefined) updateStatValue('stat-onleave', data.on_leave_count);
+            if (data.payroll_stats !== undefined) {
+                const paidEl = document.getElementById('stat-payroll-paid');
+                const totalEl = document.getElementById('stat-payroll-total');
+                if (paidEl) paidEl.innerText = data.payroll_stats.paid;
+                if (totalEl) totalEl.innerText = data.payroll_stats.total;
+            }
             if(data.morning_absent_teachers) updateShiftAbsentLists(data.morning_absent_teachers, data.afternoon_absent_teachers, data.absent_teachers);
             updateStatValue('stat-total', data.total);
             updateStatValue('stat-checkins', data.checkin_count);
@@ -1987,6 +2062,54 @@
             tbody.innerHTML = html;
         } catch (e) {
             console.error('Poll error:', e);
+        }
+    }
+
+    // ── Instant Trigger Telegram Briefing ─────────
+    async function triggerTelegramBriefing(btn) {
+        if (!confirm('{{ __("Do you want to send today\'s Executive Attendance Briefing to Telegram now?") }}')) {
+            return;
+        }
+
+        const icon = document.getElementById('tgBtnIcon');
+        const desc = document.getElementById('tgBtnDesc');
+        const origIconClass = icon ? icon.className : '';
+        const origDesc = desc ? desc.innerText : '';
+
+        if (btn) btn.disabled = true;
+        if (icon) icon.className = 'ph ph-spinner ph-spin';
+        if (desc) desc.innerText = '{{ __("Sending...") }}';
+
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const res = await fetch('{{ route("settings.telegram.briefing") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token || ''
+                },
+                body: JSON.stringify({ shift: 'auto' })
+            });
+
+            const json = await res.json();
+            if (res.ok && json.status === 'success') {
+                if (desc) desc.innerText = '✓ {{ __("Dispatched!") }}';
+                alert(json.message || '{{ __("Executive Briefing successfully sent to Telegram!") }}');
+            } else {
+                if (desc) desc.innerText = '⚠️ {{ __("Failed") }}';
+                alert(json.message || '{{ __("Failed to send briefing. Please check your Telegram configuration.") }}');
+            }
+        } catch (err) {
+            console.error(err);
+            if (desc) desc.innerText = '⚠️ {{ __("Error") }}';
+            alert('{{ __("Connection error sending Telegram briefing.") }}');
+        } finally {
+            setTimeout(() => {
+                if (btn) btn.disabled = false;
+                if (icon) icon.className = origIconClass;
+                if (desc) desc.innerText = origDesc;
+            }, 3000);
         }
     }
 
