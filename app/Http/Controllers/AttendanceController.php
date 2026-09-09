@@ -81,6 +81,7 @@ class AttendanceController extends Controller
             $onLeaveTeachers = $absentTeachers->filter(fn($t) => in_array($t->id, $onLeaveTeacherIds))->values();
             $unexcusedAbsentTeachers = $absentTeachers->filter(fn($t) => !in_array($t->id, $onLeaveTeacherIds))->values();
             $onLeaveCount = (int)$onLeaveTeachers->count();
+            $unexcusedAbsentCount = (int)$unexcusedAbsentTeachers->count();
 
             // Academic Period & Year
             $activeAcademicYear = \App\Models\AcademicYear::getCurrent();
