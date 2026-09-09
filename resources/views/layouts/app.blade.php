@@ -447,6 +447,17 @@
                     @endif
                 </button>
 
+                {{-- Leave Requests Button --}}
+                @php
+                    $pendingLeaves = \App\Models\LeaveRequest::where('status', 'pending')->count();
+                @endphp
+                <a href="{{ route('leave-requests.index') }}" title="{{ __('Leave Requests') }}" class="hide-mobile" style="background:none; border:1px solid var(--border); color:#a855f7; padding:0.4rem 0.5rem; cursor:pointer; display:flex; align-items:center; font-size:1rem; transition:all 0.15s; position: relative; border-radius: 0.5rem; text-decoration: none; margin-right: 0.2rem;">
+                    <i class="ph ph-calendar-x"></i>
+                    @if($pendingLeaves > 0)
+                        <span style="position: absolute; top: -5px; right: -5px; background: #a855f7; color: white; font-size: 0.6rem; font-weight: 800; padding: 0.1rem 0.35rem; border-radius: 10px; animation: livePulse 2s infinite;">{{ $pendingLeaves }}</span>
+                    @endif
+                </a>
+
                 {{-- Telegram Chats Button --}}
                 <button onclick="openTelegramChatsModal()" title="{{ __('View Recent Chat IDs') }}" class="hide-mobile" style="background:none; border:1px solid var(--border); color:#0088cc; padding:0.4rem 0.5rem; cursor:pointer; display:flex; align-items:center; font-size:1rem; transition:all 0.15s; position: relative;">
                     <i class="ph ph-telegram-logo"></i>
