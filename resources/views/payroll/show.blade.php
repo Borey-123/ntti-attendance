@@ -192,6 +192,83 @@
         {{-- Right Column: Meta & Actions --}}
         <div style="display:flex; flex-direction:column; gap:1.5rem;">
 
+            {{-- 🇰🇭 Bakong KHQR Instant Payout Card --}}
+            <div class="card" style="border-radius:1.5rem; padding:0; border:1px solid rgba(225,29,72,0.3); overflow:hidden; box-shadow:0 12px 30px rgba(225,29,72,0.12); background:var(--bg-card);">
+                {{-- Red KHQR Banner Header --}}
+                <div style="background:linear-gradient(135deg, #e11d48 0%, #be123c 100%); color:#ffffff; padding:1.15rem 1.25rem; display:flex; align-items:center; justify-content:space-between;">
+                    <div style="display:flex; align-items:center; gap:0.6rem;">
+                        <span style="background:#ffffff; color:#be123c; font-weight:900; font-size:0.85rem; padding:0.2rem 0.5rem; border-radius:0.35rem; letter-spacing:0.5px;">KHQR</span>
+                        <div style="font-size:0.88rem; font-weight:800; letter-spacing:0.3px;">BAKONG PAYOUT</div>
+                    </div>
+                    <span style="font-size:0.75rem; background:rgba(255,255,255,0.2); padding:0.25rem 0.6rem; border-radius:99px; font-weight:700;">
+                        {{ $payroll->status === 'paid' ? '✓ PAID' : 'READY TO SCAN' }}
+                    </span>
+                </div>
+
+                <div style="padding:1.5rem; text-align:center;">
+                    {{-- QR Code Container --}}
+                    <div style="background:#ffffff; padding:12px; border-radius:1.25rem; display:inline-block; box-shadow:0 6px 16px rgba(0,0,0,0.08); border:2px solid #f1f5f9; margin-bottom:1rem; position:relative;">
+                        <img src="{{ $khqr['qr_image_url'] }}" alt="Bakong KHQR Code" style="width:190px; height:190px; display:block; border-radius:0.5rem;">
+                        @if($payroll->status === 'paid')
+                        <div style="position:absolute; inset:0; background:rgba(16,185,129,0.85); border-radius:1.25rem; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff;">
+                            <i class="ph ph-check-circle" style="font-size:3rem; margin-bottom:0.25rem;"></i>
+                            <span style="font-weight:900; font-size:1rem; letter-spacing:0.5px;">PAID / រួចរាល់</span>
+                        </div>
+                        @endif
+                    </div>
+
+                    {{-- Amounts (USD & KHR) --}}
+                    <div style="margin-bottom:1rem;">
+                        <div style="font-size:1.6rem; font-weight:900; color:#e11d48; line-height:1.2;">
+                            ${{ number_format($khqr['amount_usd'], 2) }}
+                        </div>
+                        <div style="font-size:0.88rem; font-weight:700; color:var(--text-secondary); margin-top:0.2rem;">
+                            ≈ {{ number_format($khqr['amount_khr']) }} ៛ <span style="font-size:0.75rem; opacity:0.8;">(1$ = {{ number_format($khqr['khr_rate']) }} ៛)</span>
+                        </div>
+                    </div>
+
+                    {{-- Beneficiary Details --}}
+                    <div style="background:rgba(var(--primary-rgb),0.04); border:1px solid var(--border); border-radius:1rem; padding:0.85rem; text-align:left; font-size:0.8rem; margin-bottom:1rem; display:flex; flex-direction:column; gap:0.45rem;">
+                        <div style="display:flex; justify-content:space-between;">
+                            <span style="color:var(--text-muted);">{{ __('Beneficiary') }}:</span>
+                            <strong style="color:var(--text-primary);">{{ $khqr['account_name'] }}</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between;">
+                            <span style="color:var(--text-muted);">{{ __('Bank') }}:</span>
+                            <span style="font-weight:700; color:var(--text-primary);">{{ $khqr['bank_name'] }}</span>
+                        </div>
+                        @if(!empty($payroll->teacher->bank_account_number))
+                        <div style="display:flex; justify-content:space-between;">
+                            <span style="color:var(--text-muted);">{{ __('Account No') }}:</span>
+                            <code style="background:rgba(255,255,255,0.08); padding:0.1rem 0.4rem; border-radius:0.3rem;">{{ $khqr['account_number'] }}</code>
+                        </div>
+                        @endif
+                        <div style="display:flex; justify-content:space-between;">
+                            <span style="color:var(--text-muted);">{{ __('Bakong ID') }}:</span>
+                            <span style="font-weight:700; color:#818cf8; font-size:0.75rem;">{{ $khqr['bakong_id'] }}</span>
+                        </div>
+                    </div>
+
+                    {{-- Banking App Support Notice --}}
+                    <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:1rem; line-height:1.4;">
+                        📲 ស្កេនទូទាត់ជាមួយ App ធនាគារណាក៏បាន <br>
+                        <strong>(ABA, ACLEDA, Wing, Canadia, Bakong...)</strong>
+                    </div>
+
+                    {{-- Actions --}}
+                    <div style="display:flex; gap:0.5rem; justify-content:center;">
+                        <button type="button" onclick="copyKhqrData('{{ addslashes($khqr['khqr_string']) }}')" class="btn btn-secondary" style="border-radius:0.75rem; padding:0.5rem 0.85rem; font-size:0.8rem; font-weight:700;">
+                            <i class="ph ph-copy"></i> {{ __('Copy KHQR String') }}
+                        </button>
+                        @if($payroll->status === 'approved')
+                        <button type="button" onclick="markPaid({{ $payroll->id }}, '{{ addslashes($teacherName) }}')" class="btn btn-primary" style="background:#e11d48; border-color:#e11d48; border-radius:0.75rem; padding:0.5rem 0.85rem; font-size:0.8rem; font-weight:800;">
+                            <i class="ph ph-check"></i> {{ __('Mark Paid via KHQR') }}
+                        </button>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
             {{-- Period & System Info --}}
             <div class="card" style="border-radius:1.5rem; padding:1.5rem; border:1px solid var(--border);">
                 <h4 style="margin:0 0 1.25rem; font-size:0.85rem; font-weight:800; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px;">
@@ -295,6 +372,26 @@ async function markPaid(id, name) {
             alert(data.message || 'Error');
         }
     } catch(err) { alert('Error: ' + err.message); }
+}
+
+function copyKhqrData(str) {
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(str).then(() => {
+            if (window.showToast) window.showToast('{{ __("KHQR String copied to clipboard!") }}', 'success');
+            else alert('KHQR String copied!');
+        });
+    } else {
+        const ta = document.createElement('textarea');
+        ta.value = str;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (window.showToast) window.showToast('{{ __("KHQR String copied to clipboard!") }}', 'success');
+        else alert('KHQR String copied!');
+    }
 }
 </script>
 @endpush

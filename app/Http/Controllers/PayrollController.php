@@ -6,6 +6,7 @@ use App\Models\Payroll;
 use App\Models\PayrollSetting;
 use App\Models\Teacher;
 use App\Models\AcademicPeriod;
+use App\Services\BakongKhqrService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -137,6 +138,7 @@ class PayrollController extends Controller
     {
         $payroll  = Payroll::with(['teacher', 'academicPeriod', 'approvedByUser'])->findOrFail($id);
         $settings = PayrollSetting::getAllMap();
+        $khqr     = BakongKhqrService::generatePayrollKhqr($payroll);
 
         // Get attendance breakdown for the month
         $attendances = \App\Models\Attendance::where('teacher_id', $payroll->teacher_id)
@@ -147,7 +149,7 @@ class PayrollController extends Controller
             ->orderBy('date')
             ->get();
 
-        return view('payroll.show', compact('payroll', 'settings', 'attendances'));
+        return view('payroll.show', compact('payroll', 'settings', 'attendances', 'khqr'));
     }
 
     // ─── Approve payroll ─────────────────────────────────────
@@ -196,6 +198,7 @@ class PayrollController extends Controller
     {
         $payroll     = Payroll::with(['teacher', 'academicPeriod', 'approvedByUser'])->findOrFail($id);
         $settings    = PayrollSetting::getAllMap();
+        $khqr        = BakongKhqrService::generatePayrollKhqr($payroll);
         $attendances = \App\Models\Attendance::where('teacher_id', $payroll->teacher_id)
             ->whereBetween('date', [
                 $payroll->month->copy()->startOfMonth(),
@@ -204,7 +207,7 @@ class PayrollController extends Controller
             ->orderBy('date')
             ->get();
 
-        $pdf = Pdf::loadView('payroll.pdf_slip', compact('payroll', 'settings', 'attendances'))
+        $pdf = Pdf::loadView('payroll.pdf_slip', compact('payroll', 'settings', 'attendances', 'khqr'))
                   ->setPaper('a4', 'portrait');
 
         return $pdf->download("payslip_{$payroll->teacher->employee_id}_{$payroll->month->format('Y_m')}.pdf");

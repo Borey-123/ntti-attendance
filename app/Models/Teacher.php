@@ -24,6 +24,10 @@ class Teacher extends Model
         'face_descriptor',
         'base_salary',
         'position_rank',
+        'bank_name',
+        'bank_account_number',
+        'bank_account_name',
+        'bakong_account_id',
     ];
 
     protected $casts = [

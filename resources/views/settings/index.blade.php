@@ -886,6 +886,27 @@ input:checked + .slider:before { transform: translateX(24px); background-color: 
                         </button>
                     </div>
 
+                    {{-- 📊 Daily Executive Attendance Briefing --}}
+                    <div style="margin-top: 1.25rem; background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.08), rgba(0, 136, 204, 0.06)); padding: 1.5rem; border-radius: 1rem; border: 1px solid rgba(var(--primary-rgb), 0.3); display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                                <span style="background: var(--primary); color: #000; font-size: 0.72rem; font-weight: 900; padding: 0.15rem 0.5rem; border-radius: 99px;">SMART AI</span>
+                                <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: var(--text-primary);">{{ __('Daily Executive Briefing (របាយការណ៍សង្ខេបជូនថ្នាក់ដឹកនាំ)') }}</h4>
+                            </div>
+                            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);">
+                                {{ __('Automated morning (08:15 AM) and afternoon (02:15 PM) visual attendance infographics pushed to leadership.') }}
+                            </p>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                            <button type="button" id="btnBriefingMorning" class="btn-secondary" onclick="triggerExecutiveBriefing('morning')" style="color: var(--primary); border-color: var(--primary); font-weight: 700;">
+                                <i class="ph ph-sun-horizon"></i> {{ __('Send Morning Briefing') }}
+                            </button>
+                            <button type="button" id="btnBriefingAfternoon" class="btn-secondary" onclick="triggerExecutiveBriefing('afternoon')" style="color: #0ea5e9; border-color: #0ea5e9; font-weight: 700;">
+                                <i class="ph ph-sun"></i> {{ __('Send Afternoon Briefing') }}
+                            </button>
+                        </div>
+                    </div>
+
                     <div id="telegramTestResult" style="display:none; margin-top: 1rem; padding: 1rem; border-radius: 0.75rem; font-size: 0.85rem;"></div>
 
                     <hr style="border: 0; border-top: 1px solid var(--border); margin: 2rem 0;">
@@ -2174,6 +2195,54 @@ async function sendTelegramTest() {
         btn.innerHTML = '<i class="ph ph-paper-plane-tilt"></i> {{ __("Send Test Message") }}';
     }
 }
+
+async function triggerExecutiveBriefing(shift) {
+    const btnId = shift === 'morning' ? 'btnBriefingMorning' : 'btnBriefingAfternoon';
+    const btn = document.getElementById(btnId);
+    const originalHtml = btn.innerHTML;
+    const resultBox = document.getElementById('telegramTestResult');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> {{ __("Broadcasting...") }}';
+    resultBox.style.display = 'none';
+
+    try {
+        const response = await fetch("{{ route('settings.telegram.briefing') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ shift: shift })
+        });
+        const data = await response.json();
+
+        resultBox.style.display = 'block';
+        if (data.status === 'success' || data.success) {
+            resultBox.style.background = 'rgba(16, 185, 129, 0.12)';
+            resultBox.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+            resultBox.style.color = '#10b981';
+            resultBox.innerHTML = '<strong><i class="ph ph-check-circle"></i> {{ __("Executive Briefing Dispatched!") }}</strong> ' + (data.message || 'Briefing sent successfully.');
+            if (window.showToast) window.showToast('{{ __("Executive Briefing dispatched to Telegram!") }}', 'success');
+        } else {
+            resultBox.style.background = 'rgba(239, 68, 68, 0.12)';
+            resultBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+            resultBox.style.color = '#ef4444';
+            resultBox.innerHTML = '<strong><i class="ph ph-warning-circle"></i> {{ __("Dispatch Failed:") }}</strong> ' + (data.message || 'Check bot settings.');
+        }
+    } catch (err) {
+        resultBox.style.display = 'block';
+        resultBox.style.background = 'rgba(239, 68, 68, 0.12)';
+        resultBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+        resultBox.style.color = '#ef4444';
+        resultBox.innerHTML = '<strong><i class="ph ph-warning-circle"></i> Error:</strong> ' + err.message;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
+}
+
 
 async function fetchTelegramChats() {
     try {

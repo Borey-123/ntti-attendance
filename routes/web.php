@@ -195,6 +195,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/system-cleanup', [SettingController::class, 'runSystemCleanup'])->name('settings.cleanup');
     Route::get('/settings/telegram-chats', [SettingController::class, 'fetchTelegramChats'])->name('settings.telegram.chats');
     Route::post('/settings/telegram-test', [SettingController::class, 'sendTelegramTestMessage'])->name('settings.telegram.test');
+    Route::post('/settings/telegram-briefing', [SettingController::class, 'sendTelegramExecutiveBriefing'])->name('settings.telegram.briefing');
     Route::post('/settings/clear-cache', [SettingController::class, 'clearSystemCache'])->name('settings.clear-cache');
     Route::post('/settings/appearance', [SettingController::class, 'updateAppearance'])->name('settings.appearance.update');
     Route::post('/settings/admin', [SettingController::class, 'storeAdmin'])->name('settings.admin.store');

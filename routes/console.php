@@ -17,3 +17,6 @@ Schedule::command('telegram:monthly-report')->monthlyOn(1, '08:00');
 Schedule::command('telegram:morning-reminder')->dailyAt('07:30');
 Schedule::command('telegram:absent-alert')->dailyAt('18:45');
 Schedule::command('telegram:late-warning')->weeklyOn(5, '17:00');
+Schedule::command('telegram:executive-briefing --shift=morning')->dailyAt('08:15');
+Schedule::command('telegram:executive-briefing --shift=afternoon')->dailyAt('14:15');
+

@@ -173,6 +173,48 @@
     </tbody>
 </table>
 
+{{-- 🇰🇭 Bakong KHQR Payout Voucher Block --}}
+<div style="margin: 14px 0 10px; border: 1.5px solid #e11d48; border-radius: 6px; overflow: hidden; background: #fff;">
+    <div style="background: #e11d48; color: #fff; padding: 4px 10px; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-weight: 900; font-size: 8.5pt; letter-spacing: 0.5px;">🇰🇭 BAKONG KHQR DIRECT SALARY PAYOUT / ការទូទាត់ប្រាក់បៀវត្សរ៍តាម KHQR</span>
+        <span style="font-size: 7.5pt; font-weight: 700; background: rgba(255,255,255,0.25); padding: 1px 6px; border-radius: 99px;">
+            {{ $payroll->status === 'paid' ? 'PAID' : 'SCAN TO PAY' }}
+        </span>
+    </div>
+    <div style="padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="flex: 1; font-size: 8pt; color: #334155;">
+            <div style="margin-bottom: 2px;">
+                <span style="color: #64748b; font-weight: 700;">Beneficiary / ឈ្មោះម្ចាស់គណនី:</span>
+                <strong style="color: #0f172a;">{{ $khqr['account_name'] ?? $payroll->teacher->name }}</strong>
+            </div>
+            <div style="margin-bottom: 2px;">
+                <span style="color: #64748b; font-weight: 700;">Bank / ធនាគារ:</span>
+                <strong>{{ $khqr['bank_name'] ?? ($payroll->teacher->bank_name ?: 'Bakong / ABA / ACLEDA') }}</strong>
+                @if(!empty($payroll->teacher->bank_account_number))
+                    &nbsp;|&nbsp; <span style="color: #64748b; font-weight: 700;">A/C:</span> <strong>{{ $payroll->teacher->bank_account_number }}</strong>
+                @endif
+            </div>
+            <div style="margin-bottom: 2px;">
+                <span style="color: #64748b; font-weight: 700;">Bakong ID:</span>
+                <code style="color: #1e40af; font-weight: 700;">{{ $khqr['bakong_id'] ?? 'N/A' }}</code>
+            </div>
+            <div style="margin-top: 4px; font-size: 8.5pt;">
+                <span style="color: #e11d48; font-weight: 900; font-size: 10pt;">${{ number_format($payroll->net_salary, 2) }}</span>
+                &nbsp;≈&nbsp;
+                <span style="color: #059669; font-weight: 800;">{{ number_format(($khqr['amount_khr'] ?? round($payroll->net_salary * 4100, -2))) }} ៛</span>
+                <span style="font-size: 7pt; color: #94a3b8;">(Rate: 1$ = {{ number_format($khqr['khr_rate'] ?? 4100) }} ៛)</span>
+            </div>
+            <div style="font-size: 7pt; color: #94a3b8; margin-top: 3px; font-style: italic;">
+                Scan with any Cambodian Banking App (ABA, ACLEDA, Wing, Canadia, Sathapana, etc.)
+            </div>
+        </div>
+        <div style="text-align: center; margin-left: 12px; flex-shrink: 0;">
+            <img src="{{ $khqr['qr_image_url'] ?? '' }}" alt="KHQR" style="width: 85px; height: 85px; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px; background: #fff;">
+            <div style="font-size: 6.5pt; font-weight: 900; color: #e11d48; letter-spacing: 0.5px; margin-top: 1px;">KHQR</div>
+        </div>
+    </div>
+</div>
+
 {{-- Signature --}}
 <div class="footer">
     <div class="sig-box">

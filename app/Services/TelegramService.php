@@ -438,4 +438,183 @@ class TelegramService
 
         return self::sendMessage($leave->teacher->telegram_chat_id, $msg, $keyboard);
     }
+
+    /**
+     * Send Daily Executive Briefing (Morning / Afternoon) to School Leadership & Admins.
+     */
+    public static function sendDailyExecutiveBriefing(string $shift = 'auto'): array
+    {
+        $botToken = Setting::getValue('telegram_bot_token') ?: env('TELEGRAM_BOT_TOKEN');
+        if (!$botToken) {
+            return ['success' => false, 'recipients' => 0, 'message' => 'Telegram Bot Token not configured'];
+        }
+
+        $now = Carbon::now();
+        $todayDate = $now->format('Y-m-d');
+        $displayDate = $now->format('l, d M Y');
+
+        // Determine shift if auto
+        if ($shift === 'auto') {
+            $shift = ($now->hour < 12) ? 'morning' : 'afternoon';
+        }
+
+        $shiftLabel = match(strtolower($shift)) {
+            'morning' => '🌅 វេនព្រឹក (MORNING SHIFT)',
+            'afternoon' => '☀️ វេនរសៀល (AFTERNOON SHIFT)',
+            default => '🏛️ ប្រចាំថ្ងៃ (DAILY FULL SUMMARY)',
+        };
+
+        // 1. Fetch data
+        $activeTeachers = Teacher::where('status', 'active')->get();
+        $totalStaff = $activeTeachers->count();
+        if ($totalStaff === 0) {
+            return ['success' => false, 'recipients' => 0, 'message' => 'No active teachers found in system'];
+        }
+
+        $attendances = Attendance::whereDate('date', $todayDate)->get()->keyBy('teacher_id');
+
+        $activeLeaves = LeaveRequest::where('status', 'approved')
+            ->whereDate('start_date', '<=', $todayDate)
+            ->whereDate('end_date', '>=', $todayDate)
+            ->with('teacher')
+            ->get();
+        $leaveTeacherIds = $activeLeaves->pluck('teacher_id')->toArray();
+
+        // 2. Compute attendance metrics
+        $presentCount = 0;
+        $onTimeCount  = 0;
+        $lateCount    = 0;
+        $totalLateMinutes = 0;
+        $lateTeachers = [];
+        $absentTeachers = [];
+
+        foreach ($activeTeachers as $teacher) {
+            $att = $attendances->get($teacher->id);
+            $hasCheckedIn = false;
+            $isLate = false;
+            $minsLate = 0;
+
+            if ($att) {
+                if (strtolower($shift) === 'morning') {
+                    $hasCheckedIn = !empty($att->morning_in);
+                    $isLate = ($att->morning_status === 'late');
+                    $minsLate = (int)($att->morning_late_minutes ?? 0);
+                } elseif (strtolower($shift) === 'afternoon') {
+                    $hasCheckedIn = !empty($att->afternoon_in);
+                    $isLate = ($att->afternoon_status === 'late');
+                    $minsLate = (int)($att->afternoon_late_minutes ?? 0);
+                } else {
+                    $hasCheckedIn = (!empty($att->morning_in) || !empty($att->afternoon_in));
+                    $isLate = ($att->morning_status === 'late' || $att->afternoon_status === 'late');
+                    $minsLate = (int)(($att->morning_late_minutes ?? 0) + ($att->afternoon_late_minutes ?? 0));
+                }
+            }
+
+            if ($hasCheckedIn) {
+                $presentCount++;
+                if ($isLate) {
+                    $lateCount++;
+                    $totalLateMinutes += $minsLate;
+                    $lateTeachers[] = "• " . ($teacher->name_kh ?: $teacher->name) . " (+{$minsLate}m)";
+                } else {
+                    $onTimeCount++;
+                }
+            } else {
+                if (!in_array($teacher->id, $leaveTeacherIds)) {
+                    $absentTeachers[] = "• " . ($teacher->name_kh ?: $teacher->name) . " (" . ($teacher->department ?: 'N/A') . ")";
+                }
+            }
+        }
+
+        $leaveCount = count($leaveTeacherIds);
+        $absentCount = max(0, $totalStaff - $presentCount - $leaveCount);
+        $ratePct = $totalStaff > 0 ? round(($presentCount / $totalStaff) * 100) : 0;
+        $progressBar = str_repeat('█', (int)($ratePct / 10)) . str_repeat('░', 10 - (int)($ratePct / 10));
+
+        // 3. Department breakdown
+        $depts = $activeTeachers->groupBy('department');
+        $deptLines = [];
+        foreach ($depts as $deptName => $deptStaff) {
+            $deptTotal = $deptStaff->count();
+            $deptPresent = $deptStaff->filter(function($t) use ($attendances, $shift) {
+                $att = $attendances->get($t->id);
+                if (!$att) return false;
+                if ($shift === 'morning') return !empty($att->morning_in);
+                if ($shift === 'afternoon') return !empty($att->afternoon_in);
+                return !empty($att->morning_in) || !empty($att->afternoon_in);
+            })->count();
+            $deptPct = $deptTotal > 0 ? round(($deptPresent / $deptTotal) * 100) : 0;
+            $deptIcon = ($deptPct >= 90) ? '🟢' : (($deptPct >= 70) ? '🟡' : '🔴');
+            $deptLabel = !empty($deptName) ? $deptName : 'General';
+            $deptLines[] = "{$deptIcon} *{$deptLabel}:* {$deptPct}% ({$deptPresent}/{$deptTotal})";
+        }
+
+        // 4. Construct message
+        $uName = Setting::getValue('university_name', 'NTTI');
+        $msg = "🏛️ *{$uName}*\n"
+             . "📊 *EXECUTIVE ATTENDANCE BRIEFING*\n"
+             . "━━━━━━━━━━━━━━━━━━━━\n"
+             . "🗓️ *កាលបរិច្ឆេទ:* {$displayDate}\n"
+             . "⏱️ *វេន:* *{$shiftLabel}*\n"
+             . "🕒 *ម៉ោងបង្កើត:* " . $now->format('h:i A') . "\n\n"
+             . "📈 *អត្រាវត្តមានសរុប (Attendance Rate):*\n"
+             . "`{$progressBar}` *{$ratePct}%*\n\n"
+             . "👥 *ស្ថិតិបុគ្គលិកបង្រៀន (Staff Metrics):*\n"
+             . "• 👨‍🏫 គ្រូសរុប (Total Staff): *{$totalStaff} នាក់*\n"
+             . "• 🟢 មានវត្តមាន (Present): *{$presentCount} នាក់*\n"
+             . "• ⏰ មកទាន់ពេល (On-Time): *{$onTimeCount} នាក់*\n"
+             . "• ⚠️ មកយឺត (Late): *{$lateCount} នាក់*" . ($lateCount > 0 ? " (សរុប {$totalLateMinutes} នាទី)" : "") . "\n"
+             . "• 📝 សុំច្បាប់អនុម័ត (Leave): *{$leaveCount} នាក់*\n"
+             . "• ❌ អវត្តមាន (Absent/Unnotified): *{$absentCount} នាក់*\n\n"
+             . "🏢 *តាមដេប៉ាតឺម៉ង់ (Department Breakdown):*\n"
+             . implode("\n", array_slice($deptLines, 0, 6)) . "\n";
+
+        if (!empty($lateTeachers) && count($lateTeachers) <= 5) {
+            $msg .= "\n⚠️ *គ្រូមកយឺត (Late Staff):*\n" . implode("\n", $lateTeachers) . "\n";
+        }
+
+        if (!empty($absentTeachers) && count($absentTeachers) <= 5) {
+            $msg .= "\n🚨 *ខ្វះវត្តមាន (Absent Staff):*\n" . implode("\n", $absentTeachers) . "\n";
+        }
+
+        $msg .= "\n━━━━━━━━━━━━━━━━━━━━\n"
+              . "🤖 _ប្រព័ន្ធស្វ័យប្រវត្តិនីយកម្ម NTTI Smart Attendance_";
+
+        // 5. Action Buttons (Live Monitor & Dashboard)
+        $appUrl = config('app.url', url('/'));
+        $keyboard = [
+            'inline_keyboard' => [
+                [
+                    ['text' => '🖥️ បើក Live Monitor', 'url' => url('/live')],
+                    ['text' => '📊 មើល Dashboard', 'url' => url('/dashboard')],
+                ]
+            ]
+        ];
+
+        // 6. Broadcast to Channel & Admins
+        $sentCount = 0;
+        $channelId = Setting::getValue('telegram_chat_id');
+        if (!empty($channelId)) {
+            if (self::sendMessage($channelId, $msg, $keyboard)) {
+                $sentCount++;
+            }
+        }
+
+        $admins = \App\Models\User::whereNotNull('telegram_chat_id')->where('telegram_chat_id', '!=', '')->get();
+        foreach ($admins as $admin) {
+            if ($admin->telegram_chat_id != $channelId) {
+                if (self::sendMessage($admin->telegram_chat_id, $msg, $keyboard)) {
+                    $sentCount++;
+                }
+            }
+        }
+
+        return [
+            'success' => $sentCount > 0,
+            'recipients' => $sentCount,
+            'message' => $sentCount > 0 ? "Dispatched to {$sentCount} destination(s)" : "No recipients received message (check Chat ID configuration)",
+            'preview' => $msg
+        ];
+    }
 }
+

@@ -770,6 +770,30 @@ class SettingController extends Controller
     }
 
     /**
+     * Send or test dispatch of Daily Telegram Executive Briefing on demand.
+     */
+    public function sendTelegramExecutiveBriefing(Request $request)
+    {
+        $shift = $request->input('shift', 'auto');
+        $res = \App\Services\TelegramService::sendDailyExecutiveBriefing($shift);
+
+        if ($res['success']) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => "Executive Briefing successfully dispatched to {$res['recipients']} recipient(s)!",
+                'data'    => $res,
+            ]);
+        }
+
+        return response()->json([
+            'status'  => 'error',
+            'message' => $res['message'] ?? 'Failed to send Executive Briefing. Check Telegram configuration.',
+            'data'    => $res,
+        ], 400);
+    }
+
+
+    /**
      * One-click clear application and view caches.
      */
     public function clearSystemCache()

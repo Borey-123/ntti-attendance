@@ -323,6 +323,39 @@
         background: rgba(34, 197, 94, 0.08);
     }
 
+    /* ── 3D Digital Card Studio ── */
+    .studio-card-wrapper {
+        width: 380px;
+        height: 240px;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        user-select: none;
+    }
+    .studio-card-wrapper.is-flipped {
+        transform: rotateY(180deg);
+    }
+    .studio-card-face {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        border-radius: 14px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.1);
+        overflow: hidden;
+        background: #ffffff;
+        border: 1px solid rgba(0,0,0,0.12);
+        box-sizing: border-box;
+        font-family: 'Battambang', 'Inter', system-ui, sans-serif;
+    }
+    .studio-card-back {
+        transform: rotateY(180deg);
+        background: #ffffff;
+    }
+
     @media print {
         @page {
             size: A4 portrait;
@@ -804,8 +837,11 @@
                     <button class="action-dropdown-item" onclick="openResetPinModal({{ $teacher->id }}, '{{ addslashes($teacher->name) }}')">
                         <i class="ph ph-key" style="color:#10b981;"></i> {{ __('Reset Portal PIN') }}
                     </button>
+                    <button class="action-dropdown-item" onclick="openIdCardStudio({{ $teacher->id }})">
+                        <i class="ph ph-identification-card" style="color:#3b82f6;"></i> {{ __('Digital ID Card Studio') }}
+                    </button>
                     <button class="action-dropdown-item" onclick="printTeacherCard({{ $teacher->id }})">
-                        <i class="ph ph-printer" style="color:#3b82f6;"></i> {{ __('Print ID Card') }}
+                        <i class="ph ph-printer" style="color:#64748b;"></i> {{ __('Quick Print Card') }}
                     </button>
                     <button class="action-dropdown-item" onclick="printQrCode('{{ $teacher->employee_id }}', '{{ addslashes($teacher->name) }}')">
                         <i class="ph ph-qr-code" style="color:#a855f7;"></i> {{ __('Print QR Code') }}
@@ -905,6 +941,44 @@
                     <input type="text" name="position_rank" class="form-control" placeholder="e.g. Senior Lecturer, Full Professor">
                 </div>
             </div>
+
+            {{-- 🇰🇭 Banking & Bakong Payout Info --}}
+            <div style="background: rgba(225,29,72,0.04); border: 1px dashed rgba(225,29,72,0.3); border-radius: 1rem; padding: 1rem; margin-bottom: 1.25rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.85rem;">
+                    <span style="background: #e11d48; color: #fff; font-size: 0.7rem; font-weight: 900; padding: 0.15rem 0.4rem; border-radius: 0.3rem;">KHQR</span>
+                    <strong style="font-size: 0.88rem; color: #e11d48;">{{ __('Banking & Bakong Salary Payout') }}</strong>
+                </div>
+                <div class="d-flex gap-4" style="margin-bottom: 0.75rem;">
+                    <div class="form-group" style="flex:1; margin-bottom: 0;">
+                        <label>{{ __('Bank Name') }}</label>
+                        <select name="bank_name" class="form-control" style="background-color: var(--bg-dark);">
+                            <option value="">{{ __('Select Bank...') }}</option>
+                            <option value="ABA Bank">ABA Bank</option>
+                            <option value="ACLEDA Bank">ACLEDA Bank</option>
+                            <option value="Canadia Bank">Canadia Bank</option>
+                            <option value="Wing Bank">Wing Bank</option>
+                            <option value="Sathapana Bank">Sathapana Bank</option>
+                            <option value="Bakong">Bakong (NBC)</option>
+                            <option value="Other">{{ __('Other Bank') }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1; margin-bottom: 0;">
+                        <label>{{ __('Bank Account No') }}</label>
+                        <input type="text" name="bank_account_number" class="form-control" placeholder="e.g. 001 234 567">
+                    </div>
+                </div>
+                <div class="d-flex gap-4">
+                    <div class="form-group" style="flex:1; margin-bottom: 0;">
+                        <label>{{ __('Account Holder Name') }} <small style="color:var(--text-muted);">(Latin)</small></label>
+                        <input type="text" name="bank_account_name" class="form-control" placeholder="e.g. CHAN BOREY">
+                    </div>
+                    <div class="form-group" style="flex:1; margin-bottom: 0;">
+                        <label>{{ __('Bakong Account ID') }}</label>
+                        <input type="text" name="bakong_account_id" class="form-control" placeholder="e.g. chan_borey@aclb">
+                    </div>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label>{{ __('Profile Photo') }}</label>
                 <input type="file" name="photo" id="add_photo" class="form-control" accept="image/*" onchange="initCropper(this)">
@@ -1020,6 +1094,44 @@
                     <input type="text" id="edit_position_rank" name="position_rank" class="form-control" placeholder="e.g. Senior Lecturer, Full Professor">
                 </div>
             </div>
+
+            {{-- 🇰🇭 Banking & Bakong Payout Info --}}
+            <div style="background: rgba(225,29,72,0.04); border: 1px dashed rgba(225,29,72,0.3); border-radius: 1rem; padding: 1rem; margin-bottom: 1.25rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.85rem;">
+                    <span style="background: #e11d48; color: #fff; font-size: 0.7rem; font-weight: 900; padding: 0.15rem 0.4rem; border-radius: 0.3rem;">KHQR</span>
+                    <strong style="font-size: 0.88rem; color: #e11d48;">{{ __('Banking & Bakong Salary Payout') }}</strong>
+                </div>
+                <div class="d-flex gap-4" style="margin-bottom: 0.75rem;">
+                    <div class="form-group" style="flex:1; margin-bottom: 0;">
+                        <label>{{ __('Bank Name') }}</label>
+                        <select id="edit_bank_name" name="bank_name" class="form-control" style="background-color: var(--bg-dark);">
+                            <option value="">{{ __('Select Bank...') }}</option>
+                            <option value="ABA Bank">ABA Bank</option>
+                            <option value="ACLEDA Bank">ACLEDA Bank</option>
+                            <option value="Canadia Bank">Canadia Bank</option>
+                            <option value="Wing Bank">Wing Bank</option>
+                            <option value="Sathapana Bank">Sathapana Bank</option>
+                            <option value="Bakong">Bakong (NBC)</option>
+                            <option value="Other">{{ __('Other Bank') }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1; margin-bottom: 0;">
+                        <label>{{ __('Bank Account No') }}</label>
+                        <input type="text" id="edit_bank_account_number" name="bank_account_number" class="form-control" placeholder="e.g. 001 234 567">
+                    </div>
+                </div>
+                <div class="d-flex gap-4">
+                    <div class="form-group" style="flex:1; margin-bottom: 0;">
+                        <label>{{ __('Account Holder Name') }} <small style="color:var(--text-muted);">(Latin)</small></label>
+                        <input type="text" id="edit_bank_account_name" name="bank_account_name" class="form-control" placeholder="e.g. CHAN BOREY">
+                    </div>
+                    <div class="form-group" style="flex:1; margin-bottom: 0;">
+                        <label>{{ __('Bakong Account ID') }}</label>
+                        <input type="text" id="edit_bakong_account_id" name="bakong_account_id" class="form-control" placeholder="e.g. chan_borey@aclb">
+                    </div>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label>{{ __('Profile Photo') }} <span style="font-size: 0.8rem; color: var(--text-secondary);">({{ __('Leave blank to keep existing') }})</span></label>
                 <div id="edit_photo_preview_container" style="margin-bottom: 0.75rem; display: none; align-items: center; gap: 1rem;">
@@ -1145,9 +1257,71 @@
     </div>
 </div>
 
+<!-- 🪪 Digital Teacher ID Card Studio Modal -->
+<div class="modal-overlay" id="idCardStudioModal" style="z-index: 1000000;">
+    <div class="modal-content" style="max-width: 680px; padding: 2rem; border-radius: 2rem; background: var(--bg-card); border: 1px solid var(--border);">
+        <div class="modal-header" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+                <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(59, 130, 246, 0.12); color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                    <i class="ph ph-identification-card"></i>
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">
+                        {{ __('Digital ID Card Studio') }}
+                    </h3>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">
+                        {{ __('Standard CR80 Smart PVC Card with NFC/RFID & Dynamic QR') }}
+                    </div>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeModal('idCardStudioModal')">&times;</button>
+        </div>
+
+        {{-- 3D Interactive Card Stage --}}
+        <div style="perspective: 1200px; display: flex; justify-content: center; margin: 1.5rem 0 1.75rem;">
+            <div id="studioCardFlipWrapper" class="studio-card-wrapper" onclick="flipStudioCard()" title="{{ __('Click to flip card') }}">
+                {{-- Front Face --}}
+                <div class="studio-card-face studio-card-front" id="studioCardFront">
+                    {{-- Dynamically Injected --}}
+                </div>
+                {{-- Back Face --}}
+                <div class="studio-card-face studio-card-back" id="studioCardBack">
+                    {{-- Dynamically Injected --}}
+                </div>
+            </div>
+        </div>
+
+        {{-- Hint & Flip Toggle --}}
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <button type="button" onclick="flipStudioCard()" class="btn-secondary" style="border-radius: 999px; padding: 0.5rem 1.25rem; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem; color: #3b82f6; border-color: rgba(59, 130, 246, 0.4);">
+                <i class="ph ph-arrows-clockwise" id="flipIcon"></i> <span id="flipButtonText">{{ __('Flip to Back Side (បង្វិលមើលផ្នែកខាងក្រោយ)') }}</span>
+            </button>
+        </div>
+
+        {{-- Action Bar --}}
+        <div style="display: flex; gap: 0.75rem; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1.25rem; flex-wrap: wrap;">
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" onclick="downloadCardImage('front')" class="btn-secondary" style="border-radius: 0.85rem; padding: 0.6rem 1rem; font-size: 0.82rem; font-weight: 700;">
+                    <i class="ph ph-image"></i> {{ __('Save Front PNG') }}
+                </button>
+                <button type="button" onclick="downloadCardImage('back')" class="btn-secondary" style="border-radius: 0.85rem; padding: 0.6rem 1rem; font-size: 0.82rem; font-weight: 700;">
+                    <i class="ph ph-image"></i> {{ __('Save Back PNG') }}
+                </button>
+            </div>
+            <div style="display: flex; gap: 0.65rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('idCardStudioModal')">{{ __('Close') }}</button>
+                <button type="button" id="btnPrintCurrentCard" onclick="printStudioCard()" class="btn btn-primary" style="border-radius: 0.85rem; font-weight: 800; padding: 0.65rem 1.35rem; background: #3b82f6; border-color: #3b82f6; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);">
+                    <i class="ph ph-printer" style="font-size: 1.15rem;"></i> {{ __('Print CR80 Card') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
     let currentCropper = null;
     let croppedBlob = null;
@@ -1293,6 +1467,10 @@
             document.getElementById('edit_is_geofence_exempt').checked = !!teacher.is_geofence_exempt;
             document.getElementById('edit_base_salary').value = teacher.base_salary ? parseFloat(teacher.base_salary).toFixed(2) : '';
             document.getElementById('edit_position_rank').value = teacher.position_rank || '';
+            document.getElementById('edit_bank_name').value = teacher.bank_name || '';
+            document.getElementById('edit_bank_account_number').value = teacher.bank_account_number || '';
+            document.getElementById('edit_bank_account_name').value = teacher.bank_account_name || '';
+            document.getElementById('edit_bakong_account_id').value = teacher.bakong_account_id || '';
 
             // Photo preview
             const editForm = document.getElementById('editTeacherForm');
@@ -1470,82 +1648,238 @@
 
     function generateCardHtml(teacher) {
         const deptLabel = window.transDept ? window.transDept(teacher.department) : teacher.department;
-        const posInfo = getPositionTitles(teacher.position);
+        const posInfo = getPositionTitles(teacher.position_rank || teacher.position);
         const photoUrl = teacher.photo_url || (teacher.photo ? (teacher.photo.startsWith('http') || teacher.photo.startsWith('/') ? teacher.photo : '/' + teacher.photo) : null);
-
-        const buildingSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v8h20v-8a2 2 0 0 0-2-2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>`;
-        const envelopeSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`;
-        const phoneSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
-        const briefcaseSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
-        const footerPeopleSvg = `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+        const qrVerificationUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=2&data=` + encodeURIComponent(window.location.origin + '/portal?verify_emp=' + teacher.employee_id);
 
         return `
-            <div class="id-card">
-                <div class="id-card-header">
-                    <div class="id-card-header-left">
-                        ${universityLogo ? `<img src="${universityLogo}" class="id-card-logo" alt="Logo">` : ''}
-                        <div class="id-card-header-titles">
-                            <div class="id-card-univ-name">${universityNameKh}</div>
-                            <div class="id-card-sub-name">${universityName ? universityName.toUpperCase() : 'NATIONAL TECHNICAL TRAINING INSTITUTE'}</div>
+            <div class="id-card" id="card_front_${teacher.id}" style="width:85.6mm; height:54mm; border:1.5px solid #0f2942; border-radius:3.5mm; box-sizing:border-box; background:#ffffff; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; font-family:'Battambang','Inter',system-ui,sans-serif;">
+                {{-- Top Header --}}
+                <div style="background:linear-gradient(135deg, #0f2942 0%, #1e3a8a 100%); color:#ffffff; padding:1.8mm 3.2mm; display:flex; align-items:center; justify-content:space-between; border-bottom:1.5px solid #d97706;">
+                    <div style="display:flex; align-items:center; gap:2mm;">
+                        ${universityLogo ? `<img src="${universityLogo}" style="width:7.5mm; height:7.5mm; border-radius:50%; object-fit:cover; border:1px solid #ffffff; background:#ffffff;" alt="Logo">` : ''}
+                        <div>
+                            <div style="font-size:6.2pt; font-weight:900; line-height:1.2; font-family:'Battambang',sans-serif; color:#ffffff;">${universityNameKh}</div>
+                            <div style="font-size:4.6pt; font-weight:700; color:#cbd5e1; letter-spacing:0.3px; text-transform:uppercase;">${universityName ? universityName.toUpperCase() : 'NATIONAL TECHNICAL TRAINING INSTITUTE'}</div>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <span style="background:rgba(217,119,6,0.25); border:1px solid #d97706; color:#fef3c7; font-size:4.2pt; font-weight:900; padding:0.4mm 1.6mm; border-radius:0.8mm; text-transform:uppercase;">FACULTY</span>
+                    </div>
+                </div>
+
+                {{-- Middle Body --}}
+                <div style="padding:2.2mm 3.2mm; display:flex; gap:3mm; align-items:stretch; flex:1; box-sizing:border-box;">
+                    {{-- Photo Frame --}}
+                    <div style="flex-shrink:0; text-align:center;">
+                        <div style="width:22mm; height:28mm; border:1.5px solid #0f2942; border-radius:2mm; overflow:hidden; background:#f1f5f9; box-shadow:0 1px 4px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center;">
+                            ${photoUrl ? `<img src="${photoUrl}" style="width:100%; height:100%; object-fit:cover; display:block;" alt="${teacher.name}">` : `
+                                <div style="font-size:16pt; font-weight:900; color:#0f2942;">${teacher.name.charAt(0)}</div>
+                            `}
+                        </div>
+                        <div style="margin-top:1.2mm; background:#0f2942; color:#ffffff; font-size:5pt; font-weight:900; padding:0.5mm 1mm; border-radius:0.8mm; letter-spacing:0.4px;">
+                            ${teacher.employee_id}
+                        </div>
+                    </div>
+
+                    {{-- Info Details --}}
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; justify-content:space-between;">
+                        <div>
+                            <div style="font-size:8.6pt; font-weight:900; color:#0f2942; line-height:1.2; font-family:'Battambang',sans-serif; margin-bottom:0.4mm;">
+                                ${teacher.name_kh || teacher.name}
+                            </div>
+                            <div style="font-size:6.8pt; font-weight:800; color:#1e3a8a; text-transform:uppercase; letter-spacing:0.3px; line-height:1.2; margin-bottom:1.5mm;">
+                                ${teacher.name}
+                            </div>
+                        </div>
+
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:1.5mm; padding:1.4mm 2mm; display:flex; flex-direction:column; gap:1mm; font-size:5.2pt;">
+                            <div style="display:flex; gap:1.5mm;">
+                                <span style="color:#64748b; font-weight:700; width:13mm;">POSITION:</span>
+                                <strong style="color:#0f2942; font-weight:800;">${posInfo.en}</strong>
+                            </div>
+                            <div style="display:flex; gap:1.5mm;">
+                                <span style="color:#64748b; font-weight:700; width:13mm;">DEPT:</span>
+                                <strong style="color:#0f2942; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${deptLabel}</strong>
+                            </div>
+                            <div style="display:flex; gap:1.5mm;">
+                                <span style="color:#64748b; font-weight:700; width:13mm;">VALID THRU:</span>
+                                <strong style="color:#10b981;">10/2028</strong>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:1.2mm;">
+                            <span style="font-size:4.2pt; color:#64748b; font-weight:700; letter-spacing:0.3px;">NTTI SMART IDENTITY</span>
+                            <div style="display:flex; align-items:center; gap:1mm;">
+                                <span style="font-size:4pt; color:#64748b;">SCAN TO VERIFY</span>
+                                <img src="${qrVerificationUrl}" style="width:6.8mm; height:6.8mm; border:0.5px solid #cbd5e1; border-radius:0.5mm;" alt="QR">
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="id-card-body">
-                    <div class="id-card-photo-col">
-                        ${photoUrl ? `<img src="${photoUrl}" class="id-card-photo-img" alt="${teacher.name}">` : `
-                            <div class="id-card-photo-img" style="display:flex;align-items:center;justify-content:center;font-size:14pt;font-weight:800;color:#0f2942;">
-                                ${teacher.name.charAt(0)}
+
+                {{-- Bottom Stripe --}}
+                <div style="height:1.8mm; background:linear-gradient(90deg, #d97706 0%, #1e3a8a 100%); width:100%;"></div>
+            </div>
+        `;
+    }
+
+    function generateCardBackHtml(teacher) {
+        const rfidUid = teacher.rfid_card ? teacher.rfid_card.uid : 'NFC/RFID ENABLED';
+        const barcodeUrl = `https://barcodeapi.org/api/128/` + encodeURIComponent(teacher.employee_id);
+
+        return `
+            <div class="id-card id-card-back" id="card_back_${teacher.id}" style="width:85.6mm; height:54mm; border:1.5px solid #0f2942; border-radius:3.5mm; box-sizing:border-box; background:#ffffff; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; font-family:'Battambang','Inter',system-ui,sans-serif;">
+                {{-- Magnetic Stripe --}}
+                <div style="background:#0f172a; height:8.5mm; width:100%;"></div>
+
+                {{-- Middle Content --}}
+                <div style="padding:2mm 3.5mm; flex:1; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
+                    {{-- RFID Chip Info & Header --}}
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1mm; padding-bottom:1mm; border-bottom:1px solid #e2e8f0;">
+                        <div style="display:flex; align-items:center; gap:1.5mm;">
+                            <div style="width:5mm; height:4mm; border-radius:0.6mm; background:linear-gradient(135deg, #f59e0b, #d97706); border:0.5px solid #b45309; display:flex; align-items:center; justify-content:center;">
+                                <div style="width:2mm; height:1.5mm; border:0.5px solid rgba(255,255,255,0.7);"></div>
                             </div>
-                        `}
+                            <span style="font-size:4.8pt; font-family:monospace; font-weight:800; color:#0f2942;">RFID: ${rfidUid}</span>
+                        </div>
+                        <span style="font-size:4.5pt; font-weight:800; color:#64748b; text-transform:uppercase;">NTTI FACULTY CARD</span>
                     </div>
 
-                    <div class="id-card-info-col">
-                        <div class="id-card-top-row">
-                            <div>
-                                <div class="id-card-name-kh">${teacher.name_kh || ''}</div>
-                                <div class="id-card-name-en">${teacher.name}</div>
-                            </div>
-                            <div class="id-card-id-badge">ID: ${teacher.employee_id}</div>
+                    {{-- Regulations / Disclaimer in Khmer & English --}}
+                    <div style="font-size:4.2pt; color:#475569; line-height:1.3; margin-bottom:1.5mm;">
+                        <div style="font-weight:700; color:#0f2942; margin-bottom:0.3mm;">លក្ខខណ្ឌប្រើប្រាស់ / TERMS & CONDITIONS:</div>
+                        • កាតនេះជាកម្មសិទ្ធិផ្លូវការរបស់វិទ្យាស្ថានជាតិបណ្តុះបណ្តាលបច្ចេកទេស (NTTI)។<br>
+                        • This card is non-transferable and must be presented upon request on campus.<br>
+                        • ប្រសិនបើរើសបាន សូមប្រគល់ជូនសាលាវិញ៖ <strong>023 882 123</strong> | info@ntti.edu.kh
+                    </div>
+
+                    {{-- Barcode & Director Signature / Official Stamp --}}
+                    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:auto;">
+                        <div style="text-align:center;">
+                            <img src="${barcodeUrl}" style="height:6.5mm; width:28mm; display:block; object-fit:contain;" alt="Barcode" onerror="this.style.display='none'">
+                            <div style="font-size:4.5pt; font-family:monospace; font-weight:800; color:#0f2942; letter-spacing:1px; margin-top:0.4mm;">*${teacher.employee_id}*</div>
                         </div>
 
-                        <div class="id-card-details-grid">
-                            <div class="id-card-grid-item-full">
-                                <div class="id-card-grid-icon">${briefcaseSvg}</div>
-                                <div class="id-card-grid-content">
-                                    <span class="id-card-grid-label">POSITION</span>
-                                    <span class="id-card-grid-value" title="${posInfo.en}">${posInfo.kh}${posInfo.kh !== posInfo.en ? ` (${posInfo.en})` : ''}</span>
-                                </div>
+                        {{-- Simulated Official Red Seal & Signature --}}
+                        <div style="display:flex; align-items:center; gap:2mm;">
+                            <div style="position:relative; width:12mm; height:12mm; border-radius:50%; border:1.2px dashed #dc2626; display:flex; align-items:center; justify-content:center; color:#dc2626; text-align:center; transform:rotate(-12deg); opacity:0.85;">
+                                <div style="font-size:2.8pt; font-weight:900; line-height:1;">វិទ្យាស្ថានជាតិ<br>NTTI<br>SEAL</div>
                             </div>
-
-                            <div class="id-card-grid-item-full">
-                                <div class="id-card-grid-icon">${buildingSvg}</div>
-                                <div class="id-card-grid-content">
-                                    <span class="id-card-grid-label">DEPARTMENT</span>
-                                    <span class="id-card-grid-value" title="${deptLabel}">${deptLabel}</span>
-                                </div>
-                            </div>
-
-                            <div class="id-card-grid-item-full">
-                                <div class="id-card-grid-icon">${phoneSvg}</div>
-                                <div class="id-card-grid-content">
-                                    <span class="id-card-grid-label">PHONE</span>
-                                    <span class="id-card-grid-value">${teacher.phone || '—'}</span>
-                                </div>
-                            </div>
-
-                            <div class="id-card-grid-item-full">
-                                <div class="id-card-grid-icon">${envelopeSvg}</div>
-                                <div class="id-card-grid-content">
-                                    <span class="id-card-grid-label">EMAIL</span>
-                                    <span class="id-card-grid-value" title="${teacher.email || '—'}">${teacher.email || '—'}</span>
-                                </div>
+                            <div style="text-align:center;">
+                                <div style="width:20mm; border-bottom:0.8px solid #64748b; margin-bottom:0.6mm;"></div>
+                                <div style="font-size:4.2pt; font-weight:800; color:#0f2942;">DIRECTOR OF NTTI</div>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {{-- Bottom Stripe --}}
+                <div style="height:1.5mm; background:#0f2942; width:100%;"></div>
+            </div>
+        `;
+    }
+
+    // ── Digital ID Card Studio Controller ────────────────────────
+    let currentStudioTeacherId = null;
+    let isStudioCardFlipped = false;
+
+    function openIdCardStudio(id) {
+        const teacher = teachersData.find(t => t.id === id);
+        if (!teacher) {
+            window.showToast('{{ __("Teacher not found") }}', 'error');
+            return;
+        }
+
+        currentStudioTeacherId = id;
+        isStudioCardFlipped = false;
+
+        // Reset flip state
+        const wrapper = document.getElementById('studioCardFlipWrapper');
+        if (wrapper) wrapper.classList.remove('is-flipped');
+        
+        const flipBtnText = document.getElementById('flipButtonText');
+        if (flipBtnText) flipBtnText.innerText = '{{ __("Flip to Back Side (បង្វិលមើលផ្នែកខាងក្រោយ)") }}';
+
+        // Render front and back in studio
+        document.getElementById('studioCardFront').innerHTML = generateCardHtml(teacher);
+        document.getElementById('studioCardBack').innerHTML = generateCardBackHtml(teacher);
+
+        openModal('idCardStudioModal');
+    }
+
+    function flipStudioCard() {
+        const wrapper = document.getElementById('studioCardFlipWrapper');
+        if (!wrapper) return;
+        isStudioCardFlipped = !isStudioCardFlipped;
+        wrapper.classList.toggle('is-flipped', isStudioCardFlipped);
+
+        const flipBtnText = document.getElementById('flipButtonText');
+        if (flipBtnText) {
+            flipBtnText.innerText = isStudioCardFlipped 
+                ? '{{ __("Flip to Front Side (បង្វិលមើលផ្នែកខាងមុខ)") }}'
+                : '{{ __("Flip to Back Side (បង្វិលមើលផ្នែកខាងក្រោយ)") }}';
+        }
+    }
+
+    function printStudioCard() {
+        if (!currentStudioTeacherId) return;
+        const teacher = teachersData.find(t => t.id === currentStudioTeacherId);
+        if (!teacher) return;
+
+        const container = document.getElementById('print-cards-container');
+        // Render both front and back on print page
+        container.innerHTML = `
+            <div class="print-card-page">
+                <div style="display:flex; flex-direction:column; gap:8mm; align-items:center;">
+                    <div style="text-align:center; font-size:7pt; color:#64748b; margin-bottom:2mm;">FRONT SIDE (ផ្នែកខាងមុខ)</div>
+                    ${generateCardHtml(teacher)}
+                    <div style="text-align:center; font-size:7pt; color:#64748b; margin:4mm 0 2mm;">BACK SIDE (ផ្នែកខាងក្រោយ)</div>
+                    ${generateCardBackHtml(teacher)}
                 </div>
             </div>
         `;
+        container.style.display = 'block';
+
+        document.body.classList.add('printing-cards');
+        setTimeout(() => {
+            window.print();
+        }, 150);
+    }
+
+    async function downloadCardImage(side) {
+        if (!currentStudioTeacherId) return;
+        const teacher = teachersData.find(t => t.id === currentStudioTeacherId);
+        if (!teacher) return;
+
+        const targetEl = (side === 'back')
+            ? document.getElementById('studioCardBack')
+            : document.getElementById('studioCardFront');
+
+        if (!targetEl) return;
+
+        if (typeof html2canvas === 'undefined') {
+            alert('Image capture library loading, please try again.');
+            return;
+        }
+
+        try {
+            if (window.showToast) window.showToast('{{ __("Generating card image...") }}', 'info');
+            const canvas = await html2canvas(targetEl, {
+                scale: 3, // High-res 3x
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            });
+
+            const link = document.createElement('a');
+            link.download = `ID_Card_${teacher.employee_id}_${side}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            if (window.showToast) window.showToast('{{ __("Downloaded ID Card successfully!") }}', 'success');
+        } catch (e) {
+            console.error(e);
+            alert('Failed to generate card image: ' + e.message);
+        }
     }
 
     function printTeacherCard(id) {

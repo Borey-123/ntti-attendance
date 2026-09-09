@@ -57,6 +57,10 @@ class TeacherController extends Controller
             'photo' => 'nullable|image|max:2048',
             'base_salary' => 'nullable|numeric|min:0',
             'position_rank' => 'nullable|string|max:100',
+            'bank_name' => 'nullable|string|max:100',
+            'bank_account_number' => 'nullable|string|max:100',
+            'bank_account_name' => 'nullable|string|max:100',
+            'bakong_account_id' => 'nullable|string|max:100',
         ]);
 
         if ($request->has('is_geofence_exempt')) {
@@ -106,6 +110,10 @@ class TeacherController extends Controller
             'photo' => 'nullable|image|max:2048',
             'base_salary' => 'nullable|numeric|min:0',
             'position_rank' => 'nullable|string|max:100',
+            'bank_name' => 'nullable|string|max:100',
+            'bank_account_number' => 'nullable|string|max:100',
+            'bank_account_name' => 'nullable|string|max:100',
+            'bakong_account_id' => 'nullable|string|max:100',
         ]);
 
         if ($request->has('is_geofence_exempt')) {
