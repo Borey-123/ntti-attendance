@@ -656,16 +656,21 @@ class PortalController extends Controller
             'token' => 'required|string',
         ]);
 
-        if (!DynamicQrService::validateToken($request->token)) {
+        $teacher = Teacher::find($teacherId);
+        if (!$teacher || $teacher->status !== 'active') {
+            return response()->json(['success' => false, 'message' => __('Teacher invalid or inactive.')], 403);
+        }
+
+        $isValidDynamic = DynamicQrService::validateToken($request->token);
+
+        // Fallback: check if teacher scanned their own Employee ID Card QR code
+        $isSelfIdCard = (strtoupper(trim($request->token)) === strtoupper(trim($teacher->employee_id)) || str_contains($request->token, $teacher->employee_id));
+
+        if (!$isValidDynamic && !$isSelfIdCard) {
             return response()->json([
                 'success' => false,
                 'message' => __('Invalid or expired QR code. Please scan the current live screen.')
             ], 422);
-        }
-
-        $teacher = Teacher::find($teacherId);
-        if (!$teacher || $teacher->status !== 'active') {
-            return response()->json(['success' => false, 'message' => __('Teacher invalid or inactive.')], 403);
         }
 
         $scanRequest = new Request([

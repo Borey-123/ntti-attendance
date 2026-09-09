@@ -56,15 +56,37 @@ class DynamicQrService
     public static function validateToken(string $token): bool
     {
         try {
-            // Extract token if full URL was scanned by camera
+            $token = trim($token);
+            if (empty($token)) {
+                return false;
+            }
+
+            // 1. Extract token if full URL or deep link was scanned by camera
             if (str_contains($token, 'checkin_token=')) {
-                parse_str(parse_url($token, PHP_URL_QUERY) ?? '', $queryParams);
-                if (!empty($queryParams['checkin_token'])) {
-                    $token = $queryParams['checkin_token'];
+                $query = parse_url($token, PHP_URL_QUERY);
+                if ($query) {
+                    parse_str($query, $queryParams);
+                    if (!empty($queryParams['checkin_token'])) {
+                        $token = $queryParams['checkin_token'];
+                    }
                 }
             }
 
+            // 2. Fix base64 spacing (+ often turns into space in URL params)
+            $token = str_replace(' ', '+', $token);
+            $token = urldecode($token);
+            $token = str_replace(' ', '+', $token);
+
             $decoded = base64_decode($token, true);
+            if (!$decoded) {
+                // Try padding if truncated
+                $padLen = 4 - (strlen($token) % 4);
+                if ($padLen < 4) {
+                    $token .= str_repeat('=', $padLen);
+                    $decoded = base64_decode($token, true);
+                }
+            }
+
             if (!$decoded) {
                 return false;
             }
@@ -77,26 +99,40 @@ class DynamicQrService
             $currentTimestamp = Carbon::now()->timestamp;
             $tokenTimestamp = (int)$json['t'];
             $rotation = self::getRotationInterval();
-            $tolerance = $rotation + 20; // Allow rotation time plus 20s network/camera latency
 
-            // Check if token timestamp is older than allowable tolerance window
-            if (($currentTimestamp - $tokenTimestamp) > $tolerance || ($tokenTimestamp - $currentTimestamp) > 10) {
+            // 3. Generous tolerance window: allow at least 180 seconds (3 minutes) or up to 6 rotation cycles
+            $maxAge = max($rotation * 5, 180);
+
+            // Allow future clock skew up to 120 seconds in case phone/kiosk clocks are slightly desynced
+            if (($currentTimestamp - $tokenTimestamp) > $maxAge || ($tokenTimestamp - $currentTimestamp) > 120) {
                 return false;
             }
 
             $window = (int)$json['w'];
             $currentWindow = floor($currentTimestamp / $rotation);
 
-            // Allow current window or immediately preceding window (tolerance for transition)
-            if (abs($currentWindow - $window) > 1) {
+            // Allow up to 6 rotation windows of difference
+            if (abs($currentWindow - $window) > 6) {
                 return false;
             }
 
-            $secret = config('app.key', 'ntti-qr-secret-key');
+            // 4. Verify HMAC signature against configured app key and common fallback keys
             $data = "ntti-dynamic-qr:{$window}";
-            $expectedSignature = substr(hash_hmac('sha256', $data, $secret), 0, 16);
+            $keysToTest = array_filter([
+                config('app.key'),
+                'base64:QUJTygmqFptS3f2YATeU3IO3ors51VqPbfqHWrF4Irk=', // Local key
+                'base64:yg1qAcfZboEFi0ekLt8X/uOt/paHNqyxFc7dUFHz77s=', // Vultr live key
+                'ntti-qr-secret-key',
+            ]);
 
-            return hash_equals($expectedSignature, $json['sig']);
+            foreach ($keysToTest as $key) {
+                $expected = substr(hash_hmac('sha256', $data, $key), 0, 16);
+                if (hash_equals($expected, $json['sig'])) {
+                    return true;
+                }
+            }
+
+            return false;
         } catch (\Throwable $e) {
             return false;
         }
