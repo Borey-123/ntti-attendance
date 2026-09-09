@@ -12,74 +12,108 @@
             font-style: normal;
         }
         @font-face {
+            font-family: 'KhmerOSBattambang';
+            src: url('{{ public_path("fonts/KhmerOS_battambang.ttf") }}') format('truetype');
+            font-weight: bold;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'KhmerOSBattambang';
+            src: url('{{ public_path("fonts/KhmerOS_battambang.ttf") }}') format('truetype');
+            font-weight: 600;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'KhmerOSBattambang';
+            src: url('{{ public_path("fonts/KhmerOS_battambang.ttf") }}') format('truetype');
+            font-weight: 700;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'KhmerOSBattambang';
+            src: url('{{ public_path("fonts/KhmerOS_battambang.ttf") }}') format('truetype');
+            font-weight: 800;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'KhmerOSBattambang';
+            src: url('{{ public_path("fonts/KhmerOS_battambang.ttf") }}') format('truetype');
+            font-style: italic;
+        }
+        @font-face {
             font-family: 'KhmerOSMoul';
             src: url('{{ public_path("fonts/KhmerOSMoul.ttf") }}') format('truetype');
             font-weight: normal;
             font-style: normal;
         }
-
-        @page { size: A4 portrait; margin: 12mm 18mm; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'KhmerOSBattambang', 'DejaVu Sans', sans-serif;
-            color: #0f172a;
-            background: #fff;
-            font-size: 9pt;
-            line-height: 1.4;
+        @font-face {
+            font-family: 'KhmerOSMoul';
+            src: url('{{ public_path("fonts/KhmerOSMoul.ttf") }}') format('truetype');
+            font-weight: bold;
+            font-style: normal;
         }
 
-        .header { text-align: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 8px; margin-bottom: 12px; }
-        .motto { font-family: 'KhmerOSMoul', 'KhmerOSBattambang', serif; font-size: 11pt; color: #1e3a8a; margin-bottom: 2px; }
-        .school-name { font-family: 'KhmerOSBattambang', sans-serif; font-size: 12pt; font-weight: bold; color: #1e3a8a; }
-        .doc-title { font-size: 13pt; font-weight: bold; color: #1e40af; margin: 6px 0 2px; letter-spacing: 0.5px; text-transform: uppercase; }
-        .doc-sub { font-size: 8pt; color: #64748b; }
+        @page { size: A4 portrait; margin: 6mm 12mm 6mm 12mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'KhmerOSBattambang', sans-serif; }
+        body {
+            font-family: 'KhmerOSBattambang', sans-serif;
+            color: #0f172a;
+            background: #fff;
+            font-size: 8pt;
+            line-height: 1.3;
+        }
 
-        .info-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; }
-        .info-table td { padding: 4px 8px; font-size: 8.5pt; vertical-align: top; }
+        .header { text-align: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 4px; margin-bottom: 6px; }
+        .motto { font-family: 'KhmerOSMoul', 'KhmerOSBattambang', serif; font-size: 10pt; color: #1e3a8a; margin-bottom: 2px; }
+        .school-name { font-family: 'KhmerOSBattambang', sans-serif; font-size: 11pt; font-weight: bold; color: #1e3a8a; }
+        .doc-title { font-size: 12pt; font-weight: bold; color: #1e40af; margin: 4px 0 2px; letter-spacing: 0.5px; }
+        .doc-sub { font-size: 7.5pt; color: #64748b; }
+
+        .info-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; }
+        .info-table td { padding: 2.5px 6px; font-size: 7.5pt; vertical-align: top; }
         .info-label { font-weight: bold; color: #64748b; width: 18%; }
         .info-value { color: #0f172a; width: 32%; }
 
         .section-title {
-            font-size: 9.5pt;
+            font-size: 8.5pt;
             font-weight: bold;
             color: #1e3a8a;
             border-bottom: 1px solid #cbd5e1;
-            padding-bottom: 3px;
-            margin: 10px 0 6px;
-            text-transform: uppercase;
+            padding-bottom: 2px;
+            margin: 6px 0 4px;
         }
         .section-marker {
             display: inline-block;
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             background: #1e3a8a;
             border-radius: 2px;
             margin-right: 4px;
         }
 
-        table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-        table.data-table th { background: #1e3a8a; color: #fff; padding: 5px 8px; font-size: 8pt; font-weight: bold; text-align: left; }
-        table.data-table td { padding: 4px 8px; font-size: 8.5pt; border-bottom: 1px solid #f1f5f9; }
+        table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+        table.data-table th { background: #1e3a8a; color: #fff; padding: 3px 6px; font-size: 7.5pt; font-weight: bold; text-align: left; }
+        table.data-table td { padding: 2.5px 6px; font-size: 7.5pt; border-bottom: 1px solid #f1f5f9; }
         table.data-table tr:nth-child(even) td { background: #f8fafc; }
 
         .amount { text-align: right; font-weight: bold; }
         .deduct { color: #dc2626; }
         .bonus-col { color: #059669; }
 
-        .net-row td { background: #1e3a8a !important; color: #fff !important; font-size: 10pt; font-weight: bold; padding: 7px 8px; }
+        .net-row td { background: #1e3a8a !important; color: #fff !important; font-size: 9pt; font-weight: bold; padding: 5px 6px; }
 
-        .attendance-boxes { width: 100%; margin-bottom: 8px; border-collapse: separate; border-spacing: 6px 0; }
-        .att-box { text-align: center; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px; background: #fff; width: 33.33%; }
-        .att-num { font-size: 15pt; font-weight: bold; line-height: 1.1; }
-        .att-label { font-size: 7pt; color: #64748b; text-transform: uppercase; font-weight: bold; margin-top: 2px; }
+        .attendance-boxes { width: 100%; margin-bottom: 4px; border-collapse: separate; border-spacing: 4px 0; }
+        .att-box { text-align: center; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px; background: #fff; width: 33.33%; }
+        .att-num { font-size: 13pt; font-weight: bold; line-height: 1.1; }
+        .att-label { font-size: 6.5pt; color: #64748b; font-weight: bold; margin-top: 1px; }
 
-        .footer { margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+        .footer { margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 6px; }
         .sig-table { width: 100%; text-align: center; }
-        .sig-line { width: 110px; border-bottom: 1px solid #94a3b8; margin: 30px auto 3px; }
-        .sig-label { font-size: 7.5pt; color: #64748b; }
-        .footer-note { font-size: 7pt; color: #94a3b8; text-align: center; margin-top: 8px; font-style: italic; }
+        .sig-line { width: 100px; border-bottom: 1px solid #94a3b8; margin: 18px auto 2px; }
+        .sig-label { font-size: 7pt; color: #64748b; }
+        .footer-note { font-size: 6.5pt; color: #64748b; text-align: center; margin-top: 4px; }
 
-        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 7.5pt; font-weight: bold; text-transform: uppercase; }
+        .status-badge { display: inline-block; padding: 1px 6px; border-radius: 99px; font-size: 7pt; font-weight: bold; text-transform: uppercase; }
         .status-draft    { background: #fef3c7; color: #92400e; }
         .status-approved { background: #ede9fe; color: #4c1d95; }
         .status-paid     { background: #d1fae5; color: #064e3b; }
@@ -229,16 +263,16 @@
 </table>
 
 {{-- Bakong KHQR Payout Voucher Block --}}
-<table style="width:100%; border:1.5px solid #e11d48; border-radius:4px; margin:8px 0; border-collapse:collapse; background:#fff;">
+<table style="width:100%; border:1px solid #e11d48; border-radius:3px; margin:4px 0; border-collapse:collapse; background:#fff;">
     <tr>
-        <td colspan="2" style="background:#e11d48; color:#fff; padding:4px 8px; font-weight:bold; font-size:8pt;">
+        <td colspan="2" style="background:#e11d48; color:#fff; padding:3px 6px; font-weight:bold; font-size:7.5pt;">
             <table style="width:100%; color:#fff;">
                 <tr>
-                    <td style="font-weight:bold; font-size:8pt; padding:0;">
+                    <td style="font-weight:bold; font-size:7.5pt; padding:0;">
                         BAKONG KHQR DIRECT SALARY PAYOUT / ការទូទាត់ប្រាក់បៀវត្សរ៍តាម KHQR
                     </td>
-                    <td style="text-align:right; font-size:7pt; padding:0;">
-                        <span style="background:rgba(255,255,255,0.25); padding:1px 6px; border-radius:99px; font-weight:bold;">
+                    <td style="text-align:right; font-size:6.5pt; padding:0;">
+                        <span style="background:rgba(255,255,255,0.25); padding:1px 5px; border-radius:99px; font-weight:bold;">
                             {{ $payroll->status === 'paid' ? 'PAID' : 'SCAN TO PAY' }}
                         </span>
                     </td>
@@ -247,39 +281,39 @@
         </td>
     </tr>
     <tr>
-        <td style="padding:6px 10px; vertical-align:middle; font-size:8pt; color:#334155;">
-            <div style="margin-bottom:2px;">
+        <td style="padding:4px 8px; vertical-align:middle; font-size:7.5pt; color:#334155;">
+            <div style="margin-bottom:1px;">
                 <span style="color:#64748b; font-weight:bold;">Beneficiary / ឈ្មោះម្ចាស់គណនី:</span>
                 <strong style="color:#0f172a;">{{ $khqr['account_name'] ?? $payroll->teacher->name }}</strong>
             </div>
-            <div style="margin-bottom:2px;">
+            <div style="margin-bottom:1px;">
                 <span style="color:#64748b; font-weight:bold;">Bank / ធនាគារ:</span>
                 <strong>{{ $khqr['bank_name'] ?? ($payroll->teacher->bank_name ?: 'Bakong / ABA / ACLEDA') }}</strong>
                 @if(!empty($payroll->teacher->bank_account_number))
                     &nbsp;|&nbsp; <span style="color:#64748b; font-weight:bold;">A/C:</span> <strong>{{ $payroll->teacher->bank_account_number }}</strong>
                 @endif
             </div>
-            <div style="margin-bottom:2px;">
+            <div style="margin-bottom:1px;">
                 <span style="color:#64748b; font-weight:bold;">Bakong ID:</span>
                 <strong style="color:#1e40af;">{{ $khqr['bakong_id'] ?? 'N/A' }}</strong>
             </div>
-            <div style="margin-top:4px; font-size:8.5pt;">
-                <span style="color:#e11d48; font-weight:bold; font-size:10pt;">${{ number_format($payroll->net_salary, 2) }}</span>
+            <div style="margin-top:2px; font-size:8pt;">
+                <span style="color:#e11d48; font-weight:bold; font-size:9pt;">${{ number_format($payroll->net_salary, 2) }}</span>
                 &nbsp;~&nbsp;
                 <span style="color:#059669; font-weight:bold;">{{ number_format(($khqr['amount_khr'] ?? round($payroll->net_salary * 4100, -2))) }} ៛</span>
-                <span style="font-size:7pt; color:#94a3b8;">(Rate: 1$ = {{ number_format($khqr['khr_rate'] ?? 4100) }} ៛)</span>
+                <span style="font-size:6.5pt; color:#94a3b8;">(Rate: 1$ = {{ number_format($khqr['khr_rate'] ?? 4100) }} ៛)</span>
             </div>
-            <div style="font-size:7pt; color:#94a3b8; margin-top:2px; font-style:italic;">
+            <div style="font-size:6.5pt; color:#94a3b8; margin-top:1px;">
                 Scan with any Cambodian Banking App (ABA, ACLEDA, Wing, Canadia, Sathapana, etc.)
             </div>
         </td>
-        <td style="width:100px; text-align:center; padding:6px; vertical-align:middle;">
+        <td style="width:85px; text-align:center; padding:4px; vertical-align:middle;">
             @if(!empty($qrBase64))
-                <img src="{{ $qrBase64 }}" alt="KHQR" style="width:85px; height:85px; display:block; margin:0 auto; border:1px solid #e2e8f0; padding:2px; background:#fff;">
+                <img src="{{ $qrBase64 }}" alt="KHQR" style="width:70px; height:70px; display:block; margin:0 auto; border:1px solid #e2e8f0; padding:1px; background:#fff;">
             @elseif(!empty($khqr['qr_image_url']))
-                <img src="{{ $khqr['qr_image_url'] }}" alt="KHQR" style="width:85px; height:85px; display:block; margin:0 auto; border:1px solid #e2e8f0; padding:2px; background:#fff;">
+                <img src="{{ $khqr['qr_image_url'] }}" alt="KHQR" style="width:70px; height:70px; display:block; margin:0 auto; border:1px solid #e2e8f0; padding:1px; background:#fff;">
             @endif
-            <div style="font-size:6.5pt; font-weight:bold; color:#e11d48; margin-top:2px;">KHQR</div>
+            <div style="font-size:6pt; font-weight:bold; color:#e11d48; margin-top:1px;">KHQR</div>
         </td>
     </tr>
 </table>

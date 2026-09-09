@@ -338,6 +338,10 @@
                                         <i class="ph ph-eye"></i>
                                     </a>
 
+                                    <a href="{{ route('payroll.print', $p->id) }}" target="_blank" class="btn btn-secondary" style="padding:0.45rem 0.65rem; border-radius:0.6rem; font-size:0.85rem; color:#10b981;" title="{{ __('Print Payslip (100% Khmer Fonts)') }}">
+                                        <i class="ph ph-printer"></i>
+                                    </a>
+
                                     <a href="{{ route('payroll.pdf', $p->id) }}" target="_blank" class="btn btn-secondary" style="padding:0.45rem 0.65rem; border-radius:0.6rem; font-size:0.85rem; color:#818cf8;" title="{{ __('Download Payslip (PDF)') }}">
                                         <i class="ph ph-file-pdf"></i>
                                     </a>

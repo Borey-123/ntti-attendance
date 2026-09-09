@@ -30,6 +30,10 @@
         </div>
 
         <div style="display:flex; gap:0.65rem; flex-wrap:wrap;">
+            <a href="{{ route('payroll.print', $payroll->id) }}" class="btn btn-secondary" target="_blank" style="border-radius:0.85rem; font-weight:700; padding:0.65rem 1.15rem; color:#10b981; border-color:rgba(16,185,129,0.35);" title="{{ __('Print or Save as PDF with Perfect Khmer Fonts') }}">
+                <i class="ph ph-printer" style="font-size:1.2rem;"></i> {{ __('Print Payslip') }}
+            </a>
+
             <a href="{{ route('payroll.pdf', $payroll->id) }}" class="btn btn-secondary" target="_blank" style="border-radius:0.85rem; font-weight:700; padding:0.65rem 1.15rem; color:#818cf8; border-color:rgba(99,102,241,0.35);">
                 <i class="ph ph-file-pdf" style="font-size:1.2rem;"></i> {{ __('Download Payslip (PDF)') }}
             </a>

@@ -233,6 +233,24 @@ class PayrollController extends Controller
         return $pdf->download("payslip_{$payroll->teacher->employee_id}_{$payroll->month->format('Y_m')}.pdf");
     }
 
+    // ─── Print / Preview Payslip ─────────────────────────────
+    public function printSlip($id)
+    {
+        $payroll     = Payroll::with(['teacher', 'academicPeriod', 'approvedByUser'])->findOrFail($id);
+        $settings    = PayrollSetting::getAllMap();
+        $khqr        = BakongKhqrService::generatePayrollKhqr($payroll);
+
+        $attendances = \App\Models\Attendance::where('teacher_id', $payroll->teacher_id)
+            ->whereBetween('date', [
+                $payroll->month->copy()->startOfMonth(),
+                $payroll->month->copy()->endOfMonth(),
+            ])
+            ->orderBy('date')
+            ->get();
+
+        return view('payroll.print_slip', compact('payroll', 'settings', 'attendances', 'khqr'));
+    }
+
     // ─── Export CSV ──────────────────────────────────────────
     public function exportCsv(Request $request)
     {

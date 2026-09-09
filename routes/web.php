@@ -243,5 +243,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/payroll/{id}/paid', [PayrollController::class, 'markPaid'])->name('payroll.paid');
     Route::post('/payroll/{id}/recalculate', [PayrollController::class, 'recalculate'])->name('payroll.recalculate');
     Route::get('/payroll/{id}/pdf', [PayrollController::class, 'exportPdf'])->name('payroll.pdf');
+    Route::get('/payroll/{id}/print', [PayrollController::class, 'printSlip'])->name('payroll.print');
     Route::get('/api-web/payroll', [PayrollController::class, 'getData'])->name('api.payroll.list');
 });
