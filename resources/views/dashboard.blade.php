@@ -377,16 +377,16 @@
                 <div class="psg-bg-icon"><i class="ph ph-buildings" style="color: #6366f1;"></i></div>
             </div>
 
-            <div class="psg-item stat-card" id="card-payroll" onclick="window.location.href='{{ route('payroll.index') }}'">
-                <div class="psg-icon-wrap" style="background: linear-gradient(135deg, rgba(225,29,72,0.15), rgba(225,29,72,0.05));">
-                    <i class="ph ph-wallet" style="color: #e11d48;"></i>
+            <div class="psg-item stat-card" id="card-schedules" onclick="window.location.href='{{ route('schedules.index') }}'">
+                <div class="psg-icon-wrap" style="background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05));">
+                    <i class="ph ph-calendar-check" style="color: #10b981;"></i>
                 </div>
-                <div class="psg-val" style="color: #e11d48;">
-                    <span id="stat-payroll-paid">{{ $payrollStats['paid'] ?? 0 }}</span>/<span id="stat-payroll-total">{{ $payrollStats['total'] ?? 0 }}</span>
-                    <span class="psg-trend" style="background:rgba(225,29,72,0.12); color:#e11d48;">{{ ($payrollStats['paid'] ?? 0) > 0 && ($payrollStats['paid'] ?? 0) == ($payrollStats['total'] ?? 0) ? __('Paid') : __('Payroll') }}</span>
+                <div class="psg-val" style="color: #10b981;">
+                    <span id="stat-total-schedules">{{ $totalSchedules ?? 0 }}</span>
+                    <span class="psg-trend" id="stat-today-classes" style="background:rgba(16,185,129,0.12); color:#10b981;">{{ $todayClassesCount ?? 0 }} {{ __('Today') }}</span>
                 </div>
-                <div class="psg-label">{{ __('Monthly Payroll') }}</div>
-                <div class="psg-bg-icon"><i class="ph ph-wallet"></i></div>
+                <div class="psg-label">{{ __('Teaching Schedules') }}</div>
+                <div class="psg-bg-icon"><i class="ph ph-calendar-check"></i></div>
             </div>
         </div>
     </div>
@@ -2026,11 +2026,12 @@
             updateStatValue('stat-late', data.late_count);
             updateStatValue('stat-absent', data.absent_count);
             if (data.on_leave_count !== undefined) updateStatValue('stat-onleave', data.on_leave_count);
-            if (data.payroll_stats !== undefined) {
-                const paidEl = document.getElementById('stat-payroll-paid');
-                const totalEl = document.getElementById('stat-payroll-total');
-                if (paidEl) paidEl.innerText = data.payroll_stats.paid;
-                if (totalEl) totalEl.innerText = data.payroll_stats.total;
+            if (data.total_schedules !== undefined) {
+                updateStatSilent('stat-total-schedules', data.total_schedules);
+                const todayEl = document.getElementById('stat-today-classes');
+                if (todayEl && data.today_classes_count !== undefined) {
+                    todayEl.innerText = data.today_classes_count + ' {{ __("Today") }}';
+                }
             }
             if(data.morning_absent_teachers) updateShiftAbsentLists(data.morning_absent_teachers, data.afternoon_absent_teachers, data.absent_teachers);
             updateStatValue('stat-total', data.total);

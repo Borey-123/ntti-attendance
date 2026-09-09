@@ -131,6 +131,9 @@ class AttendanceController extends Controller
             $totalDepartments = (int)Department::count();
             $totalAdmins = (int)\App\Models\User::count();
             $departments = Department::all();
+            $totalSchedules = (int)\App\Models\TeacherSchedule::count();
+            $todayIsoDay = now()->dayOfWeekIso;
+            $todayClassesCount = (int)\App\Models\TeacherSchedule::where('day_of_week', $todayIsoDay)->count();
 
             // Apply Filters to the returned lists
             $filter = $request->filter;
@@ -221,6 +224,8 @@ class AttendanceController extends Controller
                     'total_rfid_teachers' => $totalRfidTeachers,
                     'total_departments' => $totalDepartments,
                     'total_admins' => $totalAdmins,
+                    'total_schedules' => $totalSchedules,
+                    'today_classes_count' => $todayClassesCount,
                     'checkin_count' => $checkinCount,
                     'total_scans' => $totalScans,
                     'currently_checked_in' => $currentlyCheckedInCount,
@@ -232,7 +237,8 @@ class AttendanceController extends Controller
 
             return view('dashboard', compact(
                 'attendance', 'absentTeachers', 'morningAbsentTeachers', 'afternoonAbsentTeachers', 'presentCount', 'absentCount', 'lateCount',
-                'totalTeachers', 'totalRfidTeachers', 'totalDepartments', 'totalAdmins', 'checkinCount', 'totalScans', 'currentlyCheckedInCount', 
+                'totalTeachers', 'totalRfidTeachers', 'totalDepartments', 'totalAdmins', 'totalSchedules', 'todayClassesCount',
+                'checkinCount', 'totalScans', 'currentlyCheckedInCount', 
                 'currentlyCheckedOutCount', 'rate', 'trendData', 'topOnTime', 'topLate', 'departments',
                 'pendingLeaveCount', 'approvedLeavesToday', 'onLeaveCount', 'unexcusedAbsentCount', 'onLeaveTeachers',
                 'activeAcademicYear', 'activeAcademicPeriod', 'payrollStats', 'department'
