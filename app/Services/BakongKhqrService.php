@@ -6,6 +6,9 @@ use App\Models\Teacher;
 use App\Models\Payroll;
 use App\Models\Setting;
 use Illuminate\Support\Str;
+use KHQR\BakongKHQR;
+use KHQR\Models\IndividualInfo;
+use KHQR\Helpers\KHQRData;
 
 class BakongKhqrService
 {
@@ -69,7 +72,7 @@ class BakongKhqrService
         // 1. Determine Bakong ID & Account Info
         $bakongId = !empty($teacher->bakong_account_id)
             ? trim($teacher->bakong_account_id)
-            : (!empty($teacher->phone) ? preg_replace('/[^0-9]/', '', $teacher->phone) . '@bakong' : 'teacher@ntti.edu.kh');
+            : (!empty($teacher->phone) ? preg_replace('/[^0-9]/', '', $teacher->phone) . '@bakong' : 'teacher@bakong');
 
         $accountName = !empty($teacher->bank_account_name)
             ? self::cleanName($teacher->bank_account_name)
@@ -81,43 +84,71 @@ class BakongKhqrService
         // 2. Amount calculation
         $usdAmount = (float)$payroll->net_salary;
         $khrRate = (int)Setting::getValue('khr_exchange_rate', self::DEFAULT_KHR_RATE);
-        $khrAmount = round($usdAmount * $khrRate, -2); // Round to hundreds
+        $khrAmount = (float)round($usdAmount * $khrRate, -2); // Round to hundreds
 
         $isKhr = strtoupper($currency) === 'KHR';
-        $amount = $isKhr ? number_format($khrAmount, 0, '', '') : number_format($usdAmount, 2, '.', '');
-        $currencyCode = $isKhr ? '116' : '840'; // 840 = USD, 116 = KHR
+        $amountFloat = $isKhr ? $khrAmount : round($usdAmount, 2);
+        $khqrCurrency = $isKhr ? KHQRData::CURRENCY_KHR : KHQRData::CURRENCY_USD;
+        $billNo = 'PAY-' . str_pad((string)$payroll->id, 6, '0', STR_PAD_LEFT);
 
-        // 3. Build Tag 29 (Individual Merchant Account Information)
-        $tag29_sub00 = self::formatTlv('00', $bakongId);
-        $tag29_sub01 = self::formatTlv('01', self::cleanName($teacher->name));
-        $tag29Value  = $tag29_sub00 . $tag29_sub01;
-        $tag29       = self::formatTlv('29', $tag29Value);
+        $finalKhqr = null;
 
-        // 4. Build Tag 62 (Additional Data Template)
-        $billNo      = 'PAY-' . str_pad((string)$payroll->id, 6, '0', STR_PAD_LEFT);
-        $tag62_sub01 = self::formatTlv('01', $billNo);
-        $tag62_sub07 = self::formatTlv('07', 'NTTI');
-        $tag62Value  = $tag62_sub01 . $tag62_sub07;
-        $tag62       = self::formatTlv('62', $tag62Value);
+        // 3. Attempt Generation using Official NBC-compliant BakongKHQR Library
+        try {
+            $individualInfo = new IndividualInfo(
+                bakongAccountID: $bakongId,
+                merchantName: $accountName,
+                merchantCity: 'Phnom Penh',
+                currency: $khqrCurrency,
+                amount: $amountFloat,
+                billNumber: $billNo,
+                terminalLabel: 'NTTI'
+            );
 
-        // 5. Assemble Payload (Tags 00 through 60)
-        $payload = self::formatTlv('00', '01')                             // Payload Format Indicator
-                 . self::formatTlv('01', '12')                             // Point of Initiation (12 = Dynamic with amount)
-                 . $tag29                                                  // Merchant Account Information
-                 . self::formatTlv('52', '8220')                           // Merchant Category Code (8220 = Educational Services)
-                 . self::formatTlv('53', $currencyCode)                    // Currency
-                 . self::formatTlv('54', $amount)                          // Amount
-                 . self::formatTlv('58', 'KH')                             // Country Code
-                 . self::formatTlv('59', $accountName)                     // Merchant / Beneficiary Name
-                 . self::formatTlv('60', 'Phnom Penh')                     // Merchant City
-                 . $tag62;                                                 // Additional Data
+            $khqrResponse = BakongKHQR::generateIndividual($individualInfo);
+            if (!empty($khqrResponse->data['qr'])) {
+                $finalKhqr = $khqrResponse->data['qr'];
+            }
+        } catch (\Throwable $e) {
+            // Fallback to manual standard EMV assembly below
+        }
 
-        // 6. Calculate & Append CRC16 (Tag 63)
-        $toCrc = $payload . '6304';
-        $crc = self::calculateCrc16($toCrc);
-        $finalKhqr = $toCrc . $crc;
+        // 4. Fallback Manual EMV Generation (Exact NBC Specification including Tag 99)
+        if (empty($finalKhqr)) {
+            $currencyCode = $isKhr ? '116' : '840';
+            $amountStr = $isKhr ? (string)round($khrAmount) : (string)round($usdAmount, 2);
 
-        // 7. Generate QR image URLs / embed data
+            // Tag 29 (Individual Merchant Account Information) -> ONLY Subtag 00
+            $tag29_sub00 = self::formatTlv('00', $bakongId);
+            $tag29       = self::formatTlv('29', $tag29_sub00);
+
+            // Tag 62 (Additional Data Template)
+            $tag62_sub01 = self::formatTlv('01', $billNo);
+            $tag62_sub07 = self::formatTlv('07', 'NTTI');
+            $tag62       = self::formatTlv('62', $tag62_sub01 . $tag62_sub07);
+
+            // Tag 99 (Timestamp millisecond - required by NBC to prevent expiry errors)
+            $timestampMs = (string)floor(microtime(true) * 1000);
+            $tag99       = self::formatTlv('99', self::formatTlv('00', $timestampMs));
+
+            $payload = self::formatTlv('00', '01')                   // Tag 00: Format Indicator
+                     . self::formatTlv('01', '12')                   // Tag 01: Dynamic with Amount
+                     . $tag29                                        // Tag 29: Bakong Account
+                     . self::formatTlv('52', '5999')                 // Tag 52: MCC 5999 (General)
+                     . self::formatTlv('53', $currencyCode)          // Tag 53: Currency
+                     . self::formatTlv('54', $amountStr)             // Tag 54: Amount
+                     . self::formatTlv('58', 'KH')                   // Tag 58: Country
+                     . self::formatTlv('59', $accountName)           // Tag 59: Merchant Name
+                     . self::formatTlv('60', 'Phnom Penh')           // Tag 60: City
+                     . $tag62                                        // Tag 62: Bill & Terminal
+                     . $tag99;                                       // Tag 99: Current Timestamp
+
+            $toCrc = $payload . '6304';
+            $crc = self::calculateCrc16($toCrc);
+            $finalKhqr = $toCrc . $crc;
+        }
+
+        // 5. Generate QR image URLs / embed data
         $qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=' . urlencode($finalKhqr);
 
         return [
